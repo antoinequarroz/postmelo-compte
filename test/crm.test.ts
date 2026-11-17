@@ -6,7 +6,9 @@ freshEnv();
 test("the catalogue starts with the products of the suite, Maya Studio and Nino Studio included", async () => {
   const { listProducts } = await import("@/server/crm");
   const ids = listProducts(true).map((p) => p.id);
-  expect(ids).toEqual(expect.arrayContaining(["lamio", "cairn", "tickup", "alfred", "metricove", "postmelo-studio", "nino", "maya"]));
+  expect(ids).toEqual(expect.arrayContaining(["lamio", "cairn", "tickup", "alfred", "metricove", "nino", "maya"]));
+  // Postmelo Studio now lives inside Metricove.
+  expect(ids).not.toContain("postmelo-studio");
 });
 
 test("a sale goes from prospect to client, and the dashboard follows", async () => {
