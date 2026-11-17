@@ -3,6 +3,7 @@
 import { CalendarClock, CheckCircle2, Heart, MessageCircle, Sparkles } from "lucide-react";
 import { useRef, useState } from "react";
 import { soft } from "@/components/landing/mocks";
+import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { DemoShell, onColor, typing, type Step } from "./shell";
 
@@ -14,20 +15,80 @@ const NETS = [
   { id: "yt", label: "YouTube", short: "▶" },
 ] as const;
 type Net = (typeof NETS)[number]["id"];
-const VISUALS = [
-  { title: "Épisode 12", bg: (c: string) => `linear-gradient(135deg, color-mix(in oklab, ${c} 55%, transparent), rgba(111,66,230,0.35))` },
-  { title: "Coulisses", bg: () => "linear-gradient(160deg, oklch(0.45 0.08 210), oklch(0.2 0.03 260))" },
-  { title: "« On a tout testé »", bg: (c: string) => `linear-gradient(135deg, #181715, color-mix(in oklab, ${c} 40%, #181715))` },
+const BACKGROUNDS = [
+  (c: string) => `linear-gradient(135deg, color-mix(in oklab, ${c} 55%, transparent), rgba(111,66,230,0.35))`,
+  () => "linear-gradient(160deg, oklch(0.45 0.08 210), oklch(0.2 0.03 260))",
+  (c: string) => `linear-gradient(135deg, #181715, color-mix(in oklab, ${c} 40%, #181715))`,
 ];
-const TIMES = ["Jeu 9:00", "Ven 12:30", "Sam 18:00"];
-const AI_TEXT = "L'épisode 12 est en ligne 🎙️ On y parle d'outils, d'équipe et de vidéo, avec une invitée qui a tout testé. Lien en bio.";
+
+/** What the composer says, in each language. */
+const T = {
+  fr: {
+    visuals: ["Épisode 12", "Coulisses", "« On a tout testé »"],
+    times: ["Jeu 9:00", "Ven 12:30", "Sam 18:00"],
+    ai: "L'épisode 12 est en ligne 🎙️ On y parle d'outils, d'équipe et de vidéo, avec une invitée qui a tout testé. Lien en bio.",
+    typed: "Coulisses du tournage, demain 18 h 🎬",
+    scheduled: (n: number, time: string) => `Programmé sur ${n} compte${n > 1 ? "s" : ""} · ${time}`,
+    empty: "Écris ton post, ou laisse l'IA le rédiger avec ta fiche de marque.",
+    title: "Metricove · Nouveau post",
+    hint: "Écris un post, choisis les réseaux et programme-le",
+    placeholder: "Qu'as-tu à partager ?",
+    label: "Texte du post",
+    write: "Rédiger avec l'IA",
+    visual: "Visuel",
+    on: "Publier sur",
+    when: "Quand",
+    schedule: "Programmer",
+    week: ["L", "M", "M", "J", "V", "S", "D"],
+  },
+  en: {
+    visuals: ["Episode 12", "Behind the scenes", "“We tried it all”"],
+    times: ["Thu 9:00", "Fri 12:30", "Sat 18:00"],
+    ai: "Episode 12 is out 🎙️ We talk tools, teams and video, with a guest who has tried it all. Link in bio.",
+    typed: "Behind the shoot, tomorrow 6 pm 🎬",
+    scheduled: (n: number, time: string) => `Scheduled on ${n} account${n > 1 ? "s" : ""} · ${time}`,
+    empty: "Write your post, or let the AI draft it with your brand profile.",
+    title: "Metricove · New post",
+    hint: "Write a post, pick the networks and schedule it",
+    placeholder: "What do you want to share?",
+    label: "Post text",
+    write: "Write with AI",
+    visual: "Visual",
+    on: "Publish on",
+    when: "When",
+    schedule: "Schedule",
+    week: ["M", "T", "W", "T", "F", "S", "S"],
+  },
+  de: {
+    visuals: ["Folge 12", "Hinter den Kulissen", "«Wir haben alles getestet»"],
+    times: ["Do 9:00", "Fr 12:30", "Sa 18:00"],
+    ai: "Folge 12 ist online 🎙️ Wir reden über Tools, Teams und Video, mit einem Gast, der alles getestet hat. Link in der Bio.",
+    typed: "Hinter den Kulissen des Drehs, morgen 18 Uhr 🎬",
+    scheduled: (n: number, time: string) => `Auf ${n} ${n > 1 ? "Konten" : "Konto"} geplant · ${time}`,
+    empty: "Schreib deinen Post oder lass ihn von der KI mit deinem Markenprofil verfassen.",
+    title: "Metricove · Neuer Post",
+    hint: "Schreib einen Post, wähl die Netzwerke und plane ihn ein",
+    placeholder: "Was möchtest du teilen?",
+    label: "Text des Posts",
+    write: "Mit KI schreiben",
+    visual: "Visual",
+    on: "Posten auf",
+    when: "Wann",
+    schedule: "Einplanen",
+    week: ["M", "D", "M", "D", "F", "S", "S"],
+  },
+} satisfies Record<Locale, unknown>;
 const START_POSTS = [
   { day: 1, net: "ig" as Net },
   { day: 4, net: "in" as Net },
 ];
 
 /** Metricove: write a post (or let the AI do it), pick the accounts and the time, and schedule it. */
-export function MetricoveDemo({ color }: { color: string }) {
+export function MetricoveDemo({ color, locale = "fr" }: { color: string; locale?: Locale }) {
+  const tx = T[locale];
+  const TIMES = tx.times;
+  const AI_TEXT = tx.ai;
+  const VISUALS = tx.visuals.map((title, i) => ({ title, bg: BACKGROUNDS[i] }));
   const [text, setText] = useState("");
   const [nets, setNets] = useState<Set<Net>>(new Set(["in"]));
   const [time, setTime] = useState(TIMES[0]);
@@ -65,7 +126,7 @@ export function MetricoveDemo({ color }: { color: string }) {
     if (!text.trim()) return;
     const day = TIMES.indexOf(time) + 3;
     setPosts((ps) => [...ps, ...[...nets].map((net) => ({ day, net }))]);
-    setToast(`Programmé sur ${nets.size} compte${nets.size > 1 ? "s" : ""} · ${time}`);
+    setToast(tx.scheduled(nets.size, time));
     setText("");
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setToast(null), 3000);
@@ -89,16 +150,16 @@ export function MetricoveDemo({ color }: { color: string }) {
     { at: "time-1", do: () => setTime(TIMES[1]), wait: 600 },
     { at: "schedule", do: schedule, wait: 2400 },
     { at: "text", wait: 200 },
-    ...typing("Coulisses du tournage, demain 18 h 🎬", setText, 40),
+    ...typing(tx.typed, setText, 40),
     { at: "net-x", do: () => toggle("x"), wait: 600 },
     { at: "time-2", do: () => setTime(TIMES[2]), wait: 500 },
     { at: "schedule", do: schedule, wait: 2600 },
   ];
 
   const net = NETS.find((n) => n.id === preview)!;
-  const shown = text || "Écris ton post, ou laisse l'IA le rédiger avec ta fiche de marque.";
+  const shown = text || tx.empty;
   return (
-    <DemoShell title="Metricove · Nouveau post" color={color} hint="Écris un post, choisis les réseaux et programme-le" script={script} reset={reset}>
+    <DemoShell title={tx.title} color={color} locale={locale} hint={tx.hint} script={script} reset={reset}>
       <div className="grid h-full grid-cols-1 gap-3 p-3 sm:grid-cols-[1.05fr_1fr] sm:p-4">
         {/* Composer */}
         <div className="flex min-h-0 flex-col gap-2.5">
@@ -107,21 +168,21 @@ export function MetricoveDemo({ color }: { color: string }) {
               data-demo="text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Qu'as-tu à partager ?"
-              aria-label="Texte du post"
+              placeholder={tx.placeholder}
+              aria-label={tx.label}
               maxLength={280}
               rows={4}
               className="resize-none bg-transparent p-3 text-[12.5px] leading-relaxed text-ink outline-none placeholder:text-ink-3"
             />
             <div className="flex items-center gap-2 border-t border-[color:var(--edge-07)] px-2 py-1.5">
               <button type="button" data-demo="ai" onClick={generate} className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium hover:bg-[var(--glass-05)]" style={{ color }}>
-                <Sparkles className="size-3.5" /> Rédiger avec l&apos;IA
+                <Sparkles className="size-3.5" /> {tx.write}
               </button>
               <span className="tabular ml-auto text-[10px] text-ink-3">{text.length}/280</span>
             </div>
           </div>
           <div className="max-sm:hidden">
-            <p className="mb-1.5 text-[10px] uppercase tracking-wider text-ink-3">Visuel</p>
+            <p className="mb-1.5 text-[10px] uppercase tracking-wider text-ink-3">{tx.visual}</p>
             <div className="grid grid-cols-3 gap-1.5">
               {VISUALS.map((v, i) => (
                 <button key={v.title} type="button" data-demo={`visual-${i}`} onClick={() => setVisual(i)} aria-pressed={visual === i} className={cn("flex aspect-[16/10] items-end overflow-hidden rounded-lg p-1.5 text-left ring-2 transition-[box-shadow]", visual === i ? "" : "ring-transparent")} style={{ background: v.bg(color), ["--tw-ring-color" as string]: color }}>
@@ -131,7 +192,7 @@ export function MetricoveDemo({ color }: { color: string }) {
             </div>
           </div>
           <div>
-            <p className="mb-1.5 text-[10px] uppercase tracking-wider text-ink-3">Publier sur</p>
+            <p className="mb-1.5 text-[10px] uppercase tracking-wider text-ink-3">{tx.on}</p>
             <div className="flex flex-wrap gap-1.5">
               {NETS.map((n) => {
                 const on = nets.has(n.id);
@@ -153,7 +214,7 @@ export function MetricoveDemo({ color }: { color: string }) {
             </div>
           </div>
           <div>
-            <p className="mb-1.5 text-[10px] uppercase tracking-wider text-ink-3">Quand</p>
+            <p className="mb-1.5 text-[10px] uppercase tracking-wider text-ink-3">{tx.when}</p>
             <div className="flex gap-1.5">
               {TIMES.map((t, i) => (
                 <button key={t} type="button" data-demo={`time-${i}`} onClick={() => setTime(t)} className={cn("tabular flex-1 rounded-lg border py-1.5 text-[11px] transition-colors", t !== time && "text-ink-3")} style={t === time ? { borderColor: color, background: soft(color, 14), color: "var(--ink)" } : { borderColor: "var(--edge-10)" }}>
@@ -163,7 +224,7 @@ export function MetricoveDemo({ color }: { color: string }) {
             </div>
           </div>
           <button type="button" data-demo="schedule" disabled={!text.trim()} onClick={schedule} className="press mt-auto flex items-center justify-center gap-1.5 rounded-xl py-2.5 font-medium transition-opacity disabled:opacity-40" style={{ background: color, color: onColor(color) }}>
-            <CalendarClock className="size-4" /> Programmer
+            <CalendarClock className="size-4" /> {tx.schedule}
           </button>
         </div>
 
@@ -184,7 +245,7 @@ export function MetricoveDemo({ color }: { color: string }) {
             </div>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-[9.5px] text-ink-3">
-            {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => {
+            {tx.week.map((d, i) => {
               const day = posts.filter((p) => p.day === i);
               return (
                 <div key={i} className="flex flex-col items-center gap-1 rounded-md bg-wash/[0.03] py-1.5">

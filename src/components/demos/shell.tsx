@@ -3,6 +3,7 @@
 import { Hand, MousePointerClick, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { prefersReduced } from "@/components/landing/use-scroll";
+import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /**
@@ -16,6 +17,13 @@ export function typing(text: string, onChar: (sofar: string) => void, speed = 38
   return Array.from(text, (_, i) => ({ do: () => onChar(text.slice(0, i + 1)), wait: speed }));
 }
 
+/** The words of the window around every demo. */
+const T = {
+  fr: { playing: "Démo en cours · clique pour prendre la main", tap: "Touche pour essayer", yours: "À toi", replay: "Rejouer la démo" },
+  en: { playing: "Demo playing · click to take over", tap: "Tap to try", yours: "Your turn", replay: "Replay the demo" },
+  de: { playing: "Demo läuft · klick, um zu übernehmen", tap: "Tippe, um es zu testen", yours: "Du bist dran", replay: "Demo neu starten" },
+} satisfies Record<Locale, Record<string, string>>;
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
@@ -26,6 +34,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export function DemoShell({
   title,
   color,
+  locale = "fr",
   hint,
   script,
   reset,
@@ -35,6 +44,7 @@ export function DemoShell({
 }: {
   title: string;
   color: string;
+  locale?: Locale;
   /** What to try, shown once the visitor has the demo in hand. */
   hint: string;
   script: () => Step[];
@@ -45,6 +55,7 @@ export function DemoShell({
   className?: string;
   children: React.ReactNode;
 }) {
+  const t = T[locale];
   const stage = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<"auto" | "user">("auto");
   const [visible, setVisible] = useState(false);
@@ -142,17 +153,17 @@ export function DemoShell({
                 <span className="absolute inset-0 animate-ping rounded-full opacity-60" style={{ background: color }} />
                 <span className="relative size-1.5 rounded-full" style={{ background: color }} />
               </span>
-              <span className="max-sm:hidden">Démo en cours · clique pour prendre la main</span>
-              <span className="sm:hidden">Touche pour essayer</span>
+              <span className="max-sm:hidden">{t.playing}</span>
+              <span className="sm:hidden">{t.tap}</span>
             </span>
           ) : (
             <>
               <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-medium" style={{ background: `color-mix(in oklab, ${color} 16%, transparent)`, color: `light-dark(color-mix(in oklab, ${color} 75%, black), color-mix(in oklab, ${color} 70%, white))` }}>
-                <Hand className="size-3" /> À toi
+                <Hand className="size-3" /> {t.yours}
               </span>
-              <button type="button" data-replay onClick={replay} title="Rejouer la démo" className="press flex size-7 items-center justify-center rounded-full text-ink-3 hover:bg-[var(--glass-05)] hover:text-ink">
+              <button type="button" data-replay onClick={replay} title={t.replay} className="press flex size-7 items-center justify-center rounded-full text-ink-3 hover:bg-[var(--glass-05)] hover:text-ink">
                 <RotateCcw className="size-3.5" />
-                <span className="sr-only">Rejouer la démo</span>
+                <span className="sr-only">{t.replay}</span>
               </button>
             </>
           )}

@@ -3,29 +3,98 @@
 import { Check, Copy, KeyRound, Lock, ScanFace, Search, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { soft } from "@/components/landing/mocks";
+import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { DemoShell, onColor, type Step } from "./shell";
 
 type NoteId = "charte" | "idees" | "vps";
-const NOTES: { id: NoteId; label: string; icon: string }[] = [
-  { id: "charte", label: "Charte de marque", icon: "📄" },
-  { id: "idees", label: "Idées vidéo", icon: "💡" },
-  { id: "vps", label: "Accès serveur", icon: "🔒" },
-];
-const TODOS = [
-  { t: "Logo validé", done: true },
-  { t: "Déclinaison vidéo", done: false },
-  { t: "Gabarits LinkedIn", done: false },
-];
-const VAULT = [
-  { name: "VPS production · SSH", secret: "k7#Rq9!vT2pL" },
-  { name: "Wi-Fi du studio", secret: "Plateau-B-2026" },
-  { name: "Compte Instagram", secret: "m4X!z8Qe#rT1" },
-];
-const ANSWER = "D'après tes notes, trois idées reviennent : les coulisses du tournage, une interview client et un tuto OBS de 60 secondes.";
+const NOTE_ICONS: Record<NoteId, string> = { charte: "📄", idees: "💡", vps: "🔒" };
+const SECRETS = ["k7#Rq9!vT2pL", "Plateau-B-2026", "m4X!z8Qe#rT1"];
+const DONE = [true, false, false];
+
+/** What the notes say, in each language. */
+const T = {
+  fr: {
+    notes: { charte: "Charte de marque", idees: "Idées vidéo", vps: "Accès serveur" } as Record<NoteId, string>,
+    todos: ["Logo validé", "Déclinaison vidéo", "Gabarits LinkedIn"],
+    vault: ["VPS production · SSH", "Wi-Fi du studio", "Compte Instagram"],
+    answer: "D'après tes notes, trois idées reviennent : les coulisses du tournage, une interview client et un tuto OBS de 60 secondes.",
+    title: "Cairn · Notes",
+    hint: "Coche une tâche, ouvre le coffre ou demande à l'IA",
+    search: "Rechercher",
+    searchLabel: "Rechercher une note",
+    none: "Aucune note",
+    tone: "Ton",
+    toneText: "Direct, chaleureux, sans jargon. On tutoie. Une idée par phrase.",
+    colours: "Couleurs",
+    todo: "À faire",
+    progress: (done: number, total: number) => `${done} sur ${total} terminées · modifié à l'instant`,
+    vaultText: "Coffre chiffré. Seuls Antoine et Marc peuvent l'ouvrir.",
+    copied: "Copié",
+    copy: "Copier",
+    unlock: "Ouvrir avec Face ID",
+    encrypted: "Chiffré de bout en bout · AES-256",
+    ideas: ["Coulisses du tournage, format vertical", "Interview client · 5 questions", "Tuto OBS en 60 secondes", "Coulisses du podcast, épisode 12"],
+    ask: "Demander à l'IA : « Quelles idées reviennent le plus ? »",
+    from: "Réponse tirée de 14 notes",
+  },
+  en: {
+    notes: { charte: "Brand guidelines", idees: "Video ideas", vps: "Server access" } as Record<NoteId, string>,
+    todos: ["Logo approved", "Video version", "LinkedIn templates"],
+    vault: ["Production VPS · SSH", "Studio Wi-Fi", "Instagram account"],
+    answer: "According to your notes, three ideas keep coming back: behind the scenes of the shoot, a client interview and a 60-second OBS tutorial.",
+    title: "Cairn · Notes",
+    hint: "Tick off a task, open the vault or ask the AI",
+    search: "Search",
+    searchLabel: "Search for a note",
+    none: "No notes",
+    tone: "Tone",
+    toneText: "Direct, warm, no jargon. First names. One idea per sentence.",
+    colours: "Colours",
+    todo: "To do",
+    progress: (done: number, total: number) => `${done} of ${total} done · edited just now`,
+    vaultText: "Encrypted vault. Only Antoine and Marc can open it.",
+    copied: "Copied",
+    copy: "Copy",
+    unlock: "Open with Face ID",
+    encrypted: "End-to-end encrypted · AES-256",
+    ideas: ["Behind the shoot, vertical format", "Client interview · 5 questions", "OBS tutorial in 60 seconds", "Behind the podcast, episode 12"],
+    ask: "Ask the AI: “Which ideas come up most?”",
+    from: "Answer drawn from 14 notes",
+  },
+  de: {
+    notes: { charte: "Markenleitfaden", idees: "Videoideen", vps: "Serverzugang" } as Record<NoteId, string>,
+    todos: ["Logo freigegeben", "Videoversion", "LinkedIn-Vorlagen"],
+    vault: ["Produktions-VPS · SSH", "Studio-WLAN", "Instagram-Konto"],
+    answer: "Laut deinen Notizen tauchen drei Ideen immer wieder auf: hinter den Kulissen des Drehs, ein Kundeninterview und ein OBS-Tutorial in 60 Sekunden.",
+    title: "Cairn · Notizen",
+    hint: "Hak eine Aufgabe ab, öffne den Tresor oder frag die KI",
+    search: "Suchen",
+    searchLabel: "Notiz suchen",
+    none: "Keine Notizen",
+    tone: "Tonalität",
+    toneText: "Direkt, herzlich, ohne Fachjargon. Wir duzen. Eine Idee pro Satz.",
+    colours: "Farben",
+    todo: "Zu erledigen",
+    progress: (done: number, total: number) => `${done} von ${total} erledigt · gerade bearbeitet`,
+    vaultText: "Verschlüsselter Tresor. Nur Antoine und Marc können ihn öffnen.",
+    copied: "Kopiert",
+    copy: "Kopieren",
+    unlock: "Mit Face ID öffnen",
+    encrypted: "Ende-zu-Ende-verschlüsselt · AES-256",
+    ideas: ["Hinter den Kulissen des Drehs, Hochformat", "Kundeninterview · 5 Fragen", "OBS-Tutorial in 60 Sekunden", "Hinter den Kulissen des Podcasts, Folge 12"],
+    ask: "Frag die KI: «Welche Ideen kommen am häufigsten vor?»",
+    from: "Antwort aus 14 Notizen",
+  },
+} satisfies Record<Locale, unknown>;
 
 /** Cairn: notes to tick, a vault opened with Face ID, and an AI that answers from the notes. */
-export function CairnDemo({ color }: { color: string }) {
+export function CairnDemo({ color, locale = "fr" }: { color: string; locale?: Locale }) {
+  const tx = T[locale];
+  const ANSWER = tx.answer;
+  const NOTES = (Object.keys(NOTE_ICONS) as NoteId[]).map((id) => ({ id, label: tx.notes[id], icon: NOTE_ICONS[id] }));
+  const TODOS = tx.todos.map((t, i) => ({ t, done: DONE[i] }));
+  const VAULT = tx.vault.map((name, i) => ({ name, secret: SECRETS[i] }));
   const [note, setNote] = useState<NoteId>("charte");
   const [todos, setTodos] = useState(TODOS);
   const [vault, setVault] = useState<"locked" | "scan" | "open">("locked");
@@ -47,7 +116,7 @@ export function CairnDemo({ color }: { color: string }) {
       if (i >= words.length) clearInterval(id);
     }, 70);
     return () => clearInterval(id);
-  }, [asked]);
+  }, [asked, ANSWER]);
 
   const unlock = () => {
     if (vault !== "locked") return;
@@ -82,12 +151,12 @@ export function CairnDemo({ color }: { color: string }) {
   const shown = NOTES.filter((n) => n.label.toLowerCase().includes(query.trim().toLowerCase()));
 
   return (
-    <DemoShell title="Cairn · Notes" color={color} hint="Coche une tâche, ouvre le coffre ou demande à l'IA" script={script} reset={reset}>
+    <DemoShell title={tx.title} color={color} locale={locale} hint={tx.hint} script={script} reset={reset}>
       <div className="flex h-full">
         <aside className="hidden w-[170px] shrink-0 flex-col gap-1 border-r border-[color:var(--edge-07)] p-3 sm:flex">
           <label className="mb-2 flex items-center gap-1.5 rounded-md border border-[color:var(--edge-10)] px-2 py-1 text-ink-3 focus-within:border-[color:var(--edge-14)]">
             <Search className="size-3 shrink-0" />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher" aria-label="Rechercher une note" className="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-3" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tx.search} aria-label={tx.searchLabel} className="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-3" />
           </label>
           {shown.map((n) => (
             <button
@@ -101,7 +170,7 @@ export function CairnDemo({ color }: { color: string }) {
               {n.icon} {n.label}
             </button>
           ))}
-          {!shown.length && <p className="px-2 py-1 text-ink-3">Aucune note</p>}
+          {!shown.length && <p className="px-2 py-1 text-ink-3">{tx.none}</p>}
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -116,13 +185,13 @@ export function CairnDemo({ color }: { color: string }) {
           <div key={note} className="demo-pop min-h-0 flex-1 overflow-hidden p-5">
             {note === "charte" && (
               <>
-                <p className="font-display text-[26px] leading-none">Charte de marque</p>
+                <p className="font-display text-[26px] leading-none">{tx.notes.charte}</p>
                 <p className="mt-4 text-ink-2">
-                  <span style={{ color }}>## </span>Ton
+                  <span style={{ color }}>## </span>{tx.tone}
                 </p>
-                <p className="mt-1 leading-relaxed text-ink-3">Direct, chaleureux, sans jargon. On tutoie. Une idée par phrase.</p>
+                <p className="mt-1 leading-relaxed text-ink-3">{tx.toneText}</p>
                 <p className="mt-4 text-ink-2">
-                  <span style={{ color }}>## </span>Couleurs
+                  <span style={{ color }}>## </span>{tx.colours}
                 </p>
                 <div className="mt-2 flex gap-1.5">
                   {["#12805c", "#efede8", "#181715", color].map((c) => (
@@ -130,7 +199,7 @@ export function CairnDemo({ color }: { color: string }) {
                   ))}
                 </div>
                 <p className="mt-4 text-ink-2">
-                  <span style={{ color }}>## </span>À faire
+                  <span style={{ color }}>## </span>{tx.todo}
                 </p>
                 <ul className="mt-2 flex flex-col gap-1.5">
                   {todos.map((t, i) => (
@@ -145,15 +214,15 @@ export function CairnDemo({ color }: { color: string }) {
                   ))}
                 </ul>
                 <p className="mt-3 text-[10.5px] text-ink-3">
-                  {todos.filter((t) => t.done).length} sur {todos.length} terminées · modifié à l&apos;instant
+                  {tx.progress(todos.filter((t) => t.done).length, todos.length)}
                 </p>
               </>
             )}
 
             {note === "vps" && (
               <>
-                <p className="font-display text-[26px] leading-none">Accès serveur</p>
-                <p className="mt-2 text-ink-3">Coffre chiffré. Seuls Antoine et Marc peuvent l&apos;ouvrir.</p>
+                <p className="font-display text-[26px] leading-none">{tx.notes.vps}</p>
+                <p className="mt-2 text-ink-3">{tx.vaultText}</p>
                 <div className="mt-5 rounded-2xl border p-4" style={{ borderColor: soft(color, 40), background: soft(color, 9) }}>
                   <ul className="flex flex-col gap-2">
                     {VAULT.map((v, i) => (
@@ -167,7 +236,7 @@ export function CairnDemo({ color }: { color: string }) {
                         </span>
                         {vault === "open" && (
                           <button type="button" data-demo={i === 0 ? "copy" : undefined} onClick={() => copy(i)} className="demo-pop flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[11px] hover:bg-[var(--glass-05)]">
-                            {copied === i ? <Check className="size-3.5" style={{ color }} /> : <Copy className="size-3.5" />} <span className="max-sm:hidden">{copied === i ? "Copié" : "Copier"}</span>
+                            {copied === i ? <Check className="size-3.5" style={{ color }} /> : <Copy className="size-3.5" />} <span className="max-sm:hidden">{copied === i ? tx.copied : tx.copy}</span>
                           </button>
                         )}
                       </li>
@@ -179,19 +248,19 @@ export function CairnDemo({ color }: { color: string }) {
                         <ScanFace className="size-4" />
                         {vault === "scan" && <span className="demo-scan absolute inset-x-0 h-px bg-current" />}
                       </span>
-                      {vault === "scan" ? "Face ID…" : "Ouvrir avec Face ID"}
+                      {vault === "scan" ? "Face ID…" : tx.unlock}
                     </button>
                   )}
-                  <p className="mt-3 text-[10.5px] text-ink-3">Chiffré de bout en bout · AES-256</p>
+                  <p className="mt-3 text-[10.5px] text-ink-3">{tx.encrypted}</p>
                 </div>
               </>
             )}
 
             {note === "idees" && (
               <>
-                <p className="font-display text-[26px] leading-none">Idées vidéo</p>
+                <p className="font-display text-[26px] leading-none">{tx.notes.idees}</p>
                 <ul className="mt-4 flex flex-col gap-1.5 text-ink-2">
-                  {["Coulisses du tournage, format vertical", "Interview client · 5 questions", "Tuto OBS en 60 secondes", "Coulisses du podcast, épisode 12"].map((t) => (
+                  {tx.ideas.map((t) => (
                     <li key={t} className="flex gap-2">
                       <span style={{ color }}>–</span> {t}
                     </li>
@@ -200,12 +269,12 @@ export function CairnDemo({ color }: { color: string }) {
                 <div className="mt-5 rounded-2xl border border-[color:var(--edge-10)] bg-[var(--hub-pane)] p-3">
                   {!asked ? (
                     <button type="button" data-demo="ask" onClick={() => setAsked(true)} className="flex w-full items-center gap-2 text-left text-ink-3">
-                      <Sparkles className="size-4" style={{ color }} /> Demander à l&apos;IA : « Quelles idées reviennent le plus ? »
+                      <Sparkles className="size-4" style={{ color }} /> {tx.ask}
                     </button>
                   ) : (
                     <div className="demo-pop">
                       <p className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color }}>
-                        <Sparkles className="size-3.5" /> Réponse tirée de 14 notes
+                        <Sparkles className="size-3.5" /> {tx.from}
                       </p>
                       <p className="mt-1.5 min-h-[3lh] leading-relaxed text-ink-2">
                         {answer}

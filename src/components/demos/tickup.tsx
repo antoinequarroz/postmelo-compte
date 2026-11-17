@@ -3,30 +3,68 @@
 import { Check, Plus } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { soft } from "@/components/landing/mocks";
+import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { DemoShell, onColor, typing, type Step } from "./shell";
 
 type Col = "todo" | "doing" | "done";
 type Card = { id: string; title: string; col: Col; tag: string };
-const COLS: { id: Col; name: string }[] = [
-  { id: "todo", name: "À faire" },
-  { id: "doing", name: "En cours" },
-  { id: "done", name: "Terminé" },
-];
+const COL_IDS: Col[] = ["todo", "doing", "done"];
 const NEXT: Record<Col, Col> = { todo: "doing", doing: "done", done: "todo" };
 const PROGRESS: Record<Col, number> = { todo: 0, doing: 55, done: 100 };
-const START: Card[] = [
-  { id: "STU-14", title: "Brief vidéo client", col: "todo", tag: "Vidéo" },
-  { id: "STU-15", title: "Sous-titres épisode 12", col: "todo", tag: "Podcast" },
-  { id: "STU-16", title: "Miniatures YouTube", col: "todo", tag: "Social" },
-  { id: "STU-12", title: "Montage épisode 12", col: "doing", tag: "Podcast" },
-  { id: "STU-13", title: "Visuels LinkedIn", col: "doing", tag: "Social" },
-  { id: "STU-9", title: "Générique podcast", col: "done", tag: "Podcast" },
-  { id: "STU-8", title: "Charte graphique", col: "done", tag: "Design" },
+const SPOTS: { id: string; col: Col }[] = [
+  { id: "STU-14", col: "todo" },
+  { id: "STU-15", col: "todo" },
+  { id: "STU-16", col: "todo" },
+  { id: "STU-12", col: "doing" },
+  { id: "STU-13", col: "doing" },
+  { id: "STU-9", col: "done" },
+  { id: "STU-8", col: "done" },
 ];
+const deck = (list: [string, string][]): Card[] => SPOTS.map((c, i) => ({ ...c, title: list[i][0], tag: list[i][1] }));
+
+/** What the board says, in each language. */
+const T = {
+  fr: {
+    cols: { todo: "À faire", doing: "En cours", done: "Terminé" } as Record<Col, string>,
+    start: deck([["Brief vidéo client", "Vidéo"], ["Sous-titres épisode 12", "Podcast"], ["Miniatures YouTube", "Social"], ["Montage épisode 12", "Podcast"], ["Visuels LinkedIn", "Social"], ["Générique podcast", "Podcast"], ["Charte graphique", "Design"]]),
+    fresh: "Nouveau",
+    teaser: "Teaser épisode 13",
+    hint: "Glisse une carte, ou touche-la pour l'avancer",
+    done: (n: number, total: number) => `${n}/${total} terminés`,
+    ticketTitle: "Titre du ticket",
+    advance: (title: string, col: string) => `${title}, ${col}. Avancer`,
+    ticket: "Ticket",
+  },
+  en: {
+    cols: { todo: "To do", doing: "In progress", done: "Done" } as Record<Col, string>,
+    start: deck([["Client video brief", "Video"], ["Episode 12 subtitles", "Podcast"], ["YouTube thumbnails", "Social"], ["Episode 12 edit", "Podcast"], ["LinkedIn visuals", "Social"], ["Podcast intro", "Podcast"], ["Brand guidelines", "Design"]]),
+    fresh: "New",
+    teaser: "Episode 13 teaser",
+    hint: "Drag a card, or tap it to move it forward",
+    done: (n: number, total: number) => `${n}/${total} done`,
+    ticketTitle: "Ticket title",
+    advance: (title: string, col: string) => `${title}, ${col}. Move forward`,
+    ticket: "Ticket",
+  },
+  de: {
+    cols: { todo: "Zu erledigen", doing: "In Arbeit", done: "Erledigt" } as Record<Col, string>,
+    start: deck([["Kunden-Video-Briefing", "Video"], ["Untertitel Folge 12", "Podcast"], ["YouTube-Thumbnails", "Social"], ["Schnitt Folge 12", "Podcast"], ["LinkedIn-Visuals", "Social"], ["Podcast-Intro", "Podcast"], ["Corporate Design", "Design"]]),
+    fresh: "Neu",
+    teaser: "Teaser Folge 13",
+    hint: "Zieh eine Karte oder tippe darauf, um sie weiterzuschieben",
+    done: (n: number, total: number) => `${n}/${total} erledigt`,
+    ticketTitle: "Ticket-Titel",
+    advance: (title: string, col: string) => `${title}, ${col}. Weiterschieben`,
+    ticket: "Ticket",
+  },
+} satisfies Record<Locale, unknown>;
 
 /** TickUp: a kanban where cards really move. Drag them, or tap one to send it to the next column. */
-export function TickUpDemo({ color }: { color: string }) {
+export function TickUpDemo({ color, locale = "fr" }: { color: string; locale?: Locale }) {
+  const t = T[locale];
+  const START = t.start;
+  const COLS = COL_IDS.map((id) => ({ id, name: t.cols[id] }));
   const [cards, setCards] = useState(START);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
@@ -61,8 +99,8 @@ export function TickUpDemo({ color }: { color: string }) {
     }
   };
   const addCard = (title: string) => {
-    const t = title.trim();
-    if (t) setCards((cs) => [{ id: `STU-${count.current++}`, title: t, col: "todo", tag: "Nouveau" }, ...cs]);
+    const text = title.trim();
+    if (text) setCards((cs) => [{ id: `STU-${count.current++}`, title: text, col: "todo", tag: t.fresh }, ...cs]);
     setDraft("");
     setAdding(false);
   };
@@ -119,15 +157,15 @@ export function TickUpDemo({ color }: { color: string }) {
     { at: "card-STU-14", do: () => move("STU-14", "doing"), wait: 1100 },
     { at: "card-STU-12", do: () => move("STU-12", "done"), wait: 1300 },
     { at: "add", do: () => setAdding(true), wait: 300 },
-    ...typing("Teaser épisode 13", setDraft, 45),
-    { do: () => addCard("Teaser épisode 13"), wait: 1200 },
+    ...typing(t.teaser, setDraft, 45),
+    { do: () => addCard(t.teaser), wait: 1200 },
     { at: "card-STU-13", do: () => move("STU-13", "done"), wait: 1500 },
   ];
 
   const done = cards.filter((c) => c.col === "done").length;
   const c = color;
   return (
-    <DemoShell title="TickUp · Studio · Sprint 4" color={c} hint="Glisse une carte, ou touche-la pour l'avancer" script={script} reset={reset}>
+    <DemoShell title="TickUp · Studio · Sprint 4" color={c} locale={locale} hint={t.hint} script={script} reset={reset}>
       <div className="flex h-full flex-col p-3 sm:p-4">
         <div className="mb-3 flex items-center gap-3">
           <p className="text-[13px] font-semibold">Sprint 4</p>
@@ -135,7 +173,7 @@ export function TickUpDemo({ color }: { color: string }) {
             <span className="block h-full rounded-full transition-[width] duration-700" style={{ width: `${(done / cards.length) * 100}%`, background: c, transitionTimingFunction: "var(--ease-out)" }} />
           </span>
           <span className="tabular text-[11px] text-ink-3">
-            {done}/{cards.length} terminés
+            {t.done(done, cards.length)}
           </span>
         </div>
         <div ref={board} className="grid min-h-0 flex-1 grid-cols-3 gap-2">
@@ -155,7 +193,7 @@ export function TickUpDemo({ color }: { color: string }) {
                       addCard(draft);
                     }}
                   >
-                    <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={() => !draft && setAdding(false)} placeholder="Titre du ticket" aria-label="Titre du ticket" maxLength={40} className="w-full rounded-lg border bg-raised px-2.5 py-2 text-[11.5px] outline-none" style={{ borderColor: soft(c, 60) }} />
+                    <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={() => !draft && setAdding(false)} placeholder={t.ticketTitle} aria-label={t.ticketTitle} maxLength={40} className="w-full rounded-lg border bg-raised px-2.5 py-2 text-[11.5px] outline-none" style={{ borderColor: soft(c, 60) }} />
                   </form>
                 )}
                 <div className={cn("flex min-h-0 flex-col gap-2", drag ? "overflow-visible" : "overflow-hidden")}>
@@ -171,7 +209,7 @@ export function TickUpDemo({ color }: { color: string }) {
                         data-demo={`card-${x.id}`}
                         role="button"
                         tabIndex={0}
-                        aria-label={`${x.title}, ${col.name}. Avancer`}
+                        aria-label={t.advance(x.title, col.name)}
                         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), move(x.id, NEXT[x.col]))}
                         onPointerDown={(e) => onDown(e, x.id)}
                         onPointerMove={onMove}
@@ -202,7 +240,7 @@ export function TickUpDemo({ color }: { color: string }) {
                 </div>
                 {col.id === "todo" && !adding && (
                   <button type="button" data-demo="add" onClick={() => setAdding(true)} className="flex items-center gap-1 rounded-md px-1 py-0.5 text-left text-[10.5px] text-ink-3 hover:text-ink">
-                    <Plus className="size-3" /> Ticket
+                    <Plus className="size-3" /> {t.ticket}
                   </button>
                 )}
               </div>

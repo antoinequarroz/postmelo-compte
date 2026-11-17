@@ -3,6 +3,7 @@
 import { FileText, Hash, SendHorizontal, SmilePlus } from "lucide-react";
 import { useRef, useState } from "react";
 import { soft } from "@/components/landing/mocks";
+import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { DemoShell, onColor, typing, type Step } from "./shell";
 
@@ -12,17 +13,75 @@ type Channel = "studio" | "general" | "design";
 const PEOPLE = { Léa: 200, Marc: 30, Julie: 300, Toi: 150 } as const;
 const m = (id: number, who: keyof typeof PEOPLE, text: string, time: string, likes = 0): Msg => ({ id, who, hue: PEOPLE[who], text, time, likes });
 
-const START: Record<Channel, Msg[]> = {
-  studio: [m(1, "Léa", "On tourne l'épisode 12 demain à 9 h, plateau B.", "13:58"), m(2, "Marc", "Les micros sont chargés, j'amène le Stream Deck.", "14:01", 2)],
-  general: [m(11, "Julie", "Bienvenue à Sam dans l'équipe 👋", "09:12", 6), m(12, "Marc", "Le café de la salle 2 refonctionne ☕", "10:40", 3)],
-  design: [m(21, "Julie", "Nouvelles miniatures pour l'épisode 12", "11:05"), m(22, "Léa", "J'adore la deuxième, on part là-dessus ?", "11:20", 1), m(23, "Julie", "Oui, je l'exporte en 1080 × 1920 pour les Shorts.", "11:22")],
-};
-const ABOUT: Record<Channel, string> = {
-  studio: "Tournages, montage et diffusion du studio. 9 membres.",
-  general: "Les annonces de toute l'équipe. 14 membres.",
-  design: "Visuels, miniatures et charte. 5 membres.",
-};
-const REPLIES = ["Bien reçu 👍", "Parfait, merci !", "Je m'en occupe.", "Top, on en parle au point de 14 h."];
+/** What the team says, in each language. Names of people stay as they are. */
+const T = {
+  fr: {
+    start: {
+      studio: [m(1, "Léa", "On tourne l'épisode 12 demain à 9 h, plateau B.", "13:58"), m(2, "Marc", "Les micros sont chargés, j'amène le Stream Deck.", "14:01", 2)],
+      general: [m(11, "Julie", "Bienvenue à Sam dans l'équipe 👋", "09:12", 6), m(12, "Marc", "Le café de la salle 2 refonctionne ☕", "10:40", 3)],
+      design: [m(21, "Julie", "Nouvelles miniatures pour l'épisode 12", "11:05"), m(22, "Léa", "J'adore la deuxième, on part là-dessus ?", "11:20", 1), m(23, "Julie", "Oui, je l'exporte en 1080 × 1920 pour les Shorts.", "11:22")],
+    } as Record<Channel, Msg[]>,
+    about: { studio: "Tournages, montage et diffusion du studio. 9 membres.", general: "Les annonces de toute l'équipe. 14 membres.", design: "Visuels, miniatures et charte. 5 membres." } as Record<Channel, string>,
+    replies: ["Bien reçu 👍", "Parfait, merci !", "Je m'en occupe.", "Top, on en parle au point de 14 h."],
+    script: ["Le montage de l'épisode 11 est en ligne 🎙️", "Top, je le programme sur Metricove pour jeudi.", "Parfait 🙌 je préviens l'invitée."],
+    hint: "Écris un message et appuie sur Entrée",
+    channels: "Canaux",
+    online: "En ligne",
+    pinned: "Planning des tournages · novembre",
+    pinnedBy: "Épinglé par Léa · mis à jour ce matin",
+    react: "Réagir",
+    reactWith: "Réagir avec 👍",
+    you: "Toi",
+    typing: (who: string) => `${who} écrit…`,
+    write: (channel: string) => `Écrire dans #${channel}`,
+    message: "Message",
+    send: "Envoyer",
+  },
+  en: {
+    start: {
+      studio: [m(1, "Léa", "We're shooting episode 12 tomorrow at 9 am, stage B.", "13:58"), m(2, "Marc", "The mics are charged, I'll bring the Stream Deck.", "14:01", 2)],
+      general: [m(11, "Julie", "Welcome to the team, Sam 👋", "09:12", 6), m(12, "Marc", "The coffee machine in room 2 works again ☕", "10:40", 3)],
+      design: [m(21, "Julie", "New thumbnails for episode 12", "11:05"), m(22, "Léa", "Love the second one, shall we go with it?", "11:20", 1), m(23, "Julie", "Yes, I'll export it at 1080 × 1920 for Shorts.", "11:22")],
+    } as Record<Channel, Msg[]>,
+    about: { studio: "Shoots, editing and broadcast for the studio. 9 members.", general: "Announcements for the whole team. 14 members.", design: "Visuals, thumbnails and guidelines. 5 members." } as Record<Channel, string>,
+    replies: ["Got it 👍", "Perfect, thanks!", "I'm on it.", "Great, let's discuss at the 2 pm meeting."],
+    script: ["The episode 11 edit is up 🎙️", "Great, I'll schedule it on Metricove for Thursday.", "Perfect 🙌 I'll let the guest know."],
+    hint: "Write a message and press Enter",
+    channels: "Channels",
+    online: "Online",
+    pinned: "Shooting schedule · November",
+    pinnedBy: "Pinned by Léa · updated this morning",
+    react: "React",
+    reactWith: "React with 👍",
+    you: "You",
+    typing: (who: string) => `${who} is typing…`,
+    write: (channel: string) => `Message #${channel}`,
+    message: "Message",
+    send: "Send",
+  },
+  de: {
+    start: {
+      studio: [m(1, "Léa", "Wir drehen Folge 12 morgen um 9 Uhr, Set B.", "13:58"), m(2, "Marc", "Die Mikros sind geladen, ich bringe das Stream Deck mit.", "14:01", 2)],
+      general: [m(11, "Julie", "Willkommen im Team, Sam 👋", "09:12", 6), m(12, "Marc", "Die Kaffeemaschine in Raum 2 läuft wieder ☕", "10:40", 3)],
+      design: [m(21, "Julie", "Neue Thumbnails für Folge 12", "11:05"), m(22, "Léa", "Ich liebe das zweite, nehmen wir das?", "11:20", 1), m(23, "Julie", "Ja, ich exportiere es in 1080 × 1920 für die Shorts.", "11:22")],
+    } as Record<Channel, Msg[]>,
+    about: { studio: "Drehs, Schnitt und Ausstrahlung des Studios. 9 Mitglieder.", general: "Ankündigungen für das ganze Team. 14 Mitglieder.", design: "Visuals, Thumbnails und Leitfaden. 5 Mitglieder." } as Record<Channel, string>,
+    replies: ["Angekommen 👍", "Perfekt, danke!", "Ich kümmere mich darum.", "Top, besprechen wir im Meeting um 14 Uhr."],
+    script: ["Der Schnitt von Folge 11 ist online 🎙️", "Top, ich plane ihn in Metricove für Donnerstag ein.", "Perfekt 🙌 ich sag dem Gast Bescheid."],
+    hint: "Schreib eine Nachricht und drück Enter",
+    channels: "Kanäle",
+    online: "Online",
+    pinned: "Drehplan · November",
+    pinnedBy: "Angeheftet von Léa · heute Morgen aktualisiert",
+    react: "Reagieren",
+    reactWith: "Mit 👍 reagieren",
+    you: "Du",
+    typing: (who: string) => `${who} schreibt…`,
+    write: (channel: string) => `In #${channel} schreiben`,
+    message: "Nachricht",
+    send: "Senden",
+  },
+} satisfies Record<Locale, unknown>;
 
 const clock = () => {
   const d = new Date();
@@ -30,7 +89,9 @@ const clock = () => {
 };
 
 /** Lamio: a real little chat. Write and send, react to a message, switch channels. */
-export function LamioDemo({ color }: { color: string }) {
+export function LamioDemo({ color, locale = "fr" }: { color: string; locale?: Locale }) {
+  const t = T[locale];
+  const START = t.start;
   const [channel, setChannel] = useState<Channel>("studio");
   const [msgs, setMsgs] = useState(START);
   const [draft, setDraft] = useState("");
@@ -48,10 +109,10 @@ export function LamioDemo({ color }: { color: string }) {
   };
 
   const send = (text = draft) => {
-    const t = text.trim();
-    if (!t) return;
+    const body = text.trim();
+    if (!body) return;
     const ch = channel;
-    add(ch, { who: "Toi", text: t, mine: true });
+    add(ch, { who: "Toi", text: body, mine: true });
     setDraft("");
     // Someone answers, as in a living team.
     const who = (["Léa", "Marc", "Julie"] as const)[Math.floor(Math.random() * 3)];
@@ -60,7 +121,7 @@ export function LamioDemo({ color }: { color: string }) {
       setTypingWho(who);
       timer.current = setTimeout(() => {
         setTypingWho(null);
-        add(ch, { who, text: REPLIES[Math.floor(Math.random() * REPLIES.length)] });
+        add(ch, { who, text: t.replies[Math.floor(Math.random() * t.replies.length)] });
       }, 1300);
     }, 500);
   };
@@ -76,23 +137,23 @@ export function LamioDemo({ color }: { color: string }) {
 
   const script = (): Step[] => [
     { do: () => setTypingWho("Julie"), wait: 1300 },
-    { do: () => { setTypingWho(null); add("studio", { who: "Julie", text: "Le montage de l'épisode 11 est en ligne 🎙️" }); }, wait: 900 },
+    { do: () => { setTypingWho(null); add("studio", { who: "Julie", text: t.script[0] }); }, wait: 900 },
     { at: "like-2", do: () => setMsgs((all) => ({ ...all, studio: all.studio.map((x) => (x.id === 2 ? { ...x, likes: x.likes + 1 } : x)) })), wait: 500 },
     { at: "composer", wait: 200 },
-    ...typing("Top, je le programme sur Metricove pour jeudi.", setDraft),
-    { at: "send", do: () => { setMsgs((all) => ({ ...all, studio: [...all.studio, { id: next.current++, who: "Toi", hue: PEOPLE.Toi, text: "Top, je le programme sur Metricove pour jeudi.", time: clock(), likes: 0, mine: true }] })); setDraft(""); }, wait: 700 },
+    ...typing(t.script[1], setDraft),
+    { at: "send", do: () => { setMsgs((all) => ({ ...all, studio: [...all.studio, { id: next.current++, who: "Toi", hue: PEOPLE.Toi, text: t.script[1], time: clock(), likes: 0, mine: true }] })); setDraft(""); }, wait: 700 },
     { do: () => setTypingWho("Léa"), wait: 1300 },
-    { do: () => { setTypingWho(null); add("studio", { who: "Léa", text: "Parfait 🙌 je préviens l'invitée." }); }, wait: 1400 },
+    { do: () => { setTypingWho(null); add("studio", { who: "Léa", text: t.script[2] }); }, wait: 1400 },
     { at: "ch-design", do: () => { setChannel("design"); setSeen((s) => new Set(s).add("design")); }, wait: 2200 },
     { at: "ch-studio", do: () => setChannel("studio"), wait: 1000 },
   ];
 
   const list = msgs[channel];
   return (
-    <DemoShell title={`Lamio · #${channel}`} color={color} hint="Écris un message et appuie sur Entrée" script={script} reset={reset} onTakeOver={() => setTypingWho(null)}>
+    <DemoShell title={`Lamio · #${channel}`} color={color} locale={locale} hint={t.hint} script={script} reset={reset} onTakeOver={() => setTypingWho(null)}>
       <div className="flex h-full">
         <aside className="hidden w-[150px] shrink-0 flex-col gap-1 border-r border-[color:var(--edge-07)] p-3 sm:flex">
-          <p className="mb-1 text-[10px] uppercase tracking-wider text-ink-3">Canaux</p>
+          <p className="mb-1 text-[10px] uppercase tracking-wider text-ink-3">{t.channels}</p>
           {(["general", "studio", "design"] as Channel[]).map((c) => (
             <button
               key={c}
@@ -110,7 +171,7 @@ export function LamioDemo({ color }: { color: string }) {
               )}
             </button>
           ))}
-          <p className="mb-1 mt-3 text-[10px] uppercase tracking-wider text-ink-3">En ligne</p>
+          <p className="mb-1 mt-3 text-[10px] uppercase tracking-wider text-ink-3">{t.online}</p>
           {["Léa", "Marc", "Julie"].map((n) => (
             <span key={n} className="flex items-center gap-1.5 px-2 py-1 text-ink-3">
               <span className="size-1.5 rounded-full bg-[#28c840]" /> {n}
@@ -133,13 +194,13 @@ export function LamioDemo({ color }: { color: string }) {
               <p className="flex items-center gap-1.5 text-[15px] font-semibold">
                 <Hash className="size-4" style={{ color }} /> {channel}
               </p>
-              <p className="mt-1 text-ink-3">{ABOUT[channel]}</p>
+              <p className="mt-1 text-ink-3">{t.about[channel]}</p>
               {channel === "studio" && (
                 <div className="mt-3 flex max-w-[360px] items-center gap-2.5 rounded-xl border p-2.5" style={{ borderColor: soft(color, 30), background: soft(color, 8) }}>
                   <FileText className="size-4 shrink-0" style={{ color }} />
                   <span className="min-w-0">
-                    <span className="block font-medium">Planning des tournages · novembre</span>
-                    <span className="block text-[10.5px] text-ink-3">Épinglé par Léa · mis à jour ce matin</span>
+                    <span className="block font-medium">{t.pinned}</span>
+                    <span className="block text-[10.5px] text-ink-3">{t.pinnedBy}</span>
                   </span>
                 </div>
               )}
@@ -157,14 +218,14 @@ export function LamioDemo({ color }: { color: string }) {
                     type="button"
                     data-demo={`like-${x.id}`}
                     onClick={() => like(x.id)}
-                    title="Réagir"
+                    title={t.react}
                     className="absolute right-0 top-0 flex size-6 items-center justify-center rounded-full text-ink-3 opacity-0 transition-opacity hover:bg-[var(--glass-05)] hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
                   >
                     <SmilePlus className="size-3.5" />
-                    <span className="sr-only">Réagir avec 👍</span>
+                    <span className="sr-only">{t.reactWith}</span>
                   </button>
                   <p className="text-[11px] font-semibold">
-                    {x.who === "Toi" ? "Toi" : x.who} <span className="font-normal text-ink-3">{x.time}</span>
+                    {x.who === "Toi" ? t.you : x.who} <span className="font-normal text-ink-3">{x.time}</span>
                   </p>
                   <p className="break-words text-ink-2">{x.text}</p>
                   {x.likes > 0 && (
@@ -181,7 +242,7 @@ export function LamioDemo({ color }: { color: string }) {
                 <span className="size-1.5 rounded-full bg-ink-3" />
                 <span className="size-1.5 rounded-full bg-ink-3" />
               </span>
-              {typingWho} écrit…
+              {typingWho && t.typing(typingWho)}
             </div>
           </div>
           <form
@@ -195,14 +256,14 @@ export function LamioDemo({ color }: { color: string }) {
               data-demo="composer"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder={`Écrire dans #${channel}`}
-              aria-label="Message"
+              placeholder={t.write(channel)}
+              aria-label={t.message}
               maxLength={160}
               className="min-w-0 flex-1 bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-3"
             />
-            <button type="submit" data-demo="send" title="Envoyer" className="press flex size-7 items-center justify-center rounded-lg transition-opacity disabled:opacity-40" style={{ background: color, color: onColor(color) }} disabled={!draft.trim()}>
+            <button type="submit" data-demo="send" title={t.send} className="press flex size-7 items-center justify-center rounded-lg transition-opacity disabled:opacity-40" style={{ background: color, color: onColor(color) }} disabled={!draft.trim()}>
               <SendHorizontal className="size-3.5" />
-              <span className="sr-only">Envoyer</span>
+              <span className="sr-only">{t.send}</span>
             </button>
           </form>
         </div>

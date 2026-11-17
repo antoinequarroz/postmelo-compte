@@ -3,25 +3,74 @@
 import { CalendarCheck, CheckCircle2, Clock } from "lucide-react";
 import { useRef, useState } from "react";
 import { soft } from "@/components/landing/mocks";
+import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { DemoShell, onColor, type Step } from "./shell";
 
-const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven"];
 const FIRST = 9; // 9 h
 const HOURS = 8; // 9 h → 17 h
 type Ev = { d: number; s: number; l: number; t: string; booked?: boolean };
-const START: Ev[] = [
-  { d: 0, s: 9.5, l: 2, t: "Tournage" },
-  { d: 1, s: 14, l: 1, t: "Point équipe" },
-  { d: 2, s: 10, l: 1, t: "Client Rhône" },
-  { d: 3, s: 14, l: 2.5, t: "Podcast live" },
-  { d: 4, s: 11, l: 1, t: "Revue sprint" },
+const SPOTS = [
+  { d: 0, s: 9.5, l: 2 },
+  { d: 1, s: 14, l: 1 },
+  { d: 2, s: 10, l: 1 },
+  { d: 3, s: 14, l: 2.5 },
+  { d: 4, s: 11, l: 1 },
 ];
+const ev = (names: string[]): Ev[] => SPOTS.map((e, i) => ({ ...e, t: names[i] }));
+
+/** What the agenda and the booking page say, in each language. */
+const T = {
+  fr: {
+    days: ["Lun", "Mar", "Mer", "Jeu", "Ven"],
+    start: ev(["Tournage", "Point équipe", "Client Rhône", "Podcast live", "Revue sprint"]),
+    booked: "RDV · Léa M.",
+    sent: (when: string) => `${when} · confirmation envoyée à Léa`,
+    title: "Alfred · Semaine 47",
+    hint: "Choisis un jour et un créneau, puis confirme",
+    page: "Page publique",
+    meet: "Rendez-vous avec Antoine",
+    length: "30 min · visio ou studio",
+    pick: "Choisis un créneau",
+    confirm: (when: string) => `Confirmer ${when}`,
+    confirmed: "Rendez-vous confirmé",
+  },
+  en: {
+    days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    start: ev(["Shoot", "Team meeting", "Client Rhône", "Live podcast", "Sprint review"]),
+    booked: "Meeting · Léa M.",
+    sent: (when: string) => `${when} · confirmation sent to Léa`,
+    title: "Alfred · Week 47",
+    hint: "Pick a day and a slot, then confirm",
+    page: "Public page",
+    meet: "Meeting with Antoine",
+    length: "30 min · video call or studio",
+    pick: "Pick a slot",
+    confirm: (when: string) => `Confirm ${when}`,
+    confirmed: "Booking confirmed",
+  },
+  de: {
+    days: ["Mo", "Di", "Mi", "Do", "Fr"],
+    start: ev(["Dreh", "Teammeeting", "Kunde Rhône", "Live-Podcast", "Sprint-Review"]),
+    booked: "Termin · Léa M.",
+    sent: (when: string) => `${when} · Bestätigung an Léa gesendet`,
+    title: "Alfred · Woche 47",
+    hint: "Wähl einen Tag und eine Zeit, dann bestätige",
+    page: "Öffentliche Seite",
+    meet: "Termin mit Antoine",
+    length: "30 Min. · Videocall oder Studio",
+    pick: "Wähl eine Zeit",
+    confirm: (when: string) => `${when} bestätigen`,
+    confirmed: "Termin bestätigt",
+  },
+} satisfies Record<Locale, unknown>;
 const SLOTS = [9, 10.5, 13.5, 15, 16];
 const hh = (h: number) => `${Math.floor(h)}:${h % 1 ? "30" : "00"}`;
 
 /** Alfred: the public booking page on one side, the agenda on the other. A booking lands in the week. */
-export function AlfredDemo({ color }: { color: string }) {
+export function AlfredDemo({ color, locale = "fr" }: { color: string; locale?: Locale }) {
+  const t = T[locale];
+  const { days: DAYS, start: START } = t;
   const [events, setEvents] = useState(START);
   const [day, setDay] = useState(3);
   const [slot, setSlot] = useState<number | null>(null);
@@ -31,9 +80,9 @@ export function AlfredDemo({ color }: { color: string }) {
   const free = SLOTS.filter((s) => !events.some((e) => e.d === day && s < e.s + e.l && s + 0.5 > e.s));
   const book = (d = day, s = slot) => {
     if (s === null) return;
-    setEvents((es) => [...es, { d, s, l: 0.5, t: "RDV · Léa M.", booked: true }]);
+    setEvents((es) => [...es, { d, s, l: 0.5, t: t.booked, booked: true }]);
     setSlot(null);
-    setToast(`${DAYS[d]} ${hh(s)} · confirmation envoyée à Léa`);
+    setToast(t.sent(`${DAYS[d]} ${hh(s)}`));
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setToast(null), 3200);
   };
@@ -54,7 +103,7 @@ export function AlfredDemo({ color }: { color: string }) {
   ];
 
   return (
-    <DemoShell title="Alfred · Semaine 47" color={color} hint="Choisis un jour et un créneau, puis confirme" script={script} reset={reset}>
+    <DemoShell title={t.title} color={color} locale={locale} hint={t.hint} script={script} reset={reset}>
       <div className="grid h-full grid-cols-1 sm:grid-cols-[1fr_230px]">
         {/* The week */}
         <div className="hidden min-h-0 flex-col p-4 sm:flex">
@@ -94,10 +143,10 @@ export function AlfredDemo({ color }: { color: string }) {
 
         {/* The public booking page */}
         <div className="flex min-h-0 flex-col border-[color:var(--edge-07)] p-4 sm:border-l">
-          <p className="text-[10px] uppercase tracking-wider text-ink-3">Page publique</p>
-          <p className="mt-1 text-[14px] font-semibold">Rendez-vous avec Antoine</p>
+          <p className="text-[10px] uppercase tracking-wider text-ink-3">{t.page}</p>
+          <p className="mt-1 text-[14px] font-semibold">{t.meet}</p>
           <p className="mt-0.5 flex items-center gap-1 text-ink-3">
-            <Clock className="size-3" /> 30 min · visio ou studio
+            <Clock className="size-3" /> {t.length}
           </p>
           <div className="mt-4 grid grid-cols-5 gap-1">
             {DAYS.map((d, i) => (
@@ -140,7 +189,7 @@ export function AlfredDemo({ color }: { color: string }) {
             className="press mt-auto flex items-center justify-center gap-1.5 rounded-xl py-2.5 font-medium transition-opacity disabled:opacity-40"
             style={{ background: color, color: onColor(color) }}
           >
-            <CalendarCheck className="size-4" /> {slot === null ? "Choisis un créneau" : `Confirmer ${DAYS[day]} ${hh(slot)}`}
+            <CalendarCheck className="size-4" /> {slot === null ? t.pick : t.confirm(`${DAYS[day]} ${hh(slot)}`)}
           </button>
         </div>
       </div>
@@ -149,7 +198,7 @@ export function AlfredDemo({ color }: { color: string }) {
         <div key={toast} className="demo-pop absolute left-4 top-4 z-30 flex items-center gap-2 rounded-xl border border-[color:var(--edge-12)] bg-raised px-3 py-2 shadow-2xl sm:left-auto sm:right-[250px]">
           <CheckCircle2 className="size-4 shrink-0" style={{ color }} />
           <span>
-            <span className="block font-medium">Rendez-vous confirmé</span>
+            <span className="block font-medium">{t.confirmed}</span>
             <span className="text-[10.5px] text-ink-3">{toast}</span>
           </span>
         </div>
