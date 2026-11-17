@@ -57,11 +57,17 @@ Puis recharge Caddy : `docker exec antoinequarroz-caddy caddy reload --config /e
 À faire avant de créer un compte à la main, pour garder les mêmes identifiants que dans Lamio.
 La base de Lamio est seulement lue.
 
+Lamio écrit en mode WAL : les données récentes sont dans `app.db-wal`, pas dans `app.db` seul.
+Il faut donc copier les trois fichiers ensemble, sinon l'import échoue avec « no such table: users ».
+
 ```bash
-docker cp lamio:/data/app.db /tmp/lamio-app.db
-docker cp /tmp/lamio-app.db compte:/tmp/lamio-app.db
-docker exec compte node scripts/import-lamio.mjs /tmp/lamio-app.db /data
-docker exec compte rm /tmp/lamio-app.db && rm /tmp/lamio-app.db
+mkdir -p /tmp/lamio-import
+for f in app.db app.db-wal app.db-shm; do
+  docker cp lamio:/data/$f /tmp/lamio-import/$f 2>/dev/null || true
+done
+docker cp /tmp/lamio-import compte:/tmp/lamio-import
+docker exec compte node scripts/import-lamio.mjs /tmp/lamio-import/app.db /data
+docker exec -u root compte rm -rf /tmp/lamio-import && rm -rf /tmp/lamio-import
 ```
 
 Ouvre ensuite https://compte.postmelo.ch et connecte-toi avec ton e-mail et ton mot de passe de Lamio.
@@ -79,9 +85,17 @@ Après chaque ajout dans `.env` : `cd ~/compte/deploy && docker compose up -d`.
 Tout tient dans le volume `compte_app-data` (fichier `compte.db`). À ajouter à la sauvegarde nocturne, comme Lamio :
 
 ```bash
-docker exec compte node -e "require('better-sqlite3')('/data/compte.db').backup('/data/compte-backup.db').then(()=>process.exit(0))"
-docker cp compte:/data/compte-backup.db ~/sauvegardes/compte-$(date +%F).db
+~/compte/deploy/backup.sh        # écrit dans ~/compte-backups, garde les 14 dernières
 ```
+
+Chaque nuit à 3h20, avec `crontab -e` :
+
+```cron
+20 3 * * * $HOME/compte/deploy/backup.sh >> $HOME/compte-backups.log 2>&1
+```
+
+Pour restaurer : arrête le service, décompresse la sauvegarde à la place de `compte.db` dans le volume, relance.
+Le fichier `.env` n'est pas dans la sauvegarde : garde une copie de `AUTH_SECRET` à part.
 
 ## Mettre à jour
 
