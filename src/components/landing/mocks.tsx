@@ -32,7 +32,7 @@ function Window({ title, color, on, chrome = true, children, className }: { titl
 }
 
 /** A camera picture: a coloured set and a head-and-shoulders silhouette, as on the hub's home screen. */
-function Shot({ hue, className, style, children }: { hue: number; className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
+export function Shot({ hue, className, style, children }: { hue: number; className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
   return (
     <div
       className={cn("relative overflow-hidden", className)}
@@ -48,7 +48,7 @@ function Shot({ hue, className, style, children }: { hue: number; className?: st
   );
 }
 
-const soft = (c: string, pct = 16) => `color-mix(in oklab, ${c} ${pct}%, transparent)`;
+export const soft = (c: string, pct = 16) => `color-mix(in oklab, ${c} ${pct}%, transparent)`;
 const Dot = ({ c }: { c: string }) => <span className="inline-block size-1.5 rounded-full" style={{ background: c }} />;
 
 function Lamio({ color, on, chrome }: MockProps) {

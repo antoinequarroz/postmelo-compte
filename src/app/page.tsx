@@ -2,6 +2,7 @@ import { Fingerprint, KeyRound, ShieldCheck, Users } from "lucide-react";
 import type { Metadata, Viewport } from "next";
 import { ContactForm } from "@/components/landing-contact";
 import { BeforeAfter } from "@/components/landing/before-after";
+import { Demos } from "@/components/landing/demos";
 import { Faq } from "@/components/landing/faq";
 import { Hero } from "@/components/landing/hero";
 import { Hub } from "@/components/landing/hub";
@@ -80,6 +81,8 @@ export default async function HomePage() {
         <Profiles apps={apps} suite={SUITE_NAME} />
 
         <Story apps={story} />
+
+        <Demos apps={story} />
 
         <Statement text="Un seul compte. Un seul design. Toutes tes applications, enfin au même endroit." accent={["compte", "design", "endroit"]} />
 

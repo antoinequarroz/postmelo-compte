@@ -6,8 +6,8 @@ import { Button, Field, inputClass } from "@/components/ui";
 import { api } from "@/lib/utils";
 
 /** The request form of the public page. What is sent lands in the CRM as a prospect. */
-export function ContactForm({ products }: { products: { id: string; name: string }[] }) {
-  const [form, setForm] = useState({ name: "", email: "", company: "", product: "", message: "", website: "" });
+export function ContactForm({ products, product = "" }: { products: { id: string; name: string }[]; product?: string }) {
+  const [form, setForm] = useState({ name: "", email: "", company: "", product, message: "", website: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);

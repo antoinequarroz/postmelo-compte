@@ -53,10 +53,15 @@ function Copy({ a, n, total }: { a: StoryApp; n: number; total: number }) {
           </li>
         ))}
       </ul>
-      <a href="#contact" data-product={a.id} className="group mt-8 inline-flex items-center gap-2 text-[14px] font-medium" style={{ color: readable(c) }}>
-        {a.status === "bientot" ? "Être prévenu du lancement" : `Essayer ${a.name}`}
-        <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
-      </a>
+      <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <a href={`/${a.id}`} className="group inline-flex items-center gap-2 text-[14px] font-medium" style={{ color: readable(c) }}>
+          Découvrir {a.name}
+          <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
+        </a>
+        <a href="#contact" data-product={a.id} className="text-[14px] text-ink-3 hover:text-ink">
+          {a.status === "bientot" ? "Être prévenu du lancement" : `Essayer ${a.name}`}
+        </a>
+      </div>
     </div>
   );
 }
