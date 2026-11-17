@@ -1,0 +1,33 @@
+# Le service de compte sur le VPS, à côté de Lamio et des outils (voir docs/DEPLOIEMENT.md).
+#
+# Le Caddy déjà en place occupe les ports 80 et 443. Ce service ne publie aucun port :
+# il rejoint le réseau Docker de ce Caddy, qui le joint par son nom (compte:3000).
+#
+#   cd deploy && docker compose up -d --build
+
+name: compte
+
+services:
+  app:
+    build: ..
+    container_name: compte
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      DATA_DIR: /data
+      TZ: Europe/Zurich
+    volumes:
+      - app-data:/data
+    networks:
+      default:
+      proxy:
+        aliases: [compte]
+
+volumes:
+  app-data:
+
+networks:
+  # Le réseau du Caddy en place. Sur un autre serveur : PROXY_NETWORK=<son réseau> dans deploy/.env.
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-antoinequarroz-vitrine_appnet}

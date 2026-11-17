@@ -1,0 +1,101 @@
+# Mettre le service de compte en ligne sur le VPS
+
+À la fin de ce guide : **https://compte.antoinequarroz.ch**, avec les comptes de Lamio repris, et rien de cassé :
+tant qu'aucun outil n'est branché dessus, le service tourne à côté du reste sans rien changer.
+
+Le sous-domaine `compte` est une proposition : choisis-le bien, car le changer plus tard oblige à reconfigurer
+chaque outil et invalide les clés d'accès déjà enregistrées.
+
+## 1. DNS
+
+Un enregistrement **A** `compte` vers l'IP du VPS, chez Infomaniak. Pour vérifier : `dig +short compte.antoinequarroz.ch`.
+
+## 2. Installer
+
+```bash
+git clone <adresse du dépôt> ~/compte
+cd ~/compte
+cp .env.example .env && chmod 600 .env
+nano .env
+```
+
+Au minimum :
+
+```env
+COMPTE_URL=https://compte.antoinequarroz.ch
+AUTH_SECRET=<openssl rand -base64 32>
+```
+
+Garde une copie de `AUTH_SECRET` dans Cairn : sans lui, les doubles authentifications et les clés de signature sont perdues.
+
+```bash
+cd deploy
+docker compose up -d --build
+docker ps --filter name=compte     # doit devenir « healthy »
+```
+
+## 3. Brancher Caddy
+
+Garde une copie du Caddyfile (`~/.config/antoinequarroz-vitrine/runtime/Caddyfile`), puis ajoute :
+
+```caddy
+compte.antoinequarroz.ch {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+	reverse_proxy compte:3000
+}
+```
+
+Puis recharge Caddy : `docker exec antoinequarroz-caddy caddy reload --config /etc/caddy/Caddyfile`.
+
+## 4. Reprendre les comptes de Lamio
+
+À faire avant de créer un compte à la main, pour garder les mêmes identifiants que dans Lamio.
+La base de Lamio est seulement lue.
+
+```bash
+docker cp lamio:/data/app.db /tmp/lamio-app.db
+docker cp /tmp/lamio-app.db compte:/tmp/lamio-app.db
+docker exec compte node scripts/import-lamio.mjs /tmp/lamio-app.db /data
+docker exec compte rm /tmp/lamio-app.db && rm /tmp/lamio-app.db
+```
+
+Ouvre ensuite https://compte.antoinequarroz.ch et connecte-toi avec ton e-mail et ton mot de passe de Lamio.
+Active la double authentification et ajoute une clé d'accès.
+
+Si Lamio n'a encore aucun compte, saute cette étape : la page de connexion propose de créer le premier compte, qui sera l'administrateur.
+
+## 5. Brancher les outils, un par un
+
+Voir [BRANCHER-UN-OUTIL.md](BRANCHER-UN-OUTIL.md). L'ordre conseillé : Lamio, puis Cairn, Metricove, TickUp, Alfred.
+Après chaque ajout dans `.env` : `cd ~/compte/deploy && docker compose up -d`.
+
+## 6. Sauvegarde
+
+Tout tient dans le volume `compte_app-data` (fichier `compte.db`). À ajouter à la sauvegarde nocturne, comme Lamio :
+
+```bash
+docker exec compte node -e "require('better-sqlite3')('/data/compte.db').backup('/data/compte-backup.db').then(()=>process.exit(0))"
+docker cp compte:/data/compte-backup.db ~/sauvegardes/compte-$(date +%F).db
+```
+
+## Mettre à jour
+
+```bash
+cd ~/compte && git pull && cd deploy && docker compose up -d --build
+```
+
+Les tables manquantes sont créées au démarrage. Les sessions ouvertes restent ouvertes.
+
+## Dépanner
+
+| Symptôme | Cause probable |
+| --- | --- |
+| Le conteneur redémarre en boucle | `AUTH_SECRET` manque ou fait moins de 32 caractères, ou un `<OUTIL>_CLIENT_SECRET` est trop court (`docker logs compte`) |
+| « Connexion impossible » dans un outil | Le secret n'est pas le même des deux côtés, ou `APP_URL` de l'outil ne correspond pas à `<OUTIL>_URL` du compte |
+| La clé d'accès n'est plus proposée | `COMPTE_URL` a changé : les clés sont liées au nom de domaine |
+| « Trop d'essais » | Cinq connexions par minute au plus par adresse : attendre une minute |
