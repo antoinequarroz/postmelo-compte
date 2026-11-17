@@ -3,19 +3,23 @@
 import { ArrowRight, Check } from "lucide-react";
 import { useRef, useState } from "react";
 import { ProductIcon } from "@/components/product-icon";
-import { PRODUCT_STATUS_LABEL } from "@/lib/crm-labels";
+import type { Locale } from "@/lib/i18n";
+import { countWordIn, FAMILY_LABEL, STATUS_LABEL } from "@/lib/site-text";
 import { cn } from "@/lib/utils";
 import { appColor, readable } from "./color";
 import { AppMock } from "./mocks";
 import { Reveal } from "./reveal";
 import { useScrollProgress } from "./use-scroll";
-import { countWord } from "@/lib/count-word";
 
 export type StoryApp = { id: string; name: string; color: string; category: string; family: string; tagline: string; points: string[]; status: string };
 
-const FAMILY: Record<string, string> = { equipe: "Travailler ensemble", media: "Créer et diffuser" };
+const T = {
+  fr: { eyebrow: "La suite", title: (n: string) => `${n} applications.`, sub: "Une seule façon de travailler.", notify: "Être prévenu du lancement", try: (name: string) => `Essayer ${name}` },
+  en: { eyebrow: "The suite", title: (n: string) => `${n} apps.`, sub: "One way of working.", notify: "Get notified at launch", try: (name: string) => `Try ${name}` },
+  de: { eyebrow: "Die Suite", title: (n: string) => `${n} Apps.`, sub: "Eine Art zu arbeiten.", notify: "Zum Start benachrichtigen", try: (name: string) => `${name} testen` },
+};
 
-function Copy({ a, n, total }: { a: StoryApp; n: number; total: number }) {
+function Copy({ a, n, total, locale }: { a: StoryApp; n: number; total: number; locale: Locale }) {
   // Without a colour (TickUp), the ink of the theme.
   const c = appColor(a.color);
   return (
@@ -25,7 +29,7 @@ function Copy({ a, n, total }: { a: StoryApp; n: number; total: number }) {
           {String(n + 1).padStart(2, "0")}
         </span>
         <span className="h-px w-8 bg-line-strong" />
-        {FAMILY[a.family] ?? ""}
+        {FAMILY_LABEL[locale][a.family] ?? ""}
         <span className="tabular">/ {String(total).padStart(2, "0")}</span>
       </p>
       <div className="mt-6 flex items-center gap-4">
@@ -36,7 +40,7 @@ function Copy({ a, n, total }: { a: StoryApp; n: number; total: number }) {
             {a.category}
             {a.status !== "disponible" && (
               <span className="rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ background: `color-mix(in oklab, ${c} 18%, transparent)`, color: `color-mix(in oklab, ${c} 75%, var(--lift))` }}>
-                {PRODUCT_STATUS_LABEL[a.status]}
+                {STATUS_LABEL[locale][a.status]}
               </span>
             )}
           </p>
@@ -54,7 +58,7 @@ function Copy({ a, n, total }: { a: StoryApp; n: number; total: number }) {
         ))}
       </ul>
       <a href="#contact" data-product={a.id} className="group mt-8 inline-flex items-center gap-2 text-[14px] font-medium" style={{ color: readable(c) }}>
-        {a.status === "bientot" ? "Être prévenu du lancement" : `Essayer ${a.name}`}
+        {a.status === "bientot" ? T[locale].notify : T[locale].try(a.name)}
         <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
       </a>
     </div>
@@ -65,7 +69,8 @@ function Copy({ a, n, total }: { a: StoryApp; n: number; total: number }) {
  * The tour of the suite. On large screens the section is pinned and each app takes the stage
  * in turn as the page scrolls, with its interface; on phones the apps simply follow each other.
  */
-export function Story({ apps }: { apps: StoryApp[] }) {
+export function Story({ apps, locale = "fr" }: { apps: StoryApp[]; locale?: Locale }) {
+  const t = T[locale];
   const [active, setActive] = useState(0);
   // Progress inside the current app (0..1), drawn straight into the rail without re-rendering.
   const fill = useRef<HTMLSpanElement>(null);
@@ -81,11 +86,11 @@ export function Story({ apps }: { apps: StoryApp[] }) {
   return (
     <section id="suite" className="relative scroll-mt-0">
       <Reveal className="mx-auto max-w-[1160px] px-4 pb-10 pt-28 text-center sm:px-6">
-        <p className="text-[12.5px] font-medium uppercase tracking-[0.2em] text-accent">La suite</p>
+        <p className="text-[12.5px] font-medium uppercase tracking-[0.2em] text-accent">{t.eyebrow}</p>
         <h2 className="mx-auto mt-4 max-w-[900px] font-display text-[clamp(44px,7vw,104px)] leading-[0.9] tracking-[-0.015em]">
-          {countWord(apps.length)} applications.
+          {t.title(countWordIn(apps.length, locale))}
           <br />
-          <span className="italic text-ink-2">Une seule façon de travailler.</span>
+          <span className="italic text-ink-2">{t.sub}</span>
         </h2>
       </Reveal>
 
@@ -116,7 +121,7 @@ export function Story({ apps }: { apps: StoryApp[] }) {
                   className="absolute inset-0 flex items-center transition-all duration-700"
                   style={{ opacity: n === active ? 1 : 0, transform: `translateY(${n === active ? 0 : n < active ? -40 : 40}px)`, filter: n === active ? "none" : "blur(10px)", pointerEvents: n === active ? "auto" : "none", transitionTimingFunction: "var(--ease-out)" }}
                 >
-                  <Copy a={x} n={n} total={apps.length} />
+                  <Copy a={x} n={n} total={apps.length} locale={locale} />
                 </div>
               ))}
             </div>
@@ -133,7 +138,7 @@ export function Story({ apps }: { apps: StoryApp[] }) {
                     transitionTimingFunction: "var(--ease-out)",
                   }}
                 >
-                  <AppMock id={x.id} name={x.name} color={x.color} on={n === active} />
+                  <AppMock id={x.id} name={x.name} color={x.color} on={n === active} locale={locale} />
                 </div>
               ))}
             </div>
@@ -146,9 +151,9 @@ export function Story({ apps }: { apps: StoryApp[] }) {
         {apps.map((x, n) => (
           <Reveal key={x.id} className="relative">
             <div aria-hidden className="absolute -inset-x-10 -top-10 -z-10 h-[70%]" style={{ background: `radial-gradient(closest-side, color-mix(in oklab, ${appColor(x.color)} 18%, transparent), transparent)` }} />
-            <Copy a={x} n={n} total={apps.length} />
+            <Copy a={x} n={n} total={apps.length} locale={locale} />
             <div className="mt-10 h-[380px] sm:h-[440px]">
-              <AppMock id={x.id} name={x.name} color={x.color} on />
+              <AppMock id={x.id} name={x.name} color={x.color} on locale={locale} />
             </div>
           </Reveal>
         ))}
