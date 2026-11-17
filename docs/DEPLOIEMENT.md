@@ -85,9 +85,17 @@ Après chaque ajout dans `.env` : `cd ~/compte/deploy && docker compose up -d`.
 Tout tient dans le volume `compte_app-data` (fichier `compte.db`). À ajouter à la sauvegarde nocturne, comme Lamio :
 
 ```bash
-docker exec compte node -e "require('better-sqlite3')('/data/compte.db').backup('/data/compte-backup.db').then(()=>process.exit(0))"
-docker cp compte:/data/compte-backup.db ~/sauvegardes/compte-$(date +%F).db
+~/compte/deploy/backup.sh        # écrit dans ~/compte-backups, garde les 14 dernières
 ```
+
+Chaque nuit à 3h20, avec `crontab -e` :
+
+```cron
+20 3 * * * $HOME/compte/deploy/backup.sh >> $HOME/compte-backups.log 2>&1
+```
+
+Pour restaurer : arrête le service, décompresse la sauvegarde à la place de `compte.db` dans le volume, relance.
+Le fichier `.env` n'est pas dans la sauvegarde : garde une copie de `AUTH_SECRET` à part.
 
 ## Mettre à jour
 
