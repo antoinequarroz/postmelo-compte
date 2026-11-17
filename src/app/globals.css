@@ -531,3 +531,107 @@ html:has(.landing) body {
 @media (prefers-reduced-motion: reduce) {
   .faq::details-content { transition: none; }
 }
+
+/* Blog posts and changelog entries, written in Markdown in the admin (src/lib/markdown.ts). */
+.site-prose {
+  color: var(--ink-2);
+  font-size: 16.5px;
+  line-height: 1.75;
+}
+.site-prose > * + * {
+  margin-top: 1.1em;
+}
+.site-prose h2,
+.site-prose h3,
+.site-prose h4 {
+  color: var(--ink);
+  font-family: var(--font-display-serif), Georgia, serif;
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.005em;
+  margin-top: 1.7em;
+}
+.site-prose h2 {
+  font-size: 2em;
+}
+.site-prose h3 {
+  font-size: 1.55em;
+}
+.site-prose h4 {
+  font-size: 1.25em;
+}
+.site-prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.site-prose a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--accent) 60%, transparent);
+  text-underline-offset: 3px;
+}
+.site-prose a:hover {
+  color: var(--accent);
+}
+.site-prose ul,
+.site-prose ol {
+  padding-left: 1.3em;
+}
+.site-prose ul {
+  list-style: disc;
+}
+.site-prose ol {
+  list-style: decimal;
+}
+.site-prose li + li {
+  margin-top: 0.35em;
+}
+.site-prose li::marker {
+  color: var(--accent);
+}
+.site-prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 1.1em;
+  color: var(--ink);
+  font-family: var(--font-display-serif), Georgia, serif;
+  font-size: 1.35em;
+  line-height: 1.3;
+}
+.site-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--ink) 7%, transparent);
+  padding: 0.12em 0.4em;
+}
+.site-prose pre {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--ink) 4%, transparent);
+  padding: 1em 1.2em;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.site-prose pre code {
+  background: none;
+  padding: 0;
+}
+.site-prose img {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  width: 100%;
+  height: auto;
+}
+.site-prose hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 2.2em 0;
+}
+.site-prose.compact {
+  font-size: 15px;
+  line-height: 1.65;
+}
+.site-prose.compact > * + * {
+  margin-top: 0.7em;
+}

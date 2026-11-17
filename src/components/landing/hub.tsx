@@ -4,7 +4,7 @@ import { ProductIcon } from "@/components/product-icon";
 type App = { id: string; name: string; color: string };
 
 /** One account in the middle, every app around it: dashes flow from the account to each one. */
-export function Hub({ apps }: { apps: App[] }) {
+export function Hub({ apps, label = "Ton compte" }: { apps: App[]; label?: string }) {
   const list = apps.slice(0, 8);
   const R = 40; // % of the box
   const at = (n: number) => {
@@ -40,7 +40,7 @@ export function Hub({ apps }: { apps: App[] }) {
         <span className="rounded-[22px] bg-surface p-3 shadow-[0_20px_50px_-20px_var(--deep-3)] ring-1 ring-line-strong">
           <Logo className="size-14" />
         </span>
-        <span className="rounded-full bg-surface px-2.5 py-0.5 text-[11.5px] font-medium shadow-card ring-1 ring-line">Ton compte</span>
+        <span className="rounded-full bg-surface px-2.5 py-0.5 text-[11.5px] font-medium shadow-card ring-1 ring-line">{label}</span>
       </div>
       {list.map((a, n) => {
         const p = at(n);
