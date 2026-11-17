@@ -7,6 +7,7 @@ import { Hero } from "@/components/landing/hero";
 import { Hub } from "@/components/landing/hub";
 import { Journey } from "@/components/landing/journey";
 import { Nav } from "@/components/landing/nav";
+import { Proof } from "@/components/landing/proof";
 import { Profiles } from "@/components/landing/profiles";
 import { Reveal } from "@/components/landing/reveal";
 import { SiteFooter } from "@/components/landing/site-footer";
@@ -17,6 +18,7 @@ import { CONTACT_EMAIL, SUITE_NAME } from "@/lib/brand";
 import { alternates, LOCALE_TAG, type Locale } from "@/lib/i18n";
 import { baseUrl } from "@/server/auth";
 import { localizedProducts } from "@/server/content";
+import { publicProof } from "@/server/crm";
 import { currentSession } from "@/server/http";
 
 /** The words of the sections written in this file, in each language. */
@@ -98,6 +100,7 @@ export async function LandingPage({ locale }: { locale: Locale }) {
   const t = T[locale];
   const session = await currentSession().catch(() => null);
   const products = localizedProducts(locale);
+  const proof = publicProof();
   const signedIn = !!session;
   // Absolute: the same page is also served on postmelo.ch, where these paths belong to another app.
   const account = baseUrl();
@@ -176,6 +179,8 @@ export async function LandingPage({ locale }: { locale: Locale }) {
         <Journey apps={apps} locale={locale} />
 
         <BeforeAfter locale={locale} />
+
+        <Proof proof={proof} locale={locale} />
 
         <Faq apps={apps} suite={SUITE_NAME} locale={locale} />
 
