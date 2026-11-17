@@ -28,9 +28,9 @@ let leaving = false;
 /** True when the page is on its way to a tool: the sign-in was started there. */
 export const comesFromTool = () => new URLSearchParams(window.location.search).has("sig");
 
-/** After a sign-in: home, unless the browser is already leaving for a tool or the refusal page. */
+/** After a sign-in: the account page, unless the browser is already leaving for a tool or the refusal page. */
 export function goHome() {
-  if (!leaving && !comesFromTool()) window.location.href = "/";
+  if (!leaving && !comesFromTool()) window.location.href = "/compte";
 }
 
 /** Better Auth answers in English: the messages people may meet, in French. */

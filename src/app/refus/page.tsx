@@ -16,7 +16,7 @@ export default async function RefusalPage({ searchParams }: { searchParams: Prom
         <p className="mt-2 text-[13.5px] leading-relaxed text-ink-2">
           {asked ? `${asked.name} n'est pas ouvert à ton compte.` : "Cet outil n'est pas ouvert à ton compte."} Demande à un administrateur de te l&apos;ouvrir, puis réessaie.
         </p>
-        <Link href="/" className={`press mt-5 inline-flex h-9 items-center rounded-lg px-3.5 text-[13.5px] font-medium ${primaryClass}`}>
+        <Link href="/compte" className={`press mt-5 inline-flex h-9 items-center rounded-lg px-3.5 text-[13.5px] font-medium ${primaryClass}`}>
           Voir mon compte
         </Link>
       </div>

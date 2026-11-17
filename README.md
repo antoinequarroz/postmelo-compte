@@ -7,6 +7,17 @@ Le nom affiché est défini à un seul endroit, `src/lib/brand.ts`.
 
 ## Ce que ça fait
 
+- **La page d'accueil de postmelo.ch** (`/`) : la vitrine de la suite. Les produits, regroupés en « Travailler ensemble »
+  et « Créer et diffuser », viennent du catalogue de l'admin. Le formulaire de contact crée un prospect dans le CRM.
+- **L'admin** (`/admin`, administrateurs seulement) : le CRM de la suite.
+  - Tableau de bord : revenu mensuel et annuel, licences et places, clients et prospects, pipeline pondéré,
+    renouvellements des 45 prochains jours, activité récente.
+  - Clients : recherche, statut (prospect, client, partenaire, ancien client), fiche avec contacts, licences,
+    opportunités et journal (notes, appels, e-mails, rendez-vous, et tout ce qui a changé). Export CSV.
+  - Licences : par client et par produit, formule, places, prix mensuel, statut, date de renouvellement. Export CSV.
+  - Pipeline : les opportunités en colonnes, à glisser d'une étape à l'autre. Gagner fait passer le prospect en client.
+  - Produits : le catalogue (nom, couleur, accroche, points forts, statut, prix affiché). « Masqué » le retire de la page d'accueil.
+
 - **Connexion** par e-mail et mot de passe, ou par clé d'accès (Face ID, Touch ID, clé de sécurité).
 - **Double authentification** par application (code à six chiffres), avec codes de secours.
 - **Mon compte** : nom, mot de passe, clés d'accès, appareils connectés avec déconnexion à distance.
@@ -30,7 +41,11 @@ La partie sensible n'est pas écrite ici : elle vient de [Better Auth](https://w
 | `src/server/tools.ts` | La liste des outils, lue dans les variables d'environnement |
 | `src/server/db.ts` | La base SQLite et la table « qui a accès à quel outil » |
 | `src/app/connexion` | La page de connexion (mot de passe, code, clé d'accès, premier compte) |
-| `src/components/account.tsx`, `admin.tsx` | La page « Mon compte » et la gestion des personnes |
+| `src/components/account.tsx`, `admin.tsx` | La page « Mon compte » (`/compte`) et la gestion des personnes |
+| `src/app/page.tsx` | La page d'accueil publique de la suite |
+| `src/server/crm.ts` | Le CRM : tables, règles, catalogue de départ, tableau de bord, export CSV |
+| `src/app/admin`, `src/components/crm` | Les pages de l'admin |
+| `src/app/api/crm`, `src/app/api/contact` | L'API de l'admin et le formulaire de contact |
 | `clients/compte.ts` | Le fichier à copier dans un outil pour le brancher |
 | `exemples/outil-demo.ts` | Un outil minuscule qui se connecte avec le compte |
 | `scripts/import-lamio.mjs` | La reprise des comptes de Lamio |

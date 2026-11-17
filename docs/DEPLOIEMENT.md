@@ -52,6 +52,32 @@ compte.postmelo.ch {
 
 Puis recharge Caddy : `docker exec antoinequarroz-caddy caddy reload --config /etc/caddy/Caddyfile`.
 
+## 3 bis. La page d'accueil sur postmelo.ch
+
+Le même service sert la page publique de la suite. Dans `.env` : `SITE_URL=https://postmelo.ch`, puis
+`cd ~/compte/deploy && docker compose up -d`. Dans le Caddyfile, à la place de l'ancien bloc `postmelo.ch` :
+
+```caddy
+postmelo.ch, www.postmelo.ch {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+	@site path / /_next/* /api/contact /favicon.ico /icon* /apple-icon* /robots.txt
+	handle @site {
+		reverse_proxy compte:3000
+	}
+	# Connexion, compte et admin vivent sur compte.postmelo.ch (cookies et clés d'accès y sont liés).
+	handle {
+		redir https://compte.postmelo.ch{uri} 302
+	}
+}
+```
+
+Puis recharge Caddy comme ci-dessus.
+
 ## 4. Reprendre les comptes de Lamio
 
 À faire avant de créer un compte à la main, pour garder les mêmes identifiants que dans Lamio.
