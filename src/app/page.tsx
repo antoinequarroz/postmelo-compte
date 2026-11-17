@@ -8,7 +8,7 @@ import { Nav } from "@/components/landing/nav";
 import { Reveal } from "@/components/landing/reveal";
 import { Statement } from "@/components/landing/statement";
 import { Story } from "@/components/landing/story";
-import { Logo } from "@/components/logo";
+import { SuiteLogo } from "@/components/logo";
 import { ProductIcon } from "@/components/product-icon";
 import { CONTACT_EMAIL, SUITE_NAME, SUITE_TAGLINE } from "@/lib/brand";
 import { listProducts } from "@/server/crm";
@@ -30,6 +30,8 @@ export const metadata: Metadata = {
   description: SUITE_TAGLINE,
   // The only page meant to be found: the rest of the service stays out of search engines.
   robots: { index: true, follow: true },
+  // The suite's « p » here; the rest of the service keeps the account's padlock (src/app/favicon.ico).
+  icons: { icon: "/_compte/brand/postmelo/favicon.ico", apple: "/_compte/brand/postmelo/apple-touch-icon.png" },
 };
 
 /** The public home page of the suite. It follows the theme of the device, or the one picked with the toggle of the nav. */
@@ -144,7 +146,7 @@ export default async function HomePage() {
 
       <footer className="relative overflow-hidden border-t border-line">
         <div className="mx-auto flex max-w-[1160px] flex-wrap items-center gap-5 px-4 pt-10 text-[13px] text-ink-3 sm:px-6">
-          <Logo className="size-6" />
+          <SuiteLogo className="size-6" />
           <span>© {new Date().getFullYear()} {SUITE_NAME}</span>
           <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-ink">
             {CONTACT_EMAIL}

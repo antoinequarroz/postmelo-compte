@@ -2,7 +2,7 @@
 
 import { ArrowRight, Bell, Check, ChevronDown, Command, Fingerprint, Home, LayoutGrid, Lock, Plus, Search, Settings, Share2, Users } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Logo } from "@/components/logo";
+import { SuiteLogo } from "@/components/logo";
 import { ProductGlyph, ProductIcon } from "@/components/product-icon";
 import { primaryClass } from "@/lib/styles";
 import { cn } from "@/lib/utils";
@@ -335,7 +335,7 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
         {/* Sidebar */}
         <aside className="flex w-[232px] shrink-0 flex-col border-r border-wash/[0.06] bg-[var(--win-side)] p-3 max-lg:w-[212px] max-sm:w-14 max-sm:items-center max-sm:px-2">
           <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 max-sm:px-0">
-            <Logo className="size-7" />
+            <SuiteLogo className="size-7" />
             <div className="min-w-0 leading-tight max-sm:hidden">
               <p className="text-[13px] font-medium">Studio Lumen</p>
               <p className="text-[10.5px] text-ink-3">14 membres</p>
