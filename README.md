@@ -1,9 +1,9 @@
-# Compte
+# Compte MayaKit
 
-Un seul compte pour tous les outils de la suite : Lamio, Cairn, Metricove, TickUp, Alfred, Nino.
+Un seul compte pour tous les outils de la suite MayaKit : Lamio, Cairn, Metricove, TickUp, Alfred, Nino.
 Comme un compte Google ou Adobe, mais à toi et hébergé chez toi.
 
-« Compte » est un nom provisoire : le nom affiché est défini à un seul endroit, `src/lib/brand.ts`.
+Le nom affiché est défini à un seul endroit, `src/lib/brand.ts`.
 
 ## Ce que ça fait
 
