@@ -1,7 +1,6 @@
 import React from "react";
 import { ArrowRight, Bell, Check, Home, KeyRound, LayoutGrid, Lock, Search, Users } from "lucide-react";
 import { AbsoluteFill, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
-import { MOCK_H, MOCK_TITLES, MOCK_W, MOCKS } from "./mocks";
 import { alpha, App, app, AppId, APPS, C, EASE_IN_OUT, MONO, SANS, SERIF } from "./theme";
 import { AppIcon, Backdrop, gradientText, mix, prog, rnd, Serif, Window, Words } from "./ui";
 
@@ -181,101 +180,6 @@ export const Pivot: React.FC<{ dur: number }> = ({ dur }) => {
           {v ? <br /> : " "}
           <Words text="dans un seul compte ?" start={26} wordStyle={() => ({ fontStyle: "italic", ...gradientText() })} />
         </Serif>
-      </AbsoluteFill>
-    </Backdrop>
-  );
-};
-
-/* ───────────────────────────── 3. Une app ───────────────────────────── */
-
-export const AppScene: React.FC<{ id: AppId; dur: number; index: number; total?: number; mockStart?: number; compact?: boolean }> = ({
-  id,
-  dur,
-  index,
-  total = 7,
-  mockStart = 0,
-  compact,
-}) => {
-  const f = useCurrentFrame();
-  const v = useVertical();
-  const a: App = app(id);
-  const Mock = MOCKS[id];
-  const io = useInOut(dur, dur < 80 ? 5 : 14, dur < 80 ? 5 : 14);
-  const enter = prog(f, 0, dur < 80 ? 18 : 34);
-  const tilt = interpolate(f, [0, dur], [-14, -4]);
-  const zoom = interpolate(f, [0, dur], [1, 1.04]);
-  const mf = f + mockStart;
-  const labelColor = id === "tickup" ? C.ink2 : a.color;
-  const k = dur < 80 ? 0.35 : 1; // short montage scenes: text arrives faster
-
-  const text = (
-    <div style={{ fontFamily: SANS, textAlign: v ? "center" : "left", display: "flex", flexDirection: "column", alignItems: v ? "center" : "flex-start" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 16, fontFamily: MONO, fontSize: v ? 26 : 20, letterSpacing: "0.16em", color: C.ink3, textTransform: "uppercase", opacity: prog(f, 4, 16) }}>
-        <span style={{ color: C.ink }}>{String(index + 1).padStart(2, "0")}</span>
-        <span style={{ width: 50, height: 1, background: C.lineStrong }} />
-        <span style={{ color: labelColor }}>{a.category}</span>
-        {!v && <span>/ {String(total).padStart(2, "0")}</span>}
-      </div>
-      <div style={{ display: "flex", flexDirection: v ? "column" : "row", alignItems: "center", gap: v ? 26 : 28, marginTop: v ? 34 : 30, whiteSpace: "nowrap" }}>
-        <div style={{ transform: `scale(${mix(prog(f, 2, 26), 0.6, 1)})`, opacity: prog(f, 2, 18) }}>
-          <AppIcon icon={a.icon} size={v ? 170 : 128} glow={a.color} />
-        </div>
-        <Serif size={v ? 160 : a.name.length > 9 ? 112 : 140}>
-          <Words text={a.name} start={6 * k} stagger={4 * k} dur={22 * Math.max(k, 0.6)} />
-        </Serif>
-      </div>
-      <div style={{ fontSize: v ? 46 : 34, color: C.ink, marginTop: v ? 30 : 34, maxWidth: v ? 920 : 640, lineHeight: 1.25 }}>
-        <Words text={a.tagline} start={16 * k} stagger={1.5 * k} dur={22 * Math.max(k, 0.6)} />
-      </div>
-      {!compact && (
-        <div style={{ marginTop: 34, display: "flex", flexDirection: "column", gap: 16 }}>
-          {a.points.map((p, i) => {
-            const pp = prog(f, 34 + i * 8, 18);
-            return (
-              <div key={p} style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 26, color: C.ink2, opacity: pp, transform: `translateX(${mix(pp, -16, 0)}px)` }}>
-                <span style={{ width: 30, height: 30, borderRadius: 15, background: alpha(a.color, 0.18), display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Check size={17} color={id === "tickup" ? C.ink : a.color} />
-                </span>
-                {p}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-
-  const mockScale = v ? 1.0 : 1.0; // vertical: 1040 → ~1020 px
-  const mock = (
-    <div style={{ perspective: 2200 }}>
-      <div
-        style={{
-          transform: `translateY(${mix(enter, 120, 0)}px) rotateY(${v ? 0 : tilt}deg) rotateX(${v ? mix(enter, 18, 6) : mix(enter, 10, 2)}deg) scale(${mockScale * zoom})`,
-          opacity: enter,
-          transformStyle: "preserve-3d",
-        }}
-      >
-        <Window width={MOCK_W} height={MOCK_H} title={MOCK_TITLES[id]} accent={id === "tickup" ? "#ffffff" : a.color}>
-          <Mock f={mf} />
-        </Window>
-      </div>
-    </div>
-  );
-
-  return (
-    <Backdrop glow={id === "tickup" ? "#bbbbbb" : a.color} glow2={a.color}>
-      <AbsoluteFill style={{ ...io }}>
-        {v ? (
-          <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", gap: 110 }}>
-            {text}
-            {mock}
-          </AbsoluteFill>
-        ) : (
-          <AbsoluteFill style={{ flexDirection: "row", alignItems: "center", padding: "0 0 0 110px", gap: 30 }}>
-            <div style={{ width: 620, flexShrink: 0 }}>{text}</div>
-            <div style={{ transform: "scale(1.06)", transformOrigin: "left center" }}>{mock}</div>
-          </AbsoluteFill>
-        )}
       </AbsoluteFill>
     </Backdrop>
   );
