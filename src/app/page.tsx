@@ -1,7 +1,11 @@
-import { ArrowRight, ArrowUpRight, Check, Fingerprint, KeyRound, LayoutGrid, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, Fingerprint, KeyRound, ShieldCheck, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ContactForm } from "@/components/landing-contact";
+import { Hero } from "@/components/landing/hero";
+import { Hub } from "@/components/landing/hub";
+import { CountUp, Reveal } from "@/components/landing/reveal";
+import { SpotCard } from "@/components/landing/spot-card";
 import { Logo } from "@/components/logo";
 import { ProductIcon } from "@/components/product-icon";
 import { CONTACT_EMAIL, SUITE_NAME, SUITE_TAGLINE } from "@/lib/brand";
@@ -65,66 +69,59 @@ export default async function HomePage() {
       </header>
 
       <main>
-        {/* Hero */}
-        <section className="mx-auto grid max-w-[1160px] items-center gap-12 px-4 pb-20 pt-14 sm:px-6 md:pt-24 lg:grid-cols-[1fr_1fr]">
-          <div className="rise">
-            <p className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-surface/70 px-3 py-1 text-[12.5px] text-ink-2 shadow-card">
-              <span className="size-1.5 rounded-full bg-accent" />
-              {products.length} applications, un seul compte
-            </p>
-            <h1 className="mt-6 font-display text-[clamp(46px,7vw,80px)] leading-[0.95] tracking-[-0.01em]">
-              Toute ta boîte,
-              <br />
-              <span className="italic text-accent">dans une seule suite.</span>
-            </h1>
-            <p className="mt-6 max-w-[540px] text-[16.5px] leading-relaxed text-ink-2">
-              Messagerie, notes, projets, agenda, réseaux sociaux, création de contenu et studio vidéo. Les applications {SUITE_NAME} partagent le même design, le même compte, et se pilotent depuis un seul endroit.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#contact" className={cn("press inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[14.5px] font-medium", primaryClass)}>
-                Demander un accès
-                <ArrowRight className="size-4" />
-              </a>
-              <a href={`#${families[0]?.id ?? "compte"}`} className="press inline-flex h-11 items-center rounded-xl border border-line-strong bg-surface px-5 text-[14.5px] font-medium shadow-card hover:bg-surface-2">
-                Découvrir les applications
-              </a>
-            </div>
-          </div>
+        <Hero apps={products.map((p) => ({ id: p.id, name: p.name, color: p.color, category: p.category }))} suite={SUITE_NAME} firstSection={families[0]?.id ?? "compte"} />
 
-          {/* The launcher, as people see it once signed in */}
-          <div className="rise relative" style={{ animationDelay: "80ms" }}>
-            <div className="absolute -inset-8 -z-10 rounded-[48px] bg-[radial-gradient(closest-side,var(--accent-soft),transparent)]" />
-            <div className="rounded-[22px] border border-line-strong bg-surface/85 p-5 shadow-[0_40px_90px_-40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-              <div className="flex items-center gap-2 border-b border-line pb-4">
-                <LayoutGrid className="size-4 text-ink-3" />
-                <span className="text-[13px] font-medium">Mes applications</span>
-                <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-[11.5px] font-medium text-accent">
-                  <ShieldCheck className="size-3" /> Connecté
-                </span>
-              </div>
-              <ul className="grid grid-cols-2 gap-2.5 pt-4 sm:grid-cols-4">
-                {products.slice(0, 8).map((p) => (
-                  <li key={p.id} className="flex flex-col items-center gap-2.5 rounded-xl border border-line bg-bg/40 px-2 py-4 text-center">
-                    <ProductIcon id={p.id} color={p.color} size="lg" />
-                    <span className="text-[12.5px] font-medium leading-tight">{p.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+        {/* Endless band of the apps */}
+        <div className="marquee-wrap relative overflow-hidden border-y border-line bg-surface/60 py-5 backdrop-blur [mask-image:linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)]">
+          <ul className="marquee flex w-max gap-10">
+            {[...products, ...products, ...products, ...products].map((p, n) => (
+              <li key={`${p.id}-${n}`} className="flex items-center gap-3" aria-hidden={n >= products.length}>
+                <ProductIcon id={p.id} color={p.color} size="sm" />
+                <span className="font-display text-[24px] leading-none">{p.name}</span>
+                <span className="text-[12px] uppercase tracking-[0.08em] text-ink-3">{p.category}</span>
+                <span className="ml-6 size-1 rounded-full bg-line-strong" />
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* A few figures */}
+        <section className="mx-auto grid max-w-[1160px] grid-cols-2 gap-px overflow-hidden px-4 py-16 sm:px-6 md:grid-cols-4">
+          {[
+            { value: products.length, suffix: "", label: "applications dans la suite" },
+            { value: 1, suffix: "", label: "seul compte pour tout ouvrir" },
+            { value: 2, suffix: "", label: "familles : équipe et médias" },
+            { value: 100, suffix: " %", label: "chez toi, sans dépendre des géants" },
+          ].map((f, n) => (
+            <Reveal key={f.label} delay={n * 90} className="px-2 py-4 text-center">
+              <p className="font-display text-[clamp(44px,6vw,68px)] leading-none text-ink">
+                <CountUp to={f.value} suffix={f.suffix} />
+              </p>
+              <p className="mx-auto mt-2 max-w-[180px] text-[13px] leading-snug text-ink-3">{f.label}</p>
+            </Reveal>
+          ))}
         </section>
 
         {families.map((f, i) => (
-          <section key={f.id} id={f.id} className={cn("scroll-mt-16 border-t border-line", i % 2 === 0 && "bg-bg-2/50")}>
-            <div className="mx-auto max-w-[1160px] px-4 py-20 sm:px-6">
-              <div className="max-w-[660px]">
-                <p className="text-[12.5px] font-medium uppercase tracking-[0.12em] text-accent">{f.kicker}</p>
-                <h2 className="mt-3 font-display text-[clamp(36px,5vw,52px)] leading-[1.02]">{f.title}</h2>
-                <p className="mt-4 text-[15.5px] leading-relaxed text-ink-2">{f.text}</p>
-              </div>
-              <ul className="mt-12 grid gap-4 md:grid-cols-2">
-                {f.products.map((p) => (
-                  <ProductCard key={p.id} p={p} />
+          <section key={f.id} id={f.id} className={cn("relative scroll-mt-16 overflow-hidden border-t border-line", i % 2 === 0 && "bg-bg-2/50")}>
+            <div className="mx-auto max-w-[1160px] px-4 py-24 sm:px-6">
+              <Reveal className="flex flex-wrap items-end gap-6">
+                <div className="max-w-[660px] flex-1">
+                  <p className="text-[12.5px] font-medium uppercase tracking-[0.12em] text-accent">{f.kicker}</p>
+                  <h2 className="mt-3 font-display text-[clamp(38px,5.4vw,60px)] leading-[1.0]">{f.title}</h2>
+                  <p className="mt-4 text-[15.5px] leading-relaxed text-ink-2">{f.text}</p>
+                </div>
+                <div className="flex -space-x-2" aria-hidden>
+                  {f.products.map((p) => (
+                    <span key={p.id} className="rounded-2xl bg-bg ring-4 ring-bg">
+                      <ProductIcon id={p.id} color={p.color} />
+                    </span>
+                  ))}
+                </div>
+              </Reveal>
+              <ul className="mt-14 grid gap-5 md:grid-cols-2">
+                {f.products.map((p, n) => (
+                  <ProductCard key={p.id} p={p} delay={(n % 2) * 120 + Math.floor(n / 2) * 60} />
                 ))}
               </ul>
             </div>
@@ -132,40 +129,43 @@ export default async function HomePage() {
         ))}
 
         {/* One account */}
-        <section id="compte" className="scroll-mt-16 border-t border-line">
-          <div className="mx-auto grid max-w-[1160px] gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <div>
+        <section id="compte" className="relative scroll-mt-16 overflow-hidden border-t border-line">
+          <div className="mx-auto grid max-w-[1160px] items-center gap-14 px-4 py-24 sm:px-6 lg:grid-cols-2">
+            <Reveal>
               <p className="text-[12.5px] font-medium uppercase tracking-[0.12em] text-accent">Un seul compte</p>
-              <h2 className="mt-3 font-display text-[clamp(36px,5vw,52px)] leading-[1.02]">Comme chez les grands, mais à toi.</h2>
-              <p className="mt-4 text-[15.5px] leading-relaxed text-ink-2">
+              <h2 className="mt-3 font-display text-[clamp(38px,5.4vw,60px)] leading-[1.0]">Comme chez les grands, mais à toi.</h2>
+              <p className="mt-4 max-w-[520px] text-[15.5px] leading-relaxed text-ink-2">
                 Ton compte {SUITE_NAME} ouvre toutes les applications de la suite. Tu choisis qui accède à quoi, tu vois les appareils connectés, et tu peux tout couper en un clic.
               </p>
-            </div>
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {[
-                { icon: KeyRound, title: "Une connexion, partout", text: "Un mot de passe pour toute la suite. On passe d'une application à l'autre sans se reconnecter." },
-                { icon: Fingerprint, title: "Face ID et clés d'accès", text: "Connexion par Face ID, Touch ID ou clé de sécurité, et double authentification par code." },
-                { icon: Users, title: "Les bons accès", text: "Chaque personne voit uniquement les applications que tu lui ouvres. Retirer un accès prend une seconde." },
-                { icon: ShieldCheck, title: "Standard et ouvert", text: "OpenID Connect, le standard de Google et Microsoft. Chaque application s'y branche proprement." },
-              ].map(({ icon: Icon, title, text }) => (
-                <li key={title} className="rounded-2xl border border-line bg-surface p-5 shadow-card">
-                  <span className="flex size-9 items-center justify-center rounded-lg bg-accent-soft text-accent">
-                    <Icon className="size-[18px]" />
-                  </span>
-                  <h3 className="mt-4 text-[15px] font-medium">{title}</h3>
-                  <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-3">{text}</p>
-                </li>
-              ))}
-            </ul>
+              <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+                {[
+                  { icon: KeyRound, title: "Une connexion, partout", text: "Un mot de passe pour toute la suite, sans se reconnecter." },
+                  { icon: Fingerprint, title: "Face ID et clés d'accès", text: "Touch ID, clé de sécurité et double authentification." },
+                  { icon: Users, title: "Les bons accès", text: "Chacun voit uniquement les applications que tu lui ouvres." },
+                  { icon: ShieldCheck, title: "Standard et ouvert", text: "OpenID Connect, le standard de Google et Microsoft." },
+                ].map(({ icon: Icon, title, text }, n) => (
+                  <Reveal as="li" key={title} delay={150 + n * 90} className="group rounded-2xl border border-line bg-surface p-4 shadow-card transition-transform duration-500 hover:-translate-y-1">
+                    <span className="flex size-9 items-center justify-center rounded-lg bg-accent-soft text-accent transition-transform duration-500 group-hover:rotate-[-8deg] group-hover:scale-110">
+                      <Icon className="size-[18px]" />
+                    </span>
+                    <h3 className="mt-3 text-[14.5px] font-medium">{title}</h3>
+                    <p className="mt-1 text-[13px] leading-relaxed text-ink-3">{text}</p>
+                  </Reveal>
+                ))}
+              </ul>
+            </Reveal>
+            <Reveal delay={120}>
+              <Hub apps={products.map((p) => ({ id: p.id, name: p.name, color: p.color }))} />
+            </Reveal>
           </div>
         </section>
 
         {/* Contact */}
         <section id="contact" className="scroll-mt-16 border-t border-line bg-bg-2/50">
-          <div className="mx-auto grid max-w-[1160px] gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <div>
+          <div className="mx-auto grid max-w-[1160px] gap-12 px-4 py-24 sm:px-6 lg:grid-cols-[0.9fr_1.1fr]">
+            <Reveal>
               <p className="text-[12.5px] font-medium uppercase tracking-[0.12em] text-accent">Contact</p>
-              <h2 className="mt-3 font-display text-[clamp(36px,5vw,52px)] leading-[1.02]">On en parle ?</h2>
+              <h2 className="mt-3 font-display text-[clamp(38px,5.4vw,60px)] leading-[1.0]">On en parle ?</h2>
               <p className="mt-4 text-[15.5px] leading-relaxed text-ink-2">
                 Dis-nous quelles applications t&apos;intéressent et pour combien de personnes. On te répond rapidement avec un accès d&apos;essai.
               </p>
@@ -175,8 +175,10 @@ export default async function HomePage() {
                   {CONTACT_EMAIL}
                 </a>
               </p>
-            </div>
-            <ContactForm products={products.map((p) => ({ id: p.id, name: p.name }))} />
+            </Reveal>
+            <Reveal delay={120}>
+              <ContactForm products={products.map((p) => ({ id: p.id, name: p.name }))} />
+            </Reveal>
           </div>
         </section>
       </main>
@@ -199,20 +201,23 @@ export default async function HomePage() {
   );
 }
 
-function ProductCard({ p }: { p: Product }) {
+function ProductCard({ p, delay }: { p: Product; delay: number }) {
   const points = p.description
     .split("\n")
     .map((l) => l.replace(/^[-•]\s*/, "").trim())
     .filter(Boolean);
   const tint = p.color || "var(--ink)";
   return (
-    <li className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-7">
-      <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full opacity-60 blur-2xl" style={{ background: `color-mix(in oklab, ${tint} 16%, transparent)` }} />
+    <SpotCard tint={tint} delay={delay} className="flex flex-col overflow-hidden rounded-3xl border border-line bg-surface p-6 shadow-card sm:p-8">
+      <div aria-hidden className="pointer-events-none absolute -right-20 -top-20 size-56 rounded-full opacity-70 blur-3xl" style={{ background: `color-mix(in oklab, ${tint} 18%, transparent)` }} />
+      <div aria-hidden className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, color-mix(in oklab, ${tint} 60%, transparent), transparent)` }} />
       <div className="relative flex items-start gap-4">
-        <ProductIcon id={p.id} color={p.color} size="lg" />
+        <span className="spot-icon">
+          <ProductIcon id={p.id} color={p.color} size="lg" />
+        </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-display text-[32px] leading-none">{p.name}</h3>
+            <h3 className="font-display text-[34px] leading-none">{p.name}</h3>
             {p.status !== "disponible" && (
               <span className={cn("rounded-full px-2 py-0.5 text-[11.5px] font-medium", p.status === "beta" ? "bg-accent-soft text-accent" : "bg-warn/15 text-warn")}>{PRODUCT_STATUS_LABEL[p.status]}</span>
             )}
@@ -220,18 +225,20 @@ function ProductCard({ p }: { p: Product }) {
           {p.category && <p className="mt-1.5 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-3">{p.category}</p>}
         </div>
       </div>
-      <p className="relative mt-5 text-[15px] leading-relaxed text-ink">{p.tagline}</p>
+      <p className="relative mt-5 text-[16px] leading-relaxed text-ink">{p.tagline}</p>
       {points.length > 0 && (
-        <ul className="relative mt-4 flex flex-col gap-2">
-          {points.map((point) => (
-            <li key={point} className="flex items-start gap-2.5 text-[13.5px] leading-snug text-ink-2">
-              <Check className="mt-0.5 size-3.5 shrink-0" style={{ color: `color-mix(in oklab, ${tint} 85%, var(--ink))` }} />
+        <ul className="relative mt-4 flex flex-col gap-2.5">
+          {points.map((point, n) => (
+            <li key={point} className="tick flex items-start gap-2.5 text-[13.5px] leading-snug text-ink-2" style={{ transitionDelay: `${delay + 350 + n * 80}ms` }}>
+              <span className="mt-px flex size-4 shrink-0 items-center justify-center rounded-full" style={{ background: `color-mix(in oklab, ${tint} 16%, transparent)` }}>
+                <Check className="size-2.5" strokeWidth={3} style={{ color: `color-mix(in oklab, ${tint} 85%, var(--ink))` }} />
+              </span>
               {point}
             </li>
           ))}
         </ul>
       )}
-      <div className="relative mt-auto flex items-center gap-3 pt-6 text-[13px]">
+      <div className="relative mt-auto flex items-center gap-3 pt-7 text-[13px]">
         {p.price_cents != null ? (
           <span>
             <span className="font-medium">{money(p.price_cents)}</span>
@@ -241,15 +248,15 @@ function ProductCard({ p }: { p: Product }) {
           <span className="text-ink-3">{p.status === "bientot" ? "Liste d'attente ouverte" : "Prix sur demande"}</span>
         )}
         {p.url ? (
-          <a href={p.url} className="ml-auto inline-flex items-center gap-1 font-medium text-accent hover:underline">
-            Découvrir <ArrowUpRight className="size-3.5" />
+          <a href={p.url} className="group/link ml-auto inline-flex items-center gap-1 font-medium text-accent">
+            Découvrir <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover/link:-translate-y-0.5 group-hover/link:translate-x-0.5" />
           </a>
         ) : (
-          <a href="#contact" data-product={p.id} className="ml-auto inline-flex items-center gap-1 font-medium text-accent hover:underline">
-            {p.status === "bientot" ? "Être prévenu" : "Demander un accès"} <ArrowRight className="size-3.5" />
+          <a href="#contact" data-product={p.id} className="group/link ml-auto inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3.5 py-1.5 font-medium text-ink transition-colors hover:border-transparent hover:bg-ink hover:text-bg">
+            {p.status === "bientot" ? "Être prévenu" : "Demander un accès"} <ArrowRight className="size-3.5 transition-transform duration-300 group-hover/link:translate-x-0.5" />
           </a>
         )}
       </div>
-    </li>
+    </SpotCard>
   );
 }

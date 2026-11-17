@@ -209,3 +209,146 @@ body::before {
     transform: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Public home page: motion. Everything here stops with prefers-reduced-motion.
+   --------------------------------------------------------------------------- */
+
+/* Soft colour fields drifting behind the hero. */
+@keyframes drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(8%, -6%, 0) scale(1.12); }
+  66% { transform: translate3d(-6%, 5%, 0) scale(0.94); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+  50% { transform: translate3d(-10%, 8%, 0) scale(0.9); }
+}
+.blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  opacity: 0.55;
+  will-change: transform;
+}
+.blob-a { animation: drift-a 18s var(--ease-in-out) infinite; }
+.blob-b { animation: drift-b 22s var(--ease-in-out) infinite; }
+.blob-c { animation: drift-a 26s var(--ease-in-out) infinite reverse; }
+
+/* A fine dotted grid that fades out at the edges. */
+.dot-grid {
+  background-image: radial-gradient(var(--line-strong) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 75%);
+}
+
+/* Words of the headline rise one after the other. */
+@keyframes word-in {
+  from { opacity: 0; transform: translateY(0.45em) rotate(2deg); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+.word-in {
+  animation: word-in 800ms var(--ease-out) both;
+}
+
+/* The rotating word: the old one leaves upward, the new one comes from below. */
+@keyframes swap-in {
+  from { opacity: 0; transform: translateY(60%); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+.swap-in { animation: swap-in 520ms var(--ease-out) both; }
+
+/* Launcher tiles bob gently, each on its own beat. */
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.bob { animation: bob 5s var(--ease-in-out) infinite; }
+
+/* One tile "opens" at a time: a ring pulses around it. */
+@keyframes ring {
+  0% { box-shadow: 0 0 0 0 var(--ring); }
+  100% { box-shadow: 0 0 0 14px transparent; }
+}
+.tile-live { animation: ring 1.2s var(--ease-out) 2; }
+
+/* Buttons with a light sweep. */
+@keyframes sheen {
+  0% { transform: translateX(-120%) skewX(-20deg); }
+  60%, 100% { transform: translateX(220%) skewX(-20deg); }
+}
+.sheen { position: relative; overflow: hidden; }
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: sheen 3.6s var(--ease-in-out) infinite;
+}
+
+/* Endless band of the apps. */
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+.marquee { animation: marquee 38s linear infinite; }
+.marquee-wrap:hover .marquee { animation-play-state: paused; }
+
+/* Appears when scrolled into view (see components/landing/reveal.tsx). */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px) scale(0.985);
+  transition: opacity 800ms var(--ease-out), transform 900ms var(--ease-out);
+  transition-delay: var(--delay, 0ms);
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Product cards: a light that follows the pointer, in the colour of the app. */
+.spot {
+  --mx: 50%;
+  --my: 0%;
+  transition: transform 500ms var(--ease-out), box-shadow 500ms var(--ease-out), border-color 300ms ease;
+}
+.spot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 400ms ease;
+  background: radial-gradient(420px circle at var(--mx) var(--my), color-mix(in oklab, var(--tint) 18%, transparent), transparent 60%);
+}
+.spot:hover::before { opacity: 1; }
+.spot:hover {
+  border-color: color-mix(in oklab, var(--tint) 35%, var(--line));
+  box-shadow: 0 30px 60px -30px color-mix(in oklab, var(--tint) 45%, transparent), var(--shadow);
+}
+.spot .spot-icon { transition: transform 600ms var(--ease-out); }
+.spot:hover .spot-icon { transform: rotate(-8deg) scale(1.08); }
+.reveal .tick {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 500ms var(--ease-out), transform 500ms var(--ease-out);
+}
+.reveal.is-in .tick { opacity: 1; transform: none; }
+
+/* The account diagram: dashes flow from the account to each app. */
+@keyframes flow {
+  to { stroke-dashoffset: -24; }
+}
+.flow { stroke-dasharray: 4 8; animation: flow 1.4s linear infinite; }
+@keyframes orbit-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.18); opacity: 0.15; }
+}
+.orbit-pulse { transform-box: fill-box; transform-origin: center; animation: orbit-pulse 3.2s var(--ease-in-out) infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .blob, .word-in, .swap-in, .bob, .tile-live, .sheen::after, .marquee, .flow, .orbit-pulse { animation: none !important; }
+  .reveal, .reveal .tick { opacity: 1; transform: none; transition: none; }
+  .spot, .spot .spot-icon { transition: none; }
+}
