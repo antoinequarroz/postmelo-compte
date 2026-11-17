@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { ProductIcon } from "@/components/product-icon";
 import { PRODUCT_STATUS_LABEL } from "@/lib/crm-labels";
 import { cn } from "@/lib/utils";
+import { appColor, readable } from "./color";
 import { AppMock } from "./mocks";
 import { Reveal } from "./reveal";
 import { useScrollProgress } from "./use-scroll";
@@ -14,12 +15,9 @@ export type StoryApp = { id: string; name: string; color: string; category: stri
 
 const FAMILY: Record<string, string> = { equipe: "Travailler ensemble", media: "Créer et diffuser" };
 
-/** An app colour as text: as is at night, a shade deeper on the paper so it stays readable. */
-const readable = (c: string) => `light-dark(color-mix(in oklab, ${c} 78%, black), ${c})`;
-
 function Copy({ a, n, total }: { a: StoryApp; n: number; total: number }) {
   // Without a colour (TickUp), the ink of the theme.
-  const c = a.color || "var(--ink)";
+  const c = appColor(a.color);
   return (
     <div>
       <p className="flex items-center gap-3 text-[12px] font-medium uppercase tracking-[0.16em] text-ink-3">
@@ -78,7 +76,7 @@ export function Story({ apps }: { apps: StoryApp[] }) {
     if (fill.current) fill.current.style.transform = `scaleY(${Math.min(1, x - i)})`;
   });
   const a = apps[active];
-  const color = a?.color || "var(--ink)";
+  const color = appColor(a?.color);
 
   return (
     <section id="suite" className="relative scroll-mt-0">
@@ -147,7 +145,7 @@ export function Story({ apps }: { apps: StoryApp[] }) {
       <div className="mx-auto flex max-w-[720px] flex-col gap-24 px-4 pb-24 sm:px-6 lg:hidden">
         {apps.map((x, n) => (
           <Reveal key={x.id} className="relative">
-            <div aria-hidden className="absolute -inset-x-10 -top-10 -z-10 h-[70%]" style={{ background: `radial-gradient(closest-side, color-mix(in oklab, ${x.color || "var(--ink)"} 18%, transparent), transparent)` }} />
+            <div aria-hidden className="absolute -inset-x-10 -top-10 -z-10 h-[70%]" style={{ background: `radial-gradient(closest-side, color-mix(in oklab, ${appColor(x.color)} 18%, transparent), transparent)` }} />
             <Copy a={x} n={n} total={apps.length} />
             <div className="mt-10 h-[380px] sm:h-[440px]">
               <AppMock id={x.id} name={x.name} color={x.color} on />
