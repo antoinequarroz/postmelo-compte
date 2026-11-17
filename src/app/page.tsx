@@ -1,6 +1,5 @@
 import { Fingerprint, KeyRound, ShieldCheck, Users } from "lucide-react";
 import type { Metadata, Viewport } from "next";
-import Link from "next/link";
 import { ContactForm } from "@/components/landing-contact";
 import { BeforeAfter } from "@/components/landing/before-after";
 import { Hero } from "@/components/landing/hero";
@@ -13,6 +12,7 @@ import { Logo } from "@/components/logo";
 import { ProductIcon } from "@/components/product-icon";
 import { CONTACT_EMAIL, SUITE_NAME, SUITE_TAGLINE } from "@/lib/brand";
 import { listProducts } from "@/server/crm";
+import { baseUrl } from "@/server/auth";
 import { currentSession } from "@/server/http";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +37,8 @@ export default async function HomePage() {
   const session = await currentSession().catch(() => null);
   const products = listProducts(true);
   const signedIn = !!session;
+  // Absolute: the same page is also served on postmelo.ch, where these paths belong to another app.
+  const account = baseUrl();
   const admin = session?.user.role === "admin";
   const apps = products.map((p) => ({ id: p.id, name: p.name, color: p.color, category: p.category, family: p.family, status: p.status }));
   const story = products.map((p) => ({
@@ -52,7 +54,7 @@ export default async function HomePage() {
   return (
     <div className="landing relative min-h-dvh overflow-x-clip">
       <div aria-hidden className="landing-grain" />
-      <Nav suite={SUITE_NAME} signedIn={signedIn} admin={admin} />
+      <Nav suite={SUITE_NAME} signedIn={signedIn} admin={admin} account={account} />
 
       <main>
         <Hero apps={apps} suite={SUITE_NAME} signedIn={signedIn} />
@@ -147,9 +149,9 @@ export default async function HomePage() {
           <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-ink">
             {CONTACT_EMAIL}
           </a>
-          <Link href={signedIn ? "/compte" : "/connexion"} className="ml-auto hover:text-ink">
+          <a href={`${account}${signedIn ? "/compte" : "/connexion"}`} className="ml-auto hover:text-ink">
             {signedIn ? "Mon compte" : "Se connecter"}
-          </Link>
+          </a>
         </div>
         <p aria-hidden className="pointer-events-none mt-4 select-none text-center font-display text-[25vw] leading-[0.75] tracking-[-0.03em] text-transparent [-webkit-text-stroke:1px_var(--outline)]"
           style={{ backgroundImage: "linear-gradient(180deg, var(--outline-fill), transparent 85%)", WebkitBackgroundClip: "text", backgroundClip: "text" }}
