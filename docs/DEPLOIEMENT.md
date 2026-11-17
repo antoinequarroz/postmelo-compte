@@ -78,6 +78,22 @@ postmelo.ch, www.postmelo.ch {
 
 Puis recharge Caddy comme ci-dessus.
 
+## 3 ter. Le paiement avec Stripe
+
+`/tarifs` et `/inscription` vivent sur compte.postmelo.ch (postmelo.ch/tarifs y redirige déjà avec le bloc ci-dessus).
+Sans Stripe, une inscription démarre l'essai gratuit sans carte. Pour encaisser :
+
+1. Sur dashboard.stripe.com, commence en **mode test**. Développeurs › Clés API : copie la clé secrète `sk_test_…`.
+2. Développeurs › Webhooks › Ajouter un endpoint : `https://compte.postmelo.ch/api/stripe/webhook`, avec les événements
+   `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`,
+   `customer.subscription.deleted`, `invoice.paid` et `invoice.payment_failed`. Copie le secret de signature `whsec_…`.
+3. Paramètres › Facturation › Portail client : active-le (factures, carte, résiliation, changement de nombre de places).
+4. Dans `~/compte/.env` : `STRIPE_SECRET_KEY=…` et `STRIPE_WEBHOOK_SECRET=…`, puis `cd ~/compte/deploy && docker compose up -d`.
+5. Admin › Produits : le bandeau Stripe passe au vert. Publie les formules, puis fais un achat avec la carte `4242 4242 4242 4242`.
+   Les licences arrivent dans Admin › Licences avec l'étiquette « Stripe ».
+
+Pour passer aux vrais paiements, refais 1 à 4 en mode réel (`sk_live_…` et un nouveau webhook avec son propre secret).
+
 ## 4. Reprendre les comptes de Lamio
 
 À faire avant de créer un compte à la main, pour garder les mêmes identifiants que dans Lamio.

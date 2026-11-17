@@ -8,8 +8,8 @@ import { primaryClass } from "@/lib/styles";
 import { setTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-/** A floating glass bar that tightens once the page moves. */
-export function Nav({ suite, signedIn, admin, account }: { suite: string; signedIn: boolean; admin: boolean; account: string }) {
+/** A floating glass bar that tightens once the page moves. On another page than the home, home is where its sections live ("/"). */
+export function Nav({ suite, signedIn, admin, account, home = "" }: { suite: string; signedIn: boolean; admin: boolean; account: string; home?: string }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 40);
@@ -31,10 +31,11 @@ export function Nav({ suite, signedIn, admin, account }: { suite: string; signed
           <span className="font-display text-[24px] leading-none">{suite}</span>
         </Link>
         <div className="flex flex-1 items-center justify-center gap-6 text-[13.5px] text-ink-2 max-md:hidden">
-          <a href="#pour-qui" className="hover:text-ink">Pour qui</a>
-          <a href="#suite" className="hover:text-ink">La suite</a>
-          <a href="#compte" className="hover:text-ink">Un seul compte</a>
-          <a href="#contact" className="hover:text-ink">Contact</a>
+          <a href={`${home}#pour-qui`} className="hover:text-ink">Pour qui</a>
+          <a href={`${home}#suite`} className="hover:text-ink">La suite</a>
+          <a href={`${home}#compte`} className="hover:text-ink">Un seul compte</a>
+          <a href={`${account}/tarifs`} className="hover:text-ink">Tarifs</a>
+          <a href={`${home}#contact`} className="hover:text-ink">Contact</a>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           {admin && (

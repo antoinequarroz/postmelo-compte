@@ -16,6 +16,10 @@ export const LICENSE_PLANS = ["essai", "standard", "pro", "entreprise"] as const
 export const LICENSE_STATUSES = ["essai", "actif", "suspendu", "resilie"] as const;
 export const DEAL_STAGES = ["nouveau", "qualifie", "proposition", "negociation", "gagne", "perdu"] as const;
 export const ACTIVITY_KINDS = ["note", "appel", "email", "rdv", "systeme"] as const;
+/** A pricing formula covers one app of the customer's choice, or the whole suite. */
+export const PLAN_SCOPES = ["app", "suite"] as const;
+/** Only published formulas are shown on /tarifs and can be bought. */
+export const PLAN_STATUSES = ["brouillon", "publie", "masque"] as const;
 
 /** Chance that a deal at this stage is won, for the weighted pipeline. */
 export const STAGE_ODDS: Record<(typeof DEAL_STAGES)[number], number> = { nouveau: 0.1, qualifie: 0.25, proposition: 0.5, negociation: 0.75, gagne: 1, perdu: 0 };
@@ -51,7 +55,39 @@ function migrate(conn: ReturnType<typeof db>) {
       .prepare("update crm_product set category = ?, tagline = ?, description = ? where id = 'metricove' and tagline = ? and description = ?")
       .run("Contenu et réseaux sociaux", "Créer, programmer et publier sur tous tes comptes.", "Posts et carrousels créés avec ta fiche de marque et l'IA\nInstagram, Facebook, X, LinkedIn et YouTube\nPosts programmés et publiés automatiquement, vidéos et Shorts\nUn seul calendrier éditorial pour tous les comptes", "Le calendrier éditorial et la publication sur tous tes comptes.", "Instagram, Facebook, X, LinkedIn et YouTube\nPosts programmés et publiés automatiquement\nVidéos, Shorts et relance en cas d'échec\nUn seul calendrier pour tous les comptes");
   });
+  // Licences bought online remember their formula and their Stripe subscription.
+  once("2026-11-licence-abonnement", () => {
+    conn.exec("alter table crm_license add column plan_id text");
+    conn.exec("alter table crm_license add column subscription_id text");
+    conn.exec("create index if not exists crm_license_subscription on crm_license(subscription_id)");
+  });
+  // Suggested formulas, as drafts: nothing is public until the prices are chosen and published in the admin.
+  once("2026-11-formules", () => {
+    const insert = conn.prepare(
+      "insert into crm_plan (id, name, tagline, features, scope, monthly_cents, yearly_discount, trial_days, highlight, status, sort, created_at) values (@id, @name, @tagline, @features, @scope, @monthly_cents, @yearly_discount, @trial_days, @highlight, 'brouillon', @sort, @created_at)",
+    );
+    PLANS.forEach((p, i) => insert.run({ ...p, sort: (i + 1) * 10, created_at: now() }));
+  });
 }
+
+/** The formulas suggested on day one. Prices are placeholders to be decided: they stay drafts until published. */
+const PLANS = [
+  {
+    id: "une-app", name: "Une app", scope: "app", monthly_cents: 900, yearly_discount: 17, trial_days: 14, highlight: 0,
+    tagline: "L'application dont tu as besoin, avec ton compte unique.",
+    features: "L'app de ton choix\nTon compte unique, Face ID et double authentification\nApps Mac et iPhone quand elles existent\nMises à jour incluses",
+  },
+  {
+    id: "suite", name: "Toute la suite", scope: "suite", monthly_cents: 2900, yearly_discount: 17, trial_days: 14, highlight: 1,
+    tagline: "Toutes les applications, un seul compte, un seul prix.",
+    features: "Toutes les apps disponibles, et les prochaines\nUn seul compte pour toute l'équipe\nLes accès de chacun, app par app\nSupport prioritaire",
+  },
+  {
+    id: "entreprise", name: "Entreprise", scope: "suite", monthly_cents: null, yearly_discount: 0, trial_days: 0, highlight: 0,
+    tagline: "Pour les grandes équipes, hébergé chez toi si tu veux.",
+    features: "Toute la suite\nHébergement sur ton serveur\nAccompagnement et reprise des données\nFacture annuelle",
+  },
+];
 
 function crm() {
   const conn = db();
@@ -125,6 +161,20 @@ function crm() {
       author text not null default '',
       at text not null
     );
+    create table if not exists crm_plan (
+      id text primary key,
+      name text not null,
+      tagline text not null default '',
+      features text not null default '',
+      scope text not null default 'app',
+      monthly_cents integer,
+      yearly_discount integer not null default 0,
+      trial_days integer not null default 0,
+      highlight integer not null default 0,
+      status text not null default 'brouillon',
+      sort integer not null default 0,
+      created_at text not null
+    );
     create index if not exists crm_contact_company on crm_contact(company_id);
     create index if not exists crm_license_company on crm_license(company_id);
     create index if not exists crm_deal_company on crm_deal(company_id);
@@ -193,7 +243,8 @@ export const today = () => new Date().toISOString().slice(0, 10);
 export type Product = { id: string; name: string; tagline: string; description: string; category: string; family: string; color: string; status: string; price_cents: number | null; url: string; sort: number };
 export type Company = { id: string; name: string; kind: string; email: string; phone: string; website: string; city: string; country: string; notes: string; created_at: string; updated_at: string };
 export type Contact = { id: string; company_id: string | null; name: string; email: string; phone: string; role: string; created_at: string };
-export type License = { id: string; company_id: string; product_id: string; plan: string; seats: number; price_cents: number; status: string; start_date: string; renewal_date: string | null; notes: string; created_at: string };
+export type License = { id: string; company_id: string; product_id: string; plan: string; seats: number; price_cents: number; status: string; start_date: string; renewal_date: string | null; notes: string; created_at: string; plan_id: string | null; subscription_id: string | null };
+export type Plan = { id: string; name: string; tagline: string; features: string; scope: (typeof PLAN_SCOPES)[number]; monthly_cents: number | null; yearly_discount: number; trial_days: number; highlight: number; status: string; sort: number };
 export type Deal = { id: string; company_id: string; product_id: string | null; title: string; value_cents: number; stage: string; expected_close: string | null; created_at: string; updated_at: string };
 export type Activity = { id: string; company_id: string; kind: string; body: string; author: string; at: string };
 
@@ -218,6 +269,18 @@ const SPECS = {
     status: { type: "enum", values: PRODUCT_STATUSES },
     price_cents: { type: "money", nullable: true },
     url: { type: "text", max: 300 },
+    sort: { type: "int", min: 0, max: 999 },
+  },
+  plan: {
+    name: { type: "text", max: 60, required: true },
+    tagline: { type: "text", max: 160 },
+    features: { type: "text", max: 1200 },
+    scope: { type: "enum", values: PLAN_SCOPES },
+    monthly_cents: { type: "money", nullable: true },
+    yearly_discount: { type: "int", min: 0, max: 90 },
+    trial_days: { type: "int", min: 0, max: 90 },
+    highlight: { type: "int", min: 0, max: 1 },
+    status: { type: "enum", values: PLAN_STATUSES },
     sort: { type: "int", min: 0, max: 999 },
   },
   company: {
@@ -265,7 +328,7 @@ const SPECS = {
 
 export type Kind = keyof typeof SPECS;
 export const KINDS = Object.keys(SPECS) as Kind[];
-const TABLE: Record<Kind, string> = { product: "crm_product", company: "crm_company", contact: "crm_contact", license: "crm_license", deal: "crm_deal", activity: "crm_activity" };
+const TABLE: Record<Kind, string> = { plan: "crm_plan", product: "crm_product", company: "crm_company", contact: "crm_contact", license: "crm_license", deal: "crm_deal", activity: "crm_activity" };
 
 const LABEL: Record<string, string> = {
   name: "Le nom", title: "Le titre", body: "Le texte", company_id: "Le client", product_id: "Le produit", email: "L'e-mail",
@@ -356,9 +419,9 @@ export function create(kind: Kind, input: Record<string, unknown>, author = ""):
   const data = clean(kind, input);
   const stamp = now();
   let id: string = newId();
-  if (kind === "product") {
+  if (kind === "product" || kind === "plan") {
     id = slug(String(data.name)) || id;
-    if (conn.prepare("select 1 from crm_product where id = ?").get(id)) throw new CrmError("Un produit porte déjà ce nom.", 409);
+    if (conn.prepare(`select 1 from ${TABLE[kind]} where id = ?`).get(id)) throw new CrmError(kind === "plan" ? "Une formule porte déjà ce nom." : "Un produit porte déjà ce nom.", 409);
   }
   const row: Record<string, unknown> = { ...data, id };
   if (kind === "company" || kind === "deal") Object.assign(row, { created_at: stamp, updated_at: stamp });
@@ -412,6 +475,10 @@ export function remove(kind: Kind, id: string) {
     const used = conn.prepare("select count(*) as n from crm_license where product_id = ?").get(id) as { n: number };
     if (used.n) throw new CrmError("Ce produit a encore des licences : masque-le plutôt que de le supprimer.", 409);
   }
+  if (kind === "plan") {
+    const used = conn.prepare("select count(*) as n from crm_license where plan_id = ?").get(id) as { n: number };
+    if (used.n) throw new CrmError("Des clients ont souscrit cette formule : masque-la plutôt que de la supprimer.", 409);
+  }
   const res = conn.prepare(`delete from ${TABLE[kind]} where id = ?`).run(id);
   if (!res.changes) throw new CrmError("Cet élément n'existe plus.", 404);
 }
@@ -419,14 +486,14 @@ export function remove(kind: Kind, id: string) {
 const STAGE_NAMES: Record<string, string> = { nouveau: "Nouveau", qualifie: "Qualifié", proposition: "Proposition", negociation: "Négociation", gagne: "Gagné", perdu: "Perdu" };
 const LICENSE_NAMES: Record<string, string> = { essai: "à l'essai", actif: "active", suspendu: "suspendue", resilie: "résiliée" };
 
-const productName = (id: string) => (crm().prepare("select name from crm_product where id = ?").get(id) as { name: string } | undefined)?.name ?? id;
+export const productName = (id: string) => (crm().prepare("select name from crm_product where id = ?").get(id) as { name: string } | undefined)?.name ?? id;
 
 /** A prospect that buys becomes a client. */
-function promote(companyId: string) {
+export function promote(companyId: string) {
   crm().prepare("update crm_company set kind = 'client', updated_at = ? where id = ? and kind in ('prospect', 'ancien')").run(now(), companyId);
 }
 
-function log(companyId: string, body: string, author = "") {
+export function log(companyId: string, body: string, author = "") {
   crm().prepare("insert into crm_activity (id, company_id, kind, body, author, at) values (?, ?, 'systeme', ?, ?, ?)").run(newId(), companyId, body, author, now());
 }
 
@@ -463,6 +530,16 @@ export const listProducts = (publicOnly = false) =>
   crm()
     .prepare(`select * from crm_product ${publicOnly ? "where status != 'masque'" : ""} order by sort, name`)
     .all() as Product[];
+
+export const listPlans = (publicOnly = false) =>
+  crm()
+    .prepare(`select * from crm_plan ${publicOnly ? "where status = 'publie'" : ""} order by sort, name`)
+    .all() as Plan[];
+
+export const getPlan = (id: string) => crm().prepare("select * from crm_plan where id = ?").get(id) as Plan | undefined;
+
+/** The CRM connection, for the billing module (src/server/billing.ts) that writes licences from Stripe. */
+export const crmDb = () => crm();
 
 export type CompanyRow = Company & { contacts: number; licenses: number; mrr_cents: number; open_deals: number; last_activity: string | null };
 

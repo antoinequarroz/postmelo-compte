@@ -160,6 +160,9 @@ export default async function HomePage() {
           <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-ink">
             {CONTACT_EMAIL}
           </a>
+          <a href={`${account}/tarifs`} className="hover:text-ink">
+            Tarifs
+          </a>
           <a href={`${account}${signedIn ? "/compte" : "/connexion"}`} className="ml-auto hover:text-ink">
             {signedIn ? "Mon compte" : "Se connecter"}
           </a>

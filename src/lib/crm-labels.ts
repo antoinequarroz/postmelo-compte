@@ -5,6 +5,8 @@ export const PRODUCT_STATUS_LABEL: Record<string, string> = { disponible: "Dispo
 export const PLAN_LABEL: Record<string, string> = { essai: "Essai", standard: "Standard", pro: "Pro", entreprise: "Entreprise" };
 export const LICENSE_STATUS_LABEL: Record<string, string> = { essai: "À l'essai", actif: "Active", suspendu: "Suspendue", resilie: "Résiliée" };
 export const STAGE_LABEL: Record<string, string> = { nouveau: "Nouveau", qualifie: "Qualifié", proposition: "Proposition", negociation: "Négociation", gagne: "Gagné", perdu: "Perdu" };
+export const PLAN_STATUS_LABEL: Record<string, string> = { brouillon: "Brouillon", publie: "Publiée", masque: "Masquée" };
+export const PLAN_SCOPE_LABEL: Record<string, string> = { app: "Une app au choix", suite: "Toute la suite" };
 export const ACTIVITY_LABEL: Record<string, string> = { note: "Note", appel: "Appel", email: "E-mail", rdv: "Rendez-vous", systeme: "Suivi" };
 
 /** Tone of a status badge: ok, warn, danger, accent or neutral. */
@@ -12,6 +14,7 @@ export type Tone = "ok" | "warn" | "danger" | "accent" | "neutral";
 export const KIND_TONE: Record<string, Tone> = { prospect: "warn", client: "ok", partenaire: "accent", ancien: "neutral" };
 export const LICENSE_TONE: Record<string, Tone> = { essai: "warn", actif: "ok", suspendu: "danger", resilie: "neutral" };
 export const PRODUCT_TONE: Record<string, Tone> = { disponible: "ok", beta: "accent", bientot: "warn", masque: "neutral" };
+export const PLAN_TONE: Record<string, Tone> = { brouillon: "warn", publie: "ok", masque: "neutral" };
 export const STAGE_TONE: Record<string, Tone> = { nouveau: "neutral", qualifie: "accent", proposition: "accent", negociation: "warn", gagne: "ok", perdu: "danger" };
 
 // Formatted by hand: Node and the browsers do not group thousands the same way in fr-CH,
