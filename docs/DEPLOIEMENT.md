@@ -57,11 +57,17 @@ Puis recharge Caddy : `docker exec antoinequarroz-caddy caddy reload --config /e
 À faire avant de créer un compte à la main, pour garder les mêmes identifiants que dans Lamio.
 La base de Lamio est seulement lue.
 
+Lamio écrit en mode WAL : les données récentes sont dans `app.db-wal`, pas dans `app.db` seul.
+Il faut donc copier les trois fichiers ensemble, sinon l'import échoue avec « no such table: users ».
+
 ```bash
-docker cp lamio:/data/app.db /tmp/lamio-app.db
-docker cp /tmp/lamio-app.db compte:/tmp/lamio-app.db
-docker exec compte node scripts/import-lamio.mjs /tmp/lamio-app.db /data
-docker exec compte rm /tmp/lamio-app.db && rm /tmp/lamio-app.db
+mkdir -p /tmp/lamio-import
+for f in app.db app.db-wal app.db-shm; do
+  docker cp lamio:/data/$f /tmp/lamio-import/$f 2>/dev/null || true
+done
+docker cp /tmp/lamio-import compte:/tmp/lamio-import
+docker exec compte node scripts/import-lamio.mjs /tmp/lamio-import/app.db /data
+docker exec -u root compte rm -rf /tmp/lamio-import && rm -rf /tmp/lamio-import
 ```
 
 Ouvre ensuite https://compte.postmelo.ch et connecte-toi avec ton e-mail et ton mot de passe de Lamio.
