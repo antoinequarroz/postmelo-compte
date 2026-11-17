@@ -31,6 +31,7 @@ export function Nav({ suite, signedIn, admin, account }: { suite: string; signed
           <span className="font-display text-[24px] leading-none">{suite}</span>
         </Link>
         <div className="flex flex-1 items-center justify-center gap-6 text-[13.5px] text-ink-2 max-md:hidden">
+          <a href="#pour-qui" className="hover:text-ink">Pour qui</a>
           <a href="#suite" className="hover:text-ink">La suite</a>
           <a href="#compte" className="hover:text-ink">Un seul compte</a>
           <a href="#contact" className="hover:text-ink">Contact</a>

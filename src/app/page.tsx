@@ -2,9 +2,12 @@ import { Fingerprint, KeyRound, ShieldCheck, Users } from "lucide-react";
 import type { Metadata, Viewport } from "next";
 import { ContactForm } from "@/components/landing-contact";
 import { BeforeAfter } from "@/components/landing/before-after";
+import { Faq } from "@/components/landing/faq";
 import { Hero } from "@/components/landing/hero";
 import { Hub } from "@/components/landing/hub";
+import { Journey } from "@/components/landing/journey";
 import { Nav } from "@/components/landing/nav";
+import { Profiles } from "@/components/landing/profiles";
 import { Reveal } from "@/components/landing/reveal";
 import { Statement } from "@/components/landing/statement";
 import { Story } from "@/components/landing/story";
@@ -74,6 +77,8 @@ export default async function HomePage() {
           </ul>
         </div>
 
+        <Profiles apps={apps} suite={SUITE_NAME} />
+
         <Story apps={story} />
 
         <Statement text="Un seul compte. Un seul design. Toutes tes applications, enfin au même endroit." accent={["compte", "design", "endroit"]} />
@@ -114,7 +119,11 @@ export default async function HomePage() {
           </div>
         </section>
 
+        <Journey apps={apps} />
+
         <BeforeAfter />
+
+        <Faq apps={apps} suite={SUITE_NAME} />
 
         {/* Contact */}
         <section id="contact" className="relative scroll-mt-20 overflow-hidden">

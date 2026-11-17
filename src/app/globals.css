@@ -484,3 +484,50 @@ html:has(.landing) body {
   .msg, .typing span, .card-move, .vu, .rec, .caret, .sweep::after, .graph, .flow, .bob, .orbit-pulse { animation: none !important; }
   .reveal { opacity: 1; transform: none; filter: none; transition: none; }
 }
+
+/* The podcast week (components/landing/journey.tsx): a step waits, dimmed, until the line reaches its app. */
+.journey-dot::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 20px;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--c) 34%, transparent), transparent);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out);
+}
+.journey-dot > * {
+  transition: transform 700ms var(--ease-out), filter 700ms var(--ease-out), opacity 700ms var(--ease-out);
+}
+.journey-card {
+  transition: opacity 800ms var(--ease-out), transform 900ms var(--ease-out);
+}
+.journey-step[data-on] .journey-dot::before {
+  opacity: 1;
+  transform: scale(1.35);
+}
+[data-armed] .journey-step:not([data-on]) .journey-dot > * {
+  transform: scale(0.82);
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+/* On the card itself, not an ancestor: an ancestor with opacity or a filter would switch off its glass blur. */
+[data-armed] .journey-step:not([data-on]) .journey-card {
+  opacity: 0.28;
+  transform: translateY(18px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .journey-dot::before, .journey-dot > *, .journey-card { transition: none; }
+}
+
+/* The questions open smoothly where the browser can animate to the height of their content. */
+.faq { interpolate-size: allow-keywords; }
+.faq::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition: block-size 500ms var(--ease-out), content-visibility 500ms allow-discrete;
+}
+.faq[open]::details-content { block-size: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .faq::details-content { transition: none; }
+}
