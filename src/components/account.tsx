@@ -24,7 +24,7 @@ export function Title({ children, hint }: { children: React.ReactNode; hint?: st
   );
 }
 
-export function Account({ me, sessionToken, tools }: { me: Me; sessionToken: string; tools: ToolInfo[] }) {
+export function Account({ me, sessionToken, tools, subscription }: { me: Me; sessionToken: string; tools: ToolInfo[]; subscription?: React.ReactNode }) {
   const signOut = async () => {
     await authClient.signOut();
     window.location.href = "/connexion";
@@ -42,6 +42,7 @@ export function Account({ me, sessionToken, tools }: { me: Me; sessionToken: str
           <span className="max-sm:hidden">Se déconnecter</span>
         </Button>
       </header>
+      {subscription}
       <Tools tools={tools} />
       <Profile me={me} />
       <Password />

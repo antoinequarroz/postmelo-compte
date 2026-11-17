@@ -50,7 +50,7 @@ export function ProductList({ products, stats, texts = [] }: { products: Product
                       <Badge tone={PRODUCT_TONE[p.status]}>{PRODUCT_STATUS_LABEL[p.status]}</Badge>
                     </p>
                     <p className="mt-0.5 text-[12px] text-ink-3">
-                      {[p.category, FAMILY_LABEL[p.family]].filter(Boolean).join(" · ")} · {p.price_cents != null ? `${money(p.price_cents)} / mois` : "prix sur demande"}
+                      {[p.category, FAMILY_LABEL[p.family]].filter(Boolean).join(" · ")} · {p.price_cents != null ? `${money(p.price_cents)} / personne / mois` : "prix de la formule"}
                     </p>
                   </div>
                   <ProductTranslations product={p} texts={texts.filter((t) => t.product_id === p.id)} />

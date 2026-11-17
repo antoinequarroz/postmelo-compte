@@ -3,9 +3,9 @@ import { CONTACT_EMAIL, SUITE_NAME } from "@/lib/brand";
 import { LOCALE_NAME, LOCALES, localePath, type Locale } from "@/lib/i18n";
 
 const T = {
-  fr: { blog: "Blog", changelog: "Nouveautés", mine: "Mon compte", signIn: "Se connecter" },
-  en: { blog: "Blog", changelog: "What's new", mine: "My account", signIn: "Sign in" },
-  de: { blog: "Blog", changelog: "Neuigkeiten", mine: "Mein Konto", signIn: "Anmelden" },
+  fr: { pricing: "Tarifs", blog: "Blog", changelog: "Nouveautés", mine: "Mon compte", signIn: "Se connecter" },
+  en: { pricing: "Pricing", blog: "Blog", changelog: "What's new", mine: "My account", signIn: "Sign in" },
+  de: { pricing: "Preise", blog: "Blog", changelog: "Neuigkeiten", mine: "Mein Konto", signIn: "Anmelden" },
 };
 
 /** The foot of every public page: the links, the languages, and the name of the suite drawn in outline. */
@@ -17,6 +17,9 @@ export function SiteFooter({ locale, signedIn, account, languages }: { locale: L
         <a href={localePath(locale, "/")} className="flex items-center gap-2.5 hover:text-ink">
           <SuiteLogo className="size-6" />
           <span>© {new Date().getFullYear()} {SUITE_NAME}</span>
+        </a>
+        <a href={`${account}/tarifs`} className="hover:text-ink">
+          {t.pricing}
         </a>
         <a href={localePath(locale, "/blog")} className="hover:text-ink">
           {t.blog}

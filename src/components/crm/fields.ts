@@ -1,4 +1,4 @@
-import { ACTIVITY_LABEL, FIGURE_SOURCE_LABEL, PROOF_STATUS_LABEL, KIND_LABEL, LICENSE_STATUS_LABEL, PLAN_LABEL, PRODUCT_STATUS_LABEL, STAGE_LABEL } from "@/lib/crm-labels";
+import { ACTIVITY_LABEL, FIGURE_SOURCE_LABEL, PROOF_STATUS_LABEL, KIND_LABEL, LICENSE_STATUS_LABEL, PLAN_LABEL, PLAN_SCOPE_LABEL, PLAN_STATUS_LABEL, PRODUCT_STATUS_LABEL, STAGE_LABEL } from "@/lib/crm-labels";
 import type { FieldDef } from "./kit";
 
 type Option = { id: string; name: string };
@@ -52,8 +52,21 @@ export const productFields: FieldDef[] = [
   { key: "tagline", label: "Accroche", hint: "Une phrase, affichée sur la page d'accueil." },
   { key: "description", label: "Points forts", type: "textarea", hint: "Un point par ligne, affichés avec une coche." },
   { key: "status", label: "Statut", type: "select", options: opts(PRODUCT_STATUS_LABEL), half: true, hint: "« Masqué » le retire de la page d'accueil." },
-  { key: "price_cents", label: "Prix affiché (CHF / mois)", type: "money", nullable: true, half: true, hint: "Vide : « Sur demande »." },
+  { key: "price_cents", label: "Prix (CHF / personne / mois)", type: "money", nullable: true, half: true, hint: "Prix de l'app dans la formule « Une app ». Vide : le prix de la formule." },
   { key: "url", label: "Lien « Découvrir »", type: "url", half: true, placeholder: "https://" },
+  { key: "sort", label: "Ordre", type: "int", half: true },
+];
+
+export const planFields: FieldDef[] = [
+  { key: "name", label: "Nom", required: true, half: true },
+  { key: "scope", label: "Contenu", type: "select", options: opts(PLAN_SCOPE_LABEL), half: true },
+  { key: "tagline", label: "Accroche", hint: "Une phrase sous le nom, sur /tarifs." },
+  { key: "features", label: "Ce qui est inclus", type: "textarea", hint: "Un point par ligne, affichés avec une coche." },
+  { key: "monthly_cents", label: "Prix (CHF / personne / mois)", type: "money", nullable: true, half: true, hint: "Vide : « Sur devis » (bouton Nous écrire)." },
+  { key: "yearly_discount", label: "Remise à l'année (%)", type: "int", half: true, hint: "0 : même prix au mois et à l'année." },
+  { key: "trial_days", label: "Essai gratuit (jours)", type: "int", half: true, hint: "0 : pas d'essai, paiement tout de suite." },
+  { key: "highlight", label: "Mise en avant", type: "select", options: [{ value: "0", label: "Non" }, { value: "1", label: "Oui, « Le plus choisi »" }], half: true },
+  { key: "status", label: "Statut", type: "select", options: opts(PLAN_STATUS_LABEL), half: true, hint: "Seules les formules publiées sont visibles et achetables." },
   { key: "sort", label: "Ordre", type: "int", half: true },
 ];
 

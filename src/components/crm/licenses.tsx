@@ -96,7 +96,14 @@ export function LicenseTable({ licenses, products }: { licenses: LicenseRow[]; p
                       {l.product_name}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-ink-2">{PLAN_LABEL[l.plan]}</td>
+                  <td className="px-3 py-2 text-ink-2">
+                    {PLAN_LABEL[l.plan]}
+                    {l.subscription_id ? (
+                      <span title="Abonnement Stripe : suit les paiements tout seul" className="ml-1.5 rounded-full bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-medium text-accent">Stripe</span>
+                    ) : l.plan_id ? (
+                      <span title="Souscrite en ligne" className="ml-1.5 rounded-full bg-ink/6 px-1.5 py-0.5 text-[10.5px] font-medium text-ink-2">En ligne</span>
+                    ) : null}
+                  </td>
                   <td className="tabular px-3 py-2 text-right text-ink-2">{l.seats}</td>
                   <td className="tabular px-3 py-2 text-right">{money(l.price_cents)}</td>
                   <td className="px-3 py-2">

@@ -16,7 +16,15 @@ Le nom affiché est défini à un seul endroit, `src/lib/brand.ts`.
     opportunités et journal (notes, appels, e-mails, rendez-vous, et tout ce qui a changé). Export CSV.
   - Licences : par client et par produit, formule, places, prix mensuel, statut, date de renouvellement. Export CSV.
   - Pipeline : les opportunités en colonnes, à glisser d'une étape à l'autre. Gagner fait passer le prospect en client.
-  - Produits : le catalogue (nom, couleur, accroche, points forts, statut, prix affiché). « Masqué » le retire de la page d'accueil.
+  - Produits : le catalogue (nom, couleur, accroche, points forts, statut, prix par personne). « Masqué » le retire de la page d'accueil.
+    Au-dessus, les **formules** vendues sur `/tarifs` (une app au choix ou toute la suite, prix par personne et par mois,
+    remise à l'année, jours d'essai). Elles commencent en brouillon : seules les formules publiées sont visibles et achetables.
+- **Tarifs, inscription et paiement** : `/tarifs` montre les formules publiées (aperçu des brouillons pour l'admin avec
+  `/tarifs?apercu=1`). `/inscription` crée le compte et l'entreprise dans le CRM, puis envoie vers Stripe Checkout
+  (essai gratuit compris). Stripe prévient le webhook `/api/stripe/webhook` de chaque paiement et de chaque changement
+  d'abonnement : les licences se créent et se mettent à jour seules dans le CRM, et les applications s'ouvrent au compte.
+  Sans clés Stripe, l'inscription démarre directement l'essai gratuit, sans carte. Dans « Mon compte », le client voit ses
+  licences et ouvre la page Stripe pour ses factures, sa carte ou la résiliation.
 
 - **Connexion** par e-mail et mot de passe, ou par clé d'accès (Face ID, Touch ID, clé de sécurité).
 - **Double authentification** par application (code à six chiffres), avec codes de secours.
@@ -26,7 +34,7 @@ Le nom affiché est défini à un seul endroit, `src/lib/brand.ts`.
   (code d'autorisation + PKCE, jetons signés, déconnexion). Voir [docs/BRANCHER-UN-OUTIL.md](docs/BRANCHER-UN-OUTIL.md).
 - **Reprise des comptes de Lamio**, avec les mêmes identifiants et les mêmes mots de passe.
 
-Pas d'inscription libre : le premier compte créé est l'administrateur, qui ajoute les autres.
+Le premier compte créé est l'administrateur, qui ajoute les autres. Les clients, eux, s'inscrivent en choisissant une formule sur `/tarifs`.
 
 ## Sur quoi ça repose
 
@@ -46,6 +54,8 @@ La partie sensible n'est pas écrite ici : elle vient de [Better Auth](https://w
 | `src/server/crm.ts` | Le CRM : tables, règles, catalogue de départ, tableau de bord, export CSV |
 | `src/app/admin`, `src/components/crm` | Les pages de l'admin |
 | `src/app/api/crm`, `src/app/api/contact` | L'API de l'admin et le formulaire de contact |
+| `src/server/billing.ts`, `src/lib/pricing.ts` | Inscription, Stripe, licences qui suivent l'abonnement, calcul des prix |
+| `src/app/tarifs`, `src/app/inscription`, `src/app/api/stripe` | La page des tarifs, l'inscription et le webhook Stripe |
 | `clients/compte.ts` | Le fichier à copier dans un outil pour le brancher |
 | `exemples/outil-demo.ts` | Un outil minuscule qui se connecte avec le compte |
 | `scripts/import-lamio.mjs` | La reprise des comptes de Lamio |

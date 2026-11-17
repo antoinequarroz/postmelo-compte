@@ -10,9 +10,9 @@ import { setTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const T = {
-  fr: { who: "Pour qui", suite: "La suite", demos: "Démos", account: "Un seul compte", blog: "Blog", contact: "Contact", mine: "Mon compte", signIn: "Se connecter", theme: "Clair ou sombre", toDark: "Passer en mode sombre", toLight: "Passer en mode clair", language: "Langue" },
-  en: { who: "Who it's for", suite: "The suite", demos: "Demos", account: "One account", blog: "Blog", contact: "Contact", mine: "My account", signIn: "Sign in", theme: "Light or dark", toDark: "Switch to dark mode", toLight: "Switch to light mode", language: "Language" },
-  de: { who: "Für wen", suite: "Die Suite", demos: "Demos", account: "Ein Konto", blog: "Blog", contact: "Kontakt", mine: "Mein Konto", signIn: "Anmelden", theme: "Hell oder dunkel", toDark: "Zum dunklen Modus wechseln", toLight: "Zum hellen Modus wechseln", language: "Sprache" },
+  fr: { who: "Pour qui", suite: "La suite", demos: "Démos", account: "Un seul compte", blog: "Blog", pricing: "Tarifs", contact: "Contact", mine: "Mon compte", signIn: "Se connecter", theme: "Clair ou sombre", toDark: "Passer en mode sombre", toLight: "Passer en mode clair", language: "Langue" },
+  en: { who: "Who it's for", suite: "The suite", demos: "Demos", account: "One account", blog: "Blog", pricing: "Pricing", contact: "Contact", mine: "My account", signIn: "Sign in", theme: "Light or dark", toDark: "Switch to dark mode", toLight: "Switch to light mode", language: "Language" },
+  de: { who: "Für wen", suite: "Die Suite", demos: "Demos", account: "Ein Konto", blog: "Blog", pricing: "Preise", contact: "Kontakt", mine: "Mein Konto", signIn: "Anmelden", theme: "Hell oder dunkel", toDark: "Zum dunklen Modus wechseln", toLight: "Zum hellen Modus wechseln", language: "Sprache" },
 } satisfies Record<Locale, Record<string, string>>;
 
 /**
@@ -63,6 +63,7 @@ export function Nav({
           <a href={`${home}#demos`} className="hover:text-ink max-lg:hidden">{t.demos}</a>
           <a href={`${home}#compte`} className="hover:text-ink max-xl:hidden">{t.account}</a>
           <Link href={localePath(locale, "/blog")} className="hover:text-ink">{t.blog}</Link>
+          <a href={`${account}/tarifs`} className="hover:text-ink">{t.pricing}</a>
           <a href={`${home}#contact`} className="hover:text-ink">{t.contact}</a>
         </div>
         <div className="ml-auto flex items-center gap-1.5 max-sm:gap-0.5">
