@@ -1,19 +1,19 @@
 # Mettre le service de compte en ligne sur le VPS
 
-À la fin de ce guide : **https://compte.antoinequarroz.ch**, avec les comptes de Lamio repris, et rien de cassé :
+À la fin de ce guide : **https://compte.postmelo.ch**, avec les comptes de Lamio repris, et rien de cassé :
 tant qu'aucun outil n'est branché dessus, le service tourne à côté du reste sans rien changer.
 
-Le sous-domaine `compte` est une proposition : choisis-le bien, car le changer plus tard oblige à reconfigurer
-chaque outil et invalide les clés d'accès déjà enregistrées.
+L'adresse est celle de la suite (`postmelo.ch`), pas celle d'un outil. Elle est faite pour durer : la changer plus tard
+oblige à reconfigurer chaque outil et invalide les clés d'accès déjà enregistrées.
 
 ## 1. DNS
 
-Un enregistrement **A** `compte` vers l'IP du VPS, chez Infomaniak. Pour vérifier : `dig +short compte.antoinequarroz.ch`.
+Un enregistrement **A** `compte` dans la zone `postmelo.ch`, vers l'IP du VPS, chez le registraire du domaine. Pour vérifier : `dig +short compte.postmelo.ch`.
 
 ## 2. Installer
 
 ```bash
-git clone <adresse du dépôt> ~/compte
+git clone https://github.com/antoinequarroz/postmelo-compte ~/compte
 cd ~/compte
 cp .env.example .env && chmod 600 .env
 nano .env
@@ -22,7 +22,7 @@ nano .env
 Au minimum :
 
 ```env
-COMPTE_URL=https://compte.antoinequarroz.ch
+COMPTE_URL=https://compte.postmelo.ch
 AUTH_SECRET=<openssl rand -base64 32>
 ```
 
@@ -39,7 +39,7 @@ docker ps --filter name=compte     # doit devenir « healthy »
 Garde une copie du Caddyfile (`~/.config/antoinequarroz-vitrine/runtime/Caddyfile`), puis ajoute :
 
 ```caddy
-compte.antoinequarroz.ch {
+compte.postmelo.ch {
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -64,7 +64,7 @@ docker exec compte node scripts/import-lamio.mjs /tmp/lamio-app.db /data
 docker exec compte rm /tmp/lamio-app.db && rm /tmp/lamio-app.db
 ```
 
-Ouvre ensuite https://compte.antoinequarroz.ch et connecte-toi avec ton e-mail et ton mot de passe de Lamio.
+Ouvre ensuite https://compte.postmelo.ch et connecte-toi avec ton e-mail et ton mot de passe de Lamio.
 Active la double authentification et ajoute une clé d'accès.
 
 Si Lamio n'a encore aucun compte, saute cette étape : la page de connexion propose de créer le premier compte, qui sera l'administrateur.

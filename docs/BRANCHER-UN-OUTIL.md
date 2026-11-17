@@ -18,7 +18,7 @@ L'adresse de retour n'est pas un paramètre : c'est toujours `<adresse de l'outi
 ## 2. Configurer l'outil
 
 ```env
-COMPTE_URL=https://compte.antoinequarroz.ch
+COMPTE_URL=https://compte.postmelo.ch
 COMPTE_CLIENT_ID=cairn
 COMPTE_CLIENT_SECRET=<le même secret>
 APP_URL=https://cairn.antoinequarroz.ch
