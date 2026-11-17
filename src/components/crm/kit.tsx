@@ -83,7 +83,7 @@ export function DeleteButton({ onConfirm, label = "Supprimer", compact }: { onCo
 export type FieldDef = {
   key: string;
   label: string;
-  type?: "text" | "email" | "url" | "textarea" | "select" | "money" | "int" | "date";
+  type?: "text" | "email" | "url" | "textarea" | "select" | "money" | "int" | "date" | "image";
   options?: { value: string; label: string }[];
   required?: boolean;
   hint?: string;
@@ -165,7 +165,9 @@ export function RecordModal({
           return (
             <div key={f.key} className={f.half ? "col-span-1 max-sm:col-span-2" : "col-span-2"}>
               <Field label={f.label} hint={f.hint}>
-                {f.type === "textarea" ? (
+                {f.type === "image" ? (
+                  <ImageInput value={values[f.key]} onChange={(v) => setValues((s) => ({ ...s, [f.key]: v }))} onError={setError} />
+                ) : f.type === "textarea" ? (
                   <textarea rows={4} {...common} className={`${inputClass} h-auto resize-y py-2 leading-relaxed`} />
                 ) : f.type === "select" ? (
                   <select {...common} className={inputClass}>
@@ -212,5 +214,57 @@ export function NewButton({ children, variant = "primary", ...modal }: Omit<Para
       </Button>
       {open && <RecordModal {...modal} onClose={() => setOpen(false)} />}
     </>
+  );
+}
+
+const IMAGE_MAX = 300 * 1024;
+
+/** An image picked from the computer (kept as a data: address) or the address of one. */
+function ImageInput({ value, onChange, onError }: { value: string; onChange: (v: string) => void; onError: (e: string) => void }) {
+  const pick = (file?: File) => {
+    if (!file) return;
+    if (!/^image\/(png|jpeg|webp|gif|svg\+xml)$/.test(file.type)) return onError("Choisis une image PNG, JPEG, WebP, GIF ou SVG.");
+    if (file.size > IMAGE_MAX) return onError("Cette image dépasse 300 Ko.");
+    const reader = new FileReader();
+    reader.onload = () => {
+      onError("");
+      onChange(String(reader.result));
+    };
+    reader.readAsDataURL(file);
+  };
+  const isData = value.startsWith("data:");
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex h-14 w-28 shrink-0 items-center justify-center rounded-lg border border-dashed border-line-strong bg-bg-2 p-2">
+        {value ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={value} alt="" className="max-h-full max-w-full object-contain" />
+        ) : (
+          <span className="text-[11.5px] text-ink-3">Aucune</span>
+        )}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <input
+          type="text"
+          value={isData ? "Image envoyée depuis l'ordinateur" : value}
+          readOnly={isData}
+          placeholder="https://… ou choisir un fichier"
+          onChange={(e) => onChange(e.target.value)}
+          className={inputClass}
+          aria-label="Adresse de l'image"
+        />
+        <div className="flex gap-2">
+          <label className="press inline-flex h-7 cursor-pointer items-center rounded-lg border border-line-strong px-2.5 text-[12.5px] hover:bg-ink/5">
+            Choisir un fichier
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
+          </label>
+          {value && (
+            <button type="button" className="text-[12.5px] text-ink-3 hover:text-danger" onClick={() => onChange("")}>
+              Retirer
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

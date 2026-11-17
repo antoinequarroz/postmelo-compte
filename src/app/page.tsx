@@ -7,6 +7,7 @@ import { Hero } from "@/components/landing/hero";
 import { Hub } from "@/components/landing/hub";
 import { Journey } from "@/components/landing/journey";
 import { Nav } from "@/components/landing/nav";
+import { Proof } from "@/components/landing/proof";
 import { Profiles } from "@/components/landing/profiles";
 import { Reveal } from "@/components/landing/reveal";
 import { Statement } from "@/components/landing/statement";
@@ -14,7 +15,7 @@ import { Story } from "@/components/landing/story";
 import { SuiteLogo } from "@/components/logo";
 import { ProductIcon } from "@/components/product-icon";
 import { CONTACT_EMAIL, SUITE_NAME, SUITE_TAGLINE } from "@/lib/brand";
-import { listProducts } from "@/server/crm";
+import { listProducts, publicProof } from "@/server/crm";
 import { baseUrl } from "@/server/auth";
 import { currentSession } from "@/server/http";
 
@@ -41,6 +42,7 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const session = await currentSession().catch(() => null);
   const products = listProducts(true);
+  const proof = publicProof();
   const signedIn = !!session;
   // Absolute: the same page is also served on postmelo.ch, where these paths belong to another app.
   const account = baseUrl();
@@ -122,6 +124,8 @@ export default async function HomePage() {
         <Journey apps={apps} />
 
         <BeforeAfter />
+
+        <Proof proof={proof} />
 
         <Faq apps={apps} suite={SUITE_NAME} />
 
