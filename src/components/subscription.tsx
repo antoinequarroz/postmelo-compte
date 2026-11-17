@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUpRight, PartyPopper } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Title } from "@/components/account";
@@ -56,7 +57,7 @@ export function Subscription({ company, portal, licences, welcome }: Props) {
       <div className="flex flex-wrap items-center gap-2">
         {total > 0 && <span className="text-[13px] text-ink-3">Environ <span className="font-medium text-ink">{money(total)}</span> par mois</span>}
         <span className="ml-auto" />
-        <a href="/tarifs" className="inline-flex h-8 items-center rounded-lg px-2.5 text-[13px] text-ink-2 hover:bg-ink/5 hover:text-ink">Voir les formules</a>
+        <Link href="/tarifs" className="inline-flex h-8 items-center rounded-lg px-2.5 text-[13px] text-ink-2 hover:bg-ink/5 hover:text-ink">Voir les formules</Link>
         {portal && (
           <Button size="sm" onClick={open} disabled={busy}>
             Factures et paiement <ArrowUpRight className="size-3.5" />

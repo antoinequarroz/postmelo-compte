@@ -3,6 +3,7 @@ import { ProductList } from "@/components/crm/products";
 import { PageHeader } from "@/components/ui";
 import { baseUrl } from "@/server/auth";
 import { stripeMode, webhookReady } from "@/server/billing";
+import { listProductTexts } from "@/server/content";
 import { crmDb, dashboard, listPlans, listProducts } from "@/server/crm";
 
 export const dynamic = "force-dynamic";
@@ -16,9 +17,9 @@ export default async function ProductsPage() {
   );
   return (
     <>
-      <PageHeader title="Produits" subtitle="Le catalogue de la suite et ses formules. Ils alimentent directement la page d'accueil et la page des tarifs." />
+      <PageHeader title="Produits" subtitle="Le catalogue de la suite et ses formules. Ils alimentent directement la page d'accueil (en français, en anglais et en allemand) et la page des tarifs." />
       <PlanList plans={plans} subscribers={subscribers} stripe={{ mode: stripeMode(), webhook: webhookReady(), webhookUrl: `${baseUrl()}/api/stripe/webhook` }} />
-      <ProductList products={listProducts()} stats={stats.map((s) => ({ id: s.id, active: s.active, trial: s.trial, mrr: s.mrr }))} />
+      <ProductList products={listProducts()} stats={stats.map((s) => ({ id: s.id, active: s.active, trial: s.trial, mrr: s.mrr }))} texts={listProductTexts()} />
     </>
   );
 }

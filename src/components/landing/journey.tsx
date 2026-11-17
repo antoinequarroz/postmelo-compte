@@ -3,23 +3,52 @@
 import { ArrowRight } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ProductIcon } from "@/components/product-icon";
-import { PRODUCT_STATUS_LABEL } from "@/lib/crm-labels";
+import type { Locale } from "@/lib/i18n";
+import { STATUS_LABEL } from "@/lib/site-text";
 import { cn } from "@/lib/utils";
 import { appColor, readable } from "./color";
 import type { SuiteApp } from "./profiles";
 import { Reveal } from "./reveal";
 import { useScrollProgress } from "./use-scroll";
 
+type Step = { id: string; when: string; title: string; text: string };
+
 /** One week of a small media team, one app per step. A step whose app is not in the catalogue is left out. */
-const STEPS = [
-  { id: "lamio", when: "Lundi, 9 h", title: "L'idée", text: "Dans le canal #podcast de Lamio, quelqu'un lance un nom d'invitée. Trois réactions plus tard, c'est décidé." },
-  { id: "cairn", when: "Lundi, 14 h", title: "Le brief", text: "L'angle, les questions et les liens s'écrivent dans Cairn. L'IA de Cairn retrouve ce que l'équipe avait déjà noté sur le sujet." },
-  { id: "tickup", when: "Mardi", title: "Les tâches", text: "Chaque étape devient un ticket dans TickUp, avec qui s'en occupe et pour quand : inviter, préparer le plateau, monter." },
-  { id: "alfred", when: "Mercredi", title: "Le rendez-vous", text: "L'invitée choisit son créneau sur ta page Alfred. La confirmation part par e-mail, le tournage s'inscrit dans l'agenda." },
-  { id: "nino", when: "Jeudi, 10 h", title: "Le tournage", text: "Nino Studio pilote OBS et passe d'une caméra à l'autre selon qui parle. Les prises sont prêtes pour DaVinci Resolve." },
-  { id: "maya", when: "Jeudi, même heure", title: "La diffusion", text: "Pendant le tournage, Maya Studio compose les scènes, diffuse en direct et enregistre l'épisode en MP4." },
-  { id: "metricove", when: "Vendredi", title: "Les extraits", text: "Les extraits montés et les carrousels partent sur Instagram, LinkedIn et YouTube, programmés dans Metricove." },
-];
+const STEPS: Record<Locale, Step[]> = {
+  fr: [
+    { id: "lamio", when: "Lundi, 9 h", title: "L'idée", text: "Dans le canal #podcast de Lamio, quelqu'un lance un nom d'invitée. Trois réactions plus tard, c'est décidé." },
+    { id: "cairn", when: "Lundi, 14 h", title: "Le brief", text: "L'angle, les questions et les liens s'écrivent dans Cairn. L'IA de Cairn retrouve ce que l'équipe avait déjà noté sur le sujet." },
+    { id: "tickup", when: "Mardi", title: "Les tâches", text: "Chaque étape devient un ticket dans TickUp, avec qui s'en occupe et pour quand : inviter, préparer le plateau, monter." },
+    { id: "alfred", when: "Mercredi", title: "Le rendez-vous", text: "L'invitée choisit son créneau sur ta page Alfred. La confirmation part par e-mail, le tournage s'inscrit dans l'agenda." },
+    { id: "nino", when: "Jeudi, 10 h", title: "Le tournage", text: "Nino Studio pilote OBS et passe d'une caméra à l'autre selon qui parle. Les prises sont prêtes pour DaVinci Resolve." },
+    { id: "maya", when: "Jeudi, même heure", title: "La diffusion", text: "Pendant le tournage, Maya Studio compose les scènes, diffuse en direct et enregistre l'épisode en MP4." },
+    { id: "metricove", when: "Vendredi", title: "Les extraits", text: "Les extraits montés et les carrousels partent sur Instagram, LinkedIn et YouTube, programmés dans Metricove." },
+  ],
+  en: [
+    { id: "lamio", when: "Monday, 9 am", title: "The idea", text: "In Lamio's #podcast channel, someone suggests a guest. Three reactions later, it's settled." },
+    { id: "cairn", when: "Monday, 2 pm", title: "The brief", text: "The angle, the questions and the links are written in Cairn. Cairn's AI finds what the team had already noted on the subject." },
+    { id: "tickup", when: "Tuesday", title: "The tasks", text: "Each step becomes a ticket in TickUp, with who is on it and by when: invite, set up the stage, edit." },
+    { id: "alfred", when: "Wednesday", title: "The booking", text: "The guest picks a slot on your Alfred page. The confirmation goes out by email and the shoot lands in the calendar." },
+    { id: "nino", when: "Thursday, 10 am", title: "The shoot", text: "Nino Studio drives OBS and switches cameras based on who is speaking. The takes are ready for DaVinci Resolve." },
+    { id: "maya", when: "Thursday, same time", title: "The broadcast", text: "During the shoot, Maya Studio composes the scenes, streams live and records the episode as MP4." },
+    { id: "metricove", when: "Friday", title: "The clips", text: "Edited clips and carousels go out on Instagram, LinkedIn and YouTube, scheduled in Metricove." },
+  ],
+  de: [
+    { id: "lamio", when: "Montag, 9 Uhr", title: "Die Idee", text: "Im Kanal #podcast von Lamio schlägt jemand einen Gast vor. Drei Reaktionen später ist es entschieden." },
+    { id: "cairn", when: "Montag, 14 Uhr", title: "Das Briefing", text: "Blickwinkel, Fragen und Links entstehen in Cairn. Die KI von Cairn findet, was das Team zum Thema schon notiert hatte." },
+    { id: "tickup", when: "Dienstag", title: "Die Aufgaben", text: "Jeder Schritt wird ein Ticket in TickUp, mit wer und bis wann: einladen, Set vorbereiten, schneiden." },
+    { id: "alfred", when: "Mittwoch", title: "Der Termin", text: "Der Gast wählt seinen Termin auf deiner Alfred-Seite. Die Bestätigung geht per E-Mail raus, der Dreh landet im Kalender." },
+    { id: "nino", when: "Donnerstag, 10 Uhr", title: "Der Dreh", text: "Nino Studio steuert OBS und wechselt die Kamera je nachdem, wer spricht. Die Aufnahmen sind bereit für DaVinci Resolve." },
+    { id: "maya", when: "Donnerstag, gleiche Zeit", title: "Die Ausstrahlung", text: "Während des Drehs stellt Maya Studio die Szenen zusammen, sendet live und nimmt die Folge als MP4 auf." },
+    { id: "metricove", when: "Freitag", title: "Die Ausschnitte", text: "Geschnittene Ausschnitte und Karussells gehen auf Instagram, LinkedIn und YouTube raus, geplant in Metricove." },
+  ],
+};
+
+const T = {
+  fr: { eyebrow: "Comment ça s'enchaîne", title: ["Un épisode de podcast,", "de l'idée à la mise en ligne."], intro: "Suis la semaine d'une petite équipe média. Chaque étape se passe dans une application différente, et personne ne change de compte ni de façon de travailler.", end: ["Vendredi soir, l'épisode est en ligne.", "Une semaine, un seul compte, et pas un mot de passe cherché."], cta: "Essayer avec ton équipe" },
+  en: { eyebrow: "How it all connects", title: ["A podcast episode,", "from idea to release."], intro: "Follow the week of a small media team. Each step happens in a different app, and nobody switches account or way of working.", end: ["Friday evening, the episode is live.", "One week, one account, and not a single password hunted down."], cta: "Try it with your team" },
+  de: { eyebrow: "Wie alles ineinandergreift", title: ["Eine Podcast-Folge,", "von der Idee bis online."], intro: "Folge der Woche eines kleinen Medienteams. Jeder Schritt passiert in einer anderen App, und niemand wechselt Konto oder Arbeitsweise.", end: ["Freitagabend ist die Folge online.", "Eine Woche, ein Konto, und kein einziges Passwort gesucht."], cta: "Mit deinem Team testen" },
+};
 
 type Geo = { w: number; h: number; d: string; pts: { x: number; y: number }[]; lens: number[]; total: number };
 
@@ -37,9 +66,10 @@ function through(pts: { x: number; y: number }[]) {
  * "Comment ça s'enchaîne": a podcast episode told as a path across the apps. The path draws itself
  * as the page scrolls, and each step lights up when the line reaches its app.
  */
-export function Journey({ apps }: { apps: SuiteApp[] }) {
+export function Journey({ apps, locale = "fr" }: { apps: SuiteApp[]; locale?: Locale }) {
+  const t = T[locale];
   const byId = new Map(apps.map((a) => [a.id, a]));
-  const steps = STEPS.flatMap((s) => {
+  const steps = STEPS[locale].flatMap((s) => {
     const a = byId.get(s.id);
     return a ? [{ ...s, app: a }] : [];
   });
@@ -140,14 +170,14 @@ export function Journey({ apps }: { apps: SuiteApp[] }) {
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-40 -z-10 mx-auto h-[60%] max-w-[900px] rounded-full opacity-60 blur-3xl" style={{ background: "radial-gradient(closest-side, var(--accent-soft), transparent)" }} />
       <div className="mx-auto max-w-[1160px] px-4 pt-28 sm:px-6">
         <Reveal className="text-center">
-          <p className="text-[12.5px] font-medium uppercase tracking-[0.2em] text-accent">Comment ça s&apos;enchaîne</p>
+          <p className="text-[12.5px] font-medium uppercase tracking-[0.2em] text-accent">{t.eyebrow}</p>
           <h2 className="mx-auto mt-4 max-w-[900px] font-display text-[clamp(40px,6vw,88px)] leading-[0.92] tracking-[-0.012em]">
-            Un épisode de podcast,
+            {t.title[0]}
             <br />
-            <span className="italic text-ink-2">de l&apos;idée à la mise en ligne.</span>
+            <span className="italic text-ink-2">{t.title[1]}</span>
           </h2>
           <p className="mx-auto mt-6 max-w-[620px] text-[16px] leading-relaxed text-ink-2">
-            Suis la semaine d&apos;une petite équipe média. Chaque étape se passe dans une application différente, et personne ne change de compte ni de façon de travailler.
+            {t.intro}
           </p>
         </Reveal>
       </div>
@@ -213,9 +243,9 @@ export function Journey({ apps }: { apps: SuiteApp[] }) {
                     </p>
                     <h3 className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 font-display text-[30px] leading-none">
                       {s.title}
-                      {s.app.status !== "disponible" && PRODUCT_STATUS_LABEL[s.app.status] && (
+                      {s.app.status !== "disponible" && STATUS_LABEL[locale][s.app.status] && (
                         <span className="rounded-full px-2 py-0.5 font-sans text-[11px] font-medium leading-normal" style={{ background: `color-mix(in oklab, ${c} 16%, transparent)`, color: readable(c) }}>
-                          {PRODUCT_STATUS_LABEL[s.app.status]}
+                          {STATUS_LABEL[locale][s.app.status]}
                         </span>
                       )}
                     </h3>
@@ -230,12 +260,12 @@ export function Journey({ apps }: { apps: SuiteApp[] }) {
 
       <Reveal className="mx-auto max-w-[1160px] px-4 pb-8 pt-14 text-center sm:px-6">
         <p className="mx-auto max-w-[720px] text-balance font-display text-[clamp(30px,3.6vw,48px)] leading-[1.04]">
-          Vendredi soir, l&apos;épisode est en ligne.
+          {t.end[0]}
           <br />
-          <span className="italic text-ink-3">Une semaine, un seul compte, et pas un mot de passe cherché.</span>
+          <span className="italic text-ink-3">{t.end[1]}</span>
         </p>
         <a href="#contact" className="group mt-8 inline-flex items-center gap-2 text-[14px] font-medium text-accent">
-          Essayer avec ton équipe
+          {t.cta}
           <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
         </a>
       </Reveal>

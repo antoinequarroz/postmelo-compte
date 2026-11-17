@@ -1,4 +1,5 @@
 import { Camera, CheckCircle2, Eye, FileText, Hash, Image as ImageIcon, Lock, Mic, MonitorPlay, Plus, Radio, Search, Sparkles } from "lucide-react";
+import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /**
@@ -6,7 +7,39 @@ import { cn } from "@/lib/utils";
  * They come alive (messages arriving, a card moving, meters bouncing) when `on` is set.
  */
 
-type MockProps = { color: string; on: boolean; chrome?: boolean };
+/** What the miniature interfaces say, in each language. Names of people and places stay as they are. */
+const M = {
+  fr: {
+    lamio: { title: "Lamio · #studio", msgs: ["Le montage du podcast est en ligne 🎙️", "Top ! Je le programme sur Metricove pour jeudi.", "Parfait. @tous point d'équipe à 14 h ?", "Ça marche pour moi 👍"], channels: "Canaux", direct: "Messages", about: "Tournages, montage et diffusion du studio. 9 membres.", pinned: "Planning des tournages · novembre", pinnedBy: "Épinglé par Léa · mis à jour ce matin", today: "Aujourd'hui", typing: "Léa écrit…", write: "Écrire dans #studio" },
+    cairn: { title: "Cairn · Notes", search: "Rechercher", tree: ["📁 Clients", "📁 Studio", "📄 Charte Postmelo", "📄 Idées vidéo", "🔒 Accès VPS"], note: "Charte Postmelo", tone: "Ton", toneText: "Direct, chaleureux, sans jargon. On tutoie. Une idée par phrase.", colours: "Couleurs", todo: ["Logo validé", "Déclinaison vidéo"], server: "Serveur VPS", encrypted: "Chiffré", type: "Typographie", serif: "Instrument Serif · titres", sans: "Geist · textes et interface" },
+    tickup: { title: "TickUp · Studio · Sprint 4", cols: [{ name: "À faire", cards: ["Brief vidéo", "Maquette accueil", "Sous-titres épisode 13"] }, { name: "En cours", cards: ["Montage épisode 12", "Visuels LinkedIn"] }, { name: "Terminé", cards: ["Logo final", "Charte", "Générique podcast"] }], ticket: "Ticket" },
+    alfred: { title: "Alfred · Semaine 47", days: ["Lun", "Mar", "Mer", "Jeu", "Ven"], events: ["Tournage", "Point équipe", "Client Rhône", "Podcast live", "RDV · Léa"], confirmed: "Rendez-vous confirmé", confirmedWhen: "Vendredi 10:30 · e-mail envoyé" },
+    metricove: { title: "Metricove · Calendrier", week: "Cette semaine", posts: [{ d: "Jeu 9:00", t: "Épisode 12 · annonce" }, { d: "Ven 12:30", t: "Coulisses du tournage" }, { d: "Sam 18:00", t: "Extrait « Les Coulisses »" }], episode: "Épisode 12", caption: "Le nouvel épisode est là. On parle d'outils, d'équipe et de vidéo 🎬", views: "12,4 k" },
+    nino: { title: "Nino Studio · Régie", program: "PROGRAMME", shot: "Plan large · automatique", mics: "Micros", live: "En direct" },
+    maya: { title: "Maya Studio · Scène « Plateau »", scenes: "Scènes", sceneList: ["Intro", "Plateau", "Invité", "Écran", "Fin"], sources: "Sources", sourceList: ["Écran", "Caméra", "Logo", "Titre"], bitrate: "Débit", rate: "6,2 Mb/s" },
+  },
+  en: {
+    lamio: { title: "Lamio · #studio", msgs: ["The podcast edit is up 🎙️", "Great! I'll schedule it on Metricove for Thursday.", "Perfect. @everyone team meeting at 2 pm?", "Works for me 👍"], channels: "Channels", direct: "Messages", about: "Shoots, editing and broadcast for the studio. 9 members.", pinned: "Shooting schedule · November", pinnedBy: "Pinned by Léa · updated this morning", today: "Today", typing: "Léa is typing…", write: "Message #studio" },
+    cairn: { title: "Cairn · Notes", search: "Search", tree: ["📁 Clients", "📁 Studio", "📄 Postmelo guidelines", "📄 Video ideas", "🔒 VPS access"], note: "Postmelo guidelines", tone: "Tone", toneText: "Direct, warm, no jargon. First names. One idea per sentence.", colours: "Colours", todo: ["Logo approved", "Video version"], server: "VPS server", encrypted: "Encrypted", type: "Typography", serif: "Instrument Serif · headings", sans: "Geist · text and interface" },
+    tickup: { title: "TickUp · Studio · Sprint 4", cols: [{ name: "To do", cards: ["Video brief", "Home page mock-up", "Episode 13 subtitles"] }, { name: "In progress", cards: ["Episode 12 edit", "LinkedIn visuals"] }, { name: "Done", cards: ["Final logo", "Guidelines", "Podcast intro"] }], ticket: "Ticket" },
+    alfred: { title: "Alfred · Week 47", days: ["Mon", "Tue", "Wed", "Thu", "Fri"], events: ["Shoot", "Team meeting", "Client Rhône", "Live podcast", "Meeting · Léa"], confirmed: "Booking confirmed", confirmedWhen: "Friday 10:30 · email sent" },
+    metricove: { title: "Metricove · Calendar", week: "This week", posts: [{ d: "Thu 9:00", t: "Episode 12 · announcement" }, { d: "Fri 12:30", t: "Behind the shoot" }, { d: "Sat 18:00", t: "Clip “Behind the Scenes”" }], episode: "Episode 12", caption: "The new episode is out. We talk tools, teams and video 🎬", views: "12.4k" },
+    nino: { title: "Nino Studio · Control room", program: "PROGRAM", shot: "Wide shot · automatic", mics: "Mics", live: "Go live" },
+    maya: { title: "Maya Studio · Scene “Stage”", scenes: "Scenes", sceneList: ["Intro", "Stage", "Guest", "Screen", "Outro"], sources: "Sources", sourceList: ["Screen", "Camera", "Logo", "Title"], bitrate: "Bitrate", rate: "6.2 Mb/s" },
+  },
+  de: {
+    lamio: { title: "Lamio · #studio", msgs: ["Der Podcast-Schnitt ist online 🎙️", "Top! Ich plane ihn in Metricove für Donnerstag ein.", "Perfekt. @alle Teammeeting um 14 Uhr?", "Passt für mich 👍"], channels: "Kanäle", direct: "Nachrichten", about: "Drehs, Schnitt und Ausstrahlung des Studios. 9 Mitglieder.", pinned: "Drehplan · November", pinnedBy: "Angeheftet von Léa · heute Morgen aktualisiert", today: "Heute", typing: "Léa schreibt…", write: "In #studio schreiben" },
+    cairn: { title: "Cairn · Notizen", search: "Suchen", tree: ["📁 Kunden", "📁 Studio", "📄 Postmelo-Leitfaden", "📄 Videoideen", "🔒 VPS-Zugang"], note: "Postmelo-Leitfaden", tone: "Tonalität", toneText: "Direkt, herzlich, ohne Fachjargon. Wir duzen. Eine Idee pro Satz.", colours: "Farben", todo: ["Logo freigegeben", "Videoversion"], server: "VPS-Server", encrypted: "Verschlüsselt", type: "Typografie", serif: "Instrument Serif · Titel", sans: "Geist · Text und Oberfläche" },
+    tickup: { title: "TickUp · Studio · Sprint 4", cols: [{ name: "Zu erledigen", cards: ["Video-Briefing", "Mock-up Startseite", "Untertitel Folge 13"] }, { name: "In Arbeit", cards: ["Schnitt Folge 12", "LinkedIn-Visuals"] }, { name: "Erledigt", cards: ["Finales Logo", "Leitfaden", "Podcast-Intro"] }], ticket: "Ticket" },
+    alfred: { title: "Alfred · Woche 47", days: ["Mo", "Di", "Mi", "Do", "Fr"], events: ["Dreh", "Teammeeting", "Kunde Rhône", "Live-Podcast", "Termin · Léa"], confirmed: "Termin bestätigt", confirmedWhen: "Freitag 10:30 · E-Mail gesendet" },
+    metricove: { title: "Metricove · Kalender", week: "Diese Woche", posts: [{ d: "Do 9:00", t: "Folge 12 · Ankündigung" }, { d: "Fr 12:30", t: "Hinter den Kulissen des Drehs" }, { d: "Sa 18:00", t: "Ausschnitt «Hinter den Kulissen»" }], episode: "Folge 12", caption: "Die neue Folge ist da. Wir reden über Tools, Teams und Video 🎬", views: "12,4 Tsd." },
+    nino: { title: "Nino Studio · Regie", program: "PROGRAMM", shot: "Totale · automatisch", mics: "Mikrofone", live: "Live gehen" },
+    maya: { title: "Maya Studio · Szene «Set»", scenes: "Szenen", sceneList: ["Intro", "Set", "Gast", "Bildschirm", "Ende"], sources: "Quellen", sourceList: ["Bildschirm", "Kamera", "Logo", "Titel"], bitrate: "Bitrate", rate: "6,2 Mb/s" },
+  },
+};
+type MockText = (typeof M)["fr"];
+
+type MockProps = { color: string; on: boolean; chrome?: boolean; t: MockText };
 
 function Window({ title, color, on, chrome = true, children, className }: { title: string; color: string; on: boolean; chrome?: boolean; children: React.ReactNode; className?: string }) {
   // Without chrome, the app is drawn bare, to sit inside another window (the hero's hub).
@@ -32,7 +65,7 @@ function Window({ title, color, on, chrome = true, children, className }: { titl
 }
 
 /** A camera picture: a coloured set and a head-and-shoulders silhouette, as on the hub's home screen. */
-function Shot({ hue, className, style, children }: { hue: number; className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
+export function Shot({ hue, className, style, children }: { hue: number; className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
   return (
     <div
       className={cn("relative overflow-hidden", className)}
@@ -48,29 +81,22 @@ function Shot({ hue, className, style, children }: { hue: number; className?: st
   );
 }
 
-const soft = (c: string, pct = 16) => `color-mix(in oklab, ${c} ${pct}%, transparent)`;
+export const soft = (c: string, pct = 16) => `color-mix(in oklab, ${c} ${pct}%, transparent)`;
 const Dot = ({ c }: { c: string }) => <span className="inline-block size-1.5 rounded-full" style={{ background: c }} />;
 
-function Lamio({ color, on, chrome }: MockProps) {
+function Lamio({ color, on, chrome, t: all }: MockProps) {
+  const t = all.lamio;
   const msgs = [
-    { who: "Léa", hue: 200, text: "Le montage du podcast est en ligne 🎙️" },
-    {
-      who: "Marc",
-      hue: 30,
-      text: "Top ! Je le programme sur Metricove pour jeudi.",
-    },
-    {
-      who: "Antoine",
-      hue: 150,
-      text: "Parfait. @tous point d'équipe à 14 h ?",
-    },
-    { who: "Julie", hue: 300, text: "Ça marche pour moi 👍" },
-  ];
+    { who: "Léa", hue: 200 },
+    { who: "Marc", hue: 30 },
+    { who: "Antoine", hue: 150 },
+    { who: "Julie", hue: 300 },
+  ].map((m, i) => ({ ...m, text: t.msgs[i] }));
   return (
-    <Window title="Lamio · #studio" color={color} on={on} chrome={chrome}>
+    <Window title={t.title} color={color} on={on} chrome={chrome}>
       <div className="flex h-full">
         <aside className="hidden w-[150px] shrink-0 flex-col gap-1 border-r border-[color:var(--edge-07)] p-3 sm:flex">
-          <p className="mb-1 text-[10px] uppercase tracking-wider text-ink-3">Canaux</p>
+          <p className="mb-1 text-[10px] uppercase tracking-wider text-ink-3">{t.channels}</p>
           {["general", "studio", "design", "clients"].map((c) => (
             <span key={c} className={cn("flex items-center gap-1.5 rounded-md px-2 py-1", c === "studio" ? "text-ink" : "text-ink-3")} style={c === "studio" ? { background: soft(color, 22) } : undefined}>
               <Hash className="size-3" /> {c}
@@ -81,7 +107,7 @@ function Lamio({ color, on, chrome }: MockProps) {
               )}
             </span>
           ))}
-          <p className="mb-1 mt-3 text-[10px] uppercase tracking-wider text-ink-3">Messages</p>
+          <p className="mb-1 mt-3 text-[10px] uppercase tracking-wider text-ink-3">{t.direct}</p>
           {["Léa", "Marc"].map((n) => (
             <span key={n} className="flex items-center gap-1.5 px-2 py-1 text-ink-3">
               <Dot c="#28c840" /> {n}
@@ -94,17 +120,17 @@ function Lamio({ color, on, chrome }: MockProps) {
             <p className="flex items-center gap-1.5 text-[15px] font-semibold">
               <Hash className="size-4" style={{ color }} /> studio
             </p>
-            <p className="mt-1 text-ink-3">Tournages, montage et diffusion du studio. 9 membres.</p>
+            <p className="mt-1 text-ink-3">{t.about}</p>
             {/* The pinned file, wherever the window is tall enough for it. */}
             <div className={cn("mt-3 flex items-center gap-2.5 rounded-xl border p-2.5", chrome && "max-lg:hidden")} style={{ borderColor: soft(color, 30), background: soft(color, 8) }}>
               <FileText className="size-4 shrink-0" style={{ color }} />
               <span className="min-w-0">
-                <span className="block font-medium">Planning des tournages · novembre</span>
-                <span className="block text-[10.5px] text-ink-3">Épinglé par Léa · mis à jour ce matin</span>
+                <span className="block font-medium">{t.pinned}</span>
+                <span className="block text-[10.5px] text-ink-3">{t.pinnedBy}</span>
               </span>
             </div>
             <p className="mt-3 flex items-center gap-3 text-[10.5px] text-ink-3">
-              <span className="h-px flex-1 bg-wash/[0.07]" /> Aujourd&apos;hui <span className="h-px flex-1 bg-wash/[0.07]" />
+              <span className="h-px flex-1 bg-wash/[0.07]" /> {t.today} <span className="h-px flex-1 bg-wash/[0.07]" />
             </p>
           </div>
           {msgs.map((m, i) => (
@@ -132,37 +158,38 @@ function Lamio({ color, on, chrome }: MockProps) {
               <span className="size-1.5 rounded-full bg-ink-3" />
               <span className="size-1.5 rounded-full bg-ink-3" />
             </span>
-            Léa écrit…
+            {t.typing}
           </div>
-          <div className="mt-auto flex h-9 shrink-0 items-center rounded-lg border border-[color:var(--edge-10)] px-3 text-ink-3">Écrire dans #studio</div>
+          <div className="mt-auto flex h-9 shrink-0 items-center rounded-lg border border-[color:var(--edge-10)] px-3 text-ink-3">{t.write}</div>
         </div>
       </div>
     </Window>
   );
 }
 
-function Cairn({ color, on, chrome }: MockProps) {
+function Cairn({ color, on, chrome, t: all }: MockProps) {
+  const t = all.cairn;
   return (
-    <Window title="Cairn · Notes" color={color} on={on} chrome={chrome}>
+    <Window title={t.title} color={color} on={on} chrome={chrome}>
       <div className="flex h-full">
         <aside className="hidden w-[160px] shrink-0 flex-col gap-1 border-r border-[color:var(--edge-07)] p-3 text-ink-3 sm:flex">
           <span className="mb-2 flex items-center gap-1.5 rounded-md border border-[color:var(--edge-10)] px-2 py-1">
-            <Search className="size-3" /> Rechercher <span className="ml-auto text-[9.5px]">⌘K</span>
+            <Search className="size-3" /> {t.search} <span className="ml-auto text-[9.5px]">⌘K</span>
           </span>
-          {["📁 Clients", "📁 Studio", "📄 Charte Postmelo", "📄 Idées vidéo", "🔒 Accès VPS"].map((n, i) => (
+          {t.tree.map((n, i) => (
             <span key={n} className={cn("rounded-md px-2 py-1", i === 2 && "text-ink")} style={i === 2 ? { background: soft(color, 22) } : undefined}>
               {n}
             </span>
           ))}
         </aside>
         <div className="min-w-0 flex-1 p-5">
-          <p className="font-display text-[24px] leading-none">Charte Postmelo</p>
+          <p className="font-display text-[24px] leading-none">{t.note}</p>
           <p className="mt-3 text-ink-2">
-            <span style={{ color }}>## </span>Ton
+            <span style={{ color }}>## </span>{t.tone}
           </p>
-          <p className="mt-1 leading-relaxed text-ink-3">Direct, chaleureux, sans jargon. On tutoie. Une idée par phrase.</p>
+          <p className="mt-1 leading-relaxed text-ink-3">{t.toneText}</p>
           <p className="mt-3 text-ink-2">
-            <span style={{ color }}>## </span>Couleurs
+            <span style={{ color }}>## </span>{t.colours}
           </p>
           <div className="mt-2 flex gap-1.5">
             {["#12805c", "#efede8", "#181715", color].map((c) => (
@@ -170,8 +197,8 @@ function Cairn({ color, on, chrome }: MockProps) {
             ))}
           </div>
           <p className="mt-3 text-ink-3">
-            - [x] Logo validé
-            <br />- [ ] Déclinaison vidéo
+            - [x] {t.todo[0]}
+            <br />- [ ] {t.todo[1]}
             <span className="caret ml-0.5 inline-block h-3 w-px translate-y-0.5" style={{ background: color }} />
           </p>
           <div
@@ -184,26 +211,26 @@ function Cairn({ color, on, chrome }: MockProps) {
           >
             <Lock className="size-4" style={{ color }} />
             <div className="min-w-0 flex-1">
-              <p className="font-medium">Serveur VPS</p>
+              <p className="font-medium">{t.server}</p>
               <p className="tracking-[0.25em] text-ink-3">••••••••••••</p>
             </div>
-            <span className="text-[10px] text-ink-3">Chiffré</span>
+            <span className="text-[10px] text-ink-3">{t.encrypted}</span>
           </div>
           {/* In the story's smaller windows on phones and tablets, the note stops at the vault. */}
           <div className={cn(chrome && "max-lg:hidden")}>
             <p className="mt-4 text-ink-2">
-              <span style={{ color }}>## </span>Typographie
+              <span style={{ color }}>## </span>{t.type}
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <div className="rounded-xl border border-[color:var(--edge-08)] bg-[var(--hub-pane)] p-3">
                 <p className="font-display text-[30px] leading-none">
                   Aa <span className="italic text-ink-2">Aa</span>
                 </p>
-                <p className="mt-2 text-[10.5px] text-ink-3">Instrument Serif · titres</p>
+                <p className="mt-2 text-[10.5px] text-ink-3">{t.serif}</p>
               </div>
               <div className="rounded-xl border border-[color:var(--edge-08)] bg-[var(--hub-pane)] p-3">
                 <p className="text-[26px] font-medium leading-none tracking-tight">Aa</p>
-                <p className="mt-2 text-[10.5px] text-ink-3">Geist · textes et interface</p>
+                <p className="mt-2 text-[10.5px] text-ink-3">{t.sans}</p>
               </div>
             </div>
           </div>
@@ -213,28 +240,21 @@ function Cairn({ color, on, chrome }: MockProps) {
   );
 }
 
-function TickUp({ color, on, chrome }: MockProps) {
-  const cols = [
-    {
-      name: "À faire",
-      cards: ["Brief vidéo", "Maquette accueil", "Sous-titres épisode 13"],
-    },
-    { name: "En cours", cards: ["Montage épisode 12", "Visuels LinkedIn"] },
-    { name: "Terminé", cards: ["Logo final", "Charte", "Générique podcast"] },
-  ];
+function TickUp({ color, on, chrome, t: all }: MockProps) {
+  const cols = all.tickup.cols;
   const c = color || "var(--ink)";
   return (
-    <Window title="TickUp · Studio · Sprint 4" color={c} on={on} chrome={chrome}>
+    <Window title={all.tickup.title} color={c} on={on} chrome={chrome}>
       <div className="grid h-full grid-cols-3 gap-2.5 p-4">
         {cols.map((col, ci) => (
           <div key={col.name} className="flex flex-col gap-2 rounded-xl bg-wash/[0.03] p-2">
             <p className="flex items-center gap-1.5 px-1 text-[10.5px] font-medium text-ink-2">
               <span className="size-2 rounded-full border border-ink-3" style={ci === 2 ? { background: c } : undefined} /> {col.name}
             </p>
-            {col.cards.map((t, i) => (
-              <div key={t} className={cn("relative rounded-lg border border-[color:var(--edge-10)] bg-raised p-2.5", ci === 0 && i === 0 && "card-move z-10")}>
+            {col.cards.map((card, i) => (
+              <div key={card} className={cn("relative rounded-lg border border-[color:var(--edge-10)] bg-raised p-2.5", ci === 0 && i === 0 && "card-move z-10")}>
                 <p className="text-[10px] text-ink-3">STU-{12 + ci * 3 + i}</p>
-                <p className="mt-0.5 font-medium leading-snug">{t}</p>
+                <p className="mt-0.5 font-medium leading-snug">{card}</p>
                 <div className="mt-2 flex items-center gap-1">
                   <span className="h-1 flex-1 rounded-full bg-wash/10">
                     <span className="block h-full rounded-full" style={{ width: `${[30, 65, 100][ci]}%`, background: c }} />
@@ -243,7 +263,7 @@ function TickUp({ color, on, chrome }: MockProps) {
               </div>
             ))}
             <span className="flex items-center gap-1 px-1 text-[10.5px] text-ink-3">
-              <Plus className="size-3" /> Ticket
+              <Plus className="size-3" /> {all.tickup.ticket}
             </span>
           </div>
         ))}
@@ -252,17 +272,18 @@ function TickUp({ color, on, chrome }: MockProps) {
   );
 }
 
-function Alfred({ color, on, chrome }: MockProps) {
-  const days = ["Lun", "Mar", "Mer", "Jeu", "Ven"];
+function Alfred({ color, on, chrome, t: all }: MockProps) {
+  const text = all.alfred;
+  const days = text.days;
   const events = [
-    { d: 0, s: 3, l: 2, t: "Tournage" },
-    { d: 1, s: 2, l: 2, t: "Point équipe" },
-    { d: 2, s: 0, l: 1, t: "Client Rhône" },
-    { d: 3, s: 2, l: 3, t: "Podcast live" },
-    { d: 4, s: 1, l: 1, t: "RDV · Léa" },
-  ];
+    { d: 0, s: 3, l: 2 },
+    { d: 1, s: 2, l: 2 },
+    { d: 2, s: 0, l: 1 },
+    { d: 3, s: 2, l: 3 },
+    { d: 4, s: 1, l: 1 },
+  ].map((e, i) => ({ ...e, t: text.events[i] }));
   return (
-    <Window title="Alfred · Semaine 47" color={color} on={on} chrome={chrome}>
+    <Window title={text.title} color={color} on={on} chrome={chrome}>
       <div className="flex h-full flex-col p-4">
         <div className="grid grid-cols-5 gap-1.5 text-center text-[10.5px] text-ink-3">
           {days.map((d, i) => (
@@ -300,8 +321,8 @@ function Alfred({ color, on, chrome }: MockProps) {
         <div className="msg absolute bottom-4 right-4 flex items-center gap-2 rounded-xl border border-[color:var(--edge-12)] bg-raised px-3 py-2 shadow-2xl" style={{ animationDelay: "1500ms" }}>
           <CheckCircle2 className="size-4" style={{ color }} />
           <span>
-            <span className="block font-medium">Rendez-vous confirmé</span>
-            <span className="text-[10.5px] text-ink-3">Vendredi 10:30 · e-mail envoyé</span>
+            <span className="block font-medium">{text.confirmed}</span>
+            <span className="text-[10.5px] text-ink-3">{text.confirmedWhen}</span>
           </span>
         </div>
       </div>
@@ -309,10 +330,11 @@ function Alfred({ color, on, chrome }: MockProps) {
   );
 }
 
-function Metricove({ color, on, chrome }: MockProps) {
+function Metricove({ color, on, chrome, t: all }: MockProps) {
+  const t = all.metricove;
   const nets = ["in", "IG", "X", "f", "▶"];
   return (
-    <Window title="Metricove · Calendrier" color={color} on={on} chrome={chrome}>
+    <Window title={t.title} color={color} on={on} chrome={chrome}>
       <div className="grid h-full grid-cols-[1fr_1.1fr] gap-3 p-4">
         <div className="flex min-h-0 flex-col gap-3">
           <div className="grid grid-cols-7 content-start gap-1 text-center text-[9.5px] text-ink-3">
@@ -324,12 +346,8 @@ function Metricove({ color, on, chrome }: MockProps) {
             ))}
           </div>
           <div className="min-h-0 overflow-hidden">
-            <p className="text-[10px] uppercase tracking-wider text-ink-3">Cette semaine</p>
-            {[
-              { d: "Jeu 9:00", t: "Épisode 12 · annonce", n: "in" },
-              { d: "Ven 12:30", t: "Coulisses du tournage", n: "IG" },
-              { d: "Sam 18:00", t: "Extrait « Les Coulisses »", n: "▶" },
-            ].map((p, i) => (
+            <p className="text-[10px] uppercase tracking-wider text-ink-3">{t.week}</p>
+            {t.posts.map((p, i) => ({ ...p, n: ["in", "IG", "▶"][i] })).map((p, i) => (
               <div key={p.d} className="msg mt-2 flex items-center gap-2.5 rounded-lg bg-wash/[0.03] px-2.5 py-2" style={{ animationDelay: `${500 + i * 150}ms` }}>
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-wash/[0.06] text-[9.5px] font-bold">{p.n}</span>
                 <span className="min-w-0 flex-1 truncate">{p.t}</span>
@@ -348,7 +366,7 @@ function Metricove({ color, on, chrome }: MockProps) {
             />
             <span className="font-medium">Postmelo</span>
             <span className="ml-auto rounded-full px-2 py-0.5 text-[9.5px] font-medium text-[light-dark(#fff,#000)]" style={{ background: color }}>
-              Jeu 9:00
+              {t.posts[0].d}
             </span>
           </div>
           <div
@@ -357,9 +375,9 @@ function Metricove({ color, on, chrome }: MockProps) {
               background: `linear-gradient(135deg, ${soft(color, 55)}, rgba(111,66,230,0.35))`,
             }}
           >
-            <span className="font-display text-[18px] leading-none">Épisode 12</span>
+            <span className="font-display text-[18px] leading-none">{t.episode}</span>
           </div>
-          <p className="mt-2 text-ink-2">Le nouvel épisode est là. On parle d&apos;outils, d&apos;équipe et de vidéo 🎬</p>
+          <p className="mt-2 text-ink-2">{t.caption}</p>
           <div className="mt-auto flex gap-1.5 pt-2">
             {nets.map((n, i) => (
               <span key={n} className="msg flex size-6 items-center justify-center rounded-md bg-wash/[0.06] text-[9.5px] font-bold" style={{ animationDelay: `${700 + i * 120}ms` }}>
@@ -367,7 +385,7 @@ function Metricove({ color, on, chrome }: MockProps) {
               </span>
             ))}
             <span className="ml-auto flex items-center gap-1 text-[10px] text-ink-3">
-              <Eye className="size-3" /> 12,4 k
+              <Eye className="size-3" /> {t.views}
             </span>
           </div>
         </div>
@@ -376,9 +394,10 @@ function Metricove({ color, on, chrome }: MockProps) {
   );
 }
 
-function Nino({ color, on, chrome }: MockProps) {
+function Nino({ color, on, chrome, t: all }: MockProps) {
+  const t = all.nino;
   return (
-    <Window title="Nino Studio · Régie" color={color} on={on} chrome={chrome}>
+    <Window title={t.title} color={color} on={on} chrome={chrome}>
       <div className="grid h-full grid-cols-[1.5fr_1fr] gap-3 p-4">
         <div className="flex flex-col gap-2">
           <Shot hue={210} className="flex-1 rounded-xl">
@@ -386,9 +405,9 @@ function Nino({ color, on, chrome }: MockProps) {
               <span className="rec size-2 rounded-full bg-[#ff3b30]" /> REC 00:42:18
             </span>
             <span className="absolute right-2.5 top-2.5 rounded-md px-2 py-1 text-[10px] font-semibold text-white" style={{ background: color }}>
-              PROGRAMME
+              {t.program}
             </span>
-            <span className="absolute bottom-2.5 left-2.5 text-[10px] text-white/75">Plan large · automatique</span>
+            <span className="absolute bottom-2.5 left-2.5 text-[10px] text-white/75">{t.shot}</span>
           </Shot>
           <div className="grid grid-cols-3 gap-2">
             {[210, 30, 290].map((h, i) => (
@@ -401,7 +420,7 @@ function Nino({ color, on, chrome }: MockProps) {
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <p className="text-[10px] uppercase tracking-wider text-ink-3">Micros</p>
+          <p className="text-[10px] uppercase tracking-wider text-ink-3">{t.mics}</p>
           <div className="flex flex-1 items-end justify-between gap-1.5 rounded-xl bg-wash/[0.03] p-3">
             {[0, 1, 2, 3].map((m) => (
               <div key={m} className="flex h-full flex-1 flex-col items-center gap-1.5">
@@ -420,7 +439,7 @@ function Nino({ color, on, chrome }: MockProps) {
             ))}
           </div>
           <button className="flex items-center justify-center gap-1.5 rounded-lg py-2 font-medium text-white" style={{ background: color }}>
-            <Radio className="size-3.5" /> En direct
+            <Radio className="size-3.5" /> {t.live}
           </button>
         </div>
       </div>
@@ -428,24 +447,21 @@ function Nino({ color, on, chrome }: MockProps) {
   );
 }
 
-function Maya({ color, on, chrome }: MockProps) {
+function Maya({ color, on, chrome, t: all }: MockProps) {
+  const t = all.maya;
+  const current = t.sceneList[1];
   return (
-    <Window title="Maya Studio · Scène « Plateau »" color={color} on={on} chrome={chrome}>
+    <Window title={t.title} color={color} on={on} chrome={chrome}>
       <div className="grid h-full grid-cols-[110px_1fr] gap-3 p-4 max-sm:grid-cols-1">
         <div className="flex flex-col gap-1.5 max-sm:hidden">
-          <p className="text-[10px] uppercase tracking-wider text-ink-3">Scènes</p>
-          {["Intro", "Plateau", "Invité", "Écran", "Fin"].map((s) => (
-            <span key={s} className={cn("rounded-md px-2 py-1", s === "Plateau" ? "text-ink" : "text-ink-3")} style={s === "Plateau" ? { background: soft(color, 25) } : undefined}>
+          <p className="text-[10px] uppercase tracking-wider text-ink-3">{t.scenes}</p>
+          {t.sceneList.map((s) => (
+            <span key={s} className={cn("rounded-md px-2 py-1", s === current ? "text-ink" : "text-ink-3")} style={s === current ? { background: soft(color, 25) } : undefined}>
               {s}
             </span>
           ))}
-          <p className="mt-2 text-[10px] uppercase tracking-wider text-ink-3">Sources</p>
-          {[
-            [MonitorPlay, "Écran"],
-            [Camera, "Caméra"],
-            [ImageIcon, "Logo"],
-            [FileText, "Titre"],
-          ].map(([Icon, n]) => {
+          <p className="mt-2 text-[10px] uppercase tracking-wider text-ink-3">{t.sources}</p>
+          {[MonitorPlay, Camera, ImageIcon, FileText].map((Icon, i) => [Icon, t.sourceList[i]]).map(([Icon, n]) => {
             const I = Icon as typeof Camera;
             return (
               <span key={n as string} className="flex items-center gap-1.5 px-2 text-ink-3">
@@ -471,11 +487,11 @@ function Maya({ color, on, chrome }: MockProps) {
             </span>
           </div>
           <div className="flex items-center gap-3 rounded-lg bg-wash/[0.03] px-3 py-2">
-            <span className="text-[10px] text-ink-3">Débit</span>
+            <span className="text-[10px] text-ink-3">{t.bitrate}</span>
             <svg viewBox="0 0 200 30" className="h-6 flex-1" aria-hidden>
               <polyline className="graph" fill="none" stroke={color} strokeWidth="2" points="0,22 20,18 40,20 60,12 80,15 100,8 120,11 140,6 160,9 180,5 200,7" />
             </svg>
-            <span className="tabular text-[10px]">6,2 Mb/s</span>
+            <span className="tabular text-[10px]">{t.rate}</span>
           </div>
         </div>
       </div>
@@ -504,8 +520,9 @@ const MOCKS: Record<string, (p: MockProps) => React.ReactElement> = {
 };
 
 /** One app's interface. With `chrome` (the default) it has its own window and title bar; without, it is drawn bare. */
-export function AppMock({ id, name, color, on, chrome = true }: { id: string; name: string; color: string; on: boolean; chrome?: boolean }) {
+export function AppMock({ id, name, color, on, chrome = true, locale = "fr" }: { id: string; name: string; color: string; on: boolean; chrome?: boolean; locale?: Locale }) {
   const Mock = MOCKS[id];
   const c = color || "var(--ink)";
-  return Mock ? <Mock color={c} on={on} chrome={chrome} /> : <Generic color={c} on={on} chrome={chrome} name={name} />;
+  const t = M[locale];
+  return Mock ? <Mock color={c} on={on} chrome={chrome} t={t} /> : <Generic color={c} on={on} chrome={chrome} name={name} t={t} />;
 }

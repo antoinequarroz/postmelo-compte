@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Nav } from "@/components/landing/nav";
 import { Reveal } from "@/components/landing/reveal";
-import { SuiteLogo } from "@/components/logo";
+import { SiteFooter } from "@/components/landing/site-footer";
 import { Pricing } from "@/components/pricing";
 import { CONTACT_EMAIL, SUITE_NAME } from "@/lib/brand";
 import { sellable } from "@/lib/pricing";
@@ -33,7 +34,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
   return (
     <div className="landing relative min-h-dvh overflow-x-clip">
       <div aria-hidden className="landing-grain" />
-      <Nav suite={SUITE_NAME} signedIn={!!session} admin={admin} account={account} home={`${account}/`} />
+      <Nav suite={SUITE_NAME} signedIn={!!session} admin={admin} account={account} />
       <main className="mx-auto max-w-[1160px] px-4 pb-28 pt-36 sm:px-6">
         <Reveal className="mx-auto max-w-[720px] text-center">
           <p className="text-[12.5px] font-medium uppercase tracking-[0.2em] text-accent">Tarifs</p>
@@ -63,7 +64,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
               <a href={`${account}/#contact`} className="mt-6 inline-flex font-medium text-accent hover:underline">Nous écrire</a>
               {admin && (
                 <p className="mt-6 text-[12.5px] text-ink-3">
-                  Admin : publie tes formules dans <a className="underline" href="/admin/produits">Admin › Produits</a>, ou <a className="underline" href="/tarifs?apercu=1">vois l&apos;aperçu</a>.
+                  Admin : publie tes formules dans <Link className="underline" href="/admin/produits">Admin › Produits</Link>, ou <Link className="underline" href="/tarifs?apercu=1">vois l&apos;aperçu</Link>.
                 </p>
               )}
             </Reveal>
@@ -86,14 +87,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
           Prix en francs suisses. Paiement sécurisé par Stripe. Une question ? <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-ink hover:text-accent">{CONTACT_EMAIL}</a>
         </p>
       </main>
-      <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-[1160px] flex-wrap items-center gap-5 px-4 py-10 text-[13px] text-ink-3 sm:px-6">
-          <SuiteLogo className="size-6" />
-          <span>© {new Date().getFullYear()} {SUITE_NAME}</span>
-          <a href={`${account}/`} className="ml-auto hover:text-ink">Accueil</a>
-          <a href={`${account}${session ? "/compte" : "/connexion"}`} className="hover:text-ink">{session ? "Mon compte" : "Se connecter"}</a>
-        </div>
-      </footer>
+      <SiteFooter locale="fr" signedIn={!!session} account={account} languages={{ fr: "/tarifs" }} />
     </div>
   );
 }

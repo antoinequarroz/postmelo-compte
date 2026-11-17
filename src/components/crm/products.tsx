@@ -5,13 +5,15 @@ import { useState } from "react";
 import { ProductIcon } from "@/components/product-icon";
 import { Button } from "@/components/ui";
 import { money, PRODUCT_STATUS_LABEL, PRODUCT_TONE } from "@/lib/crm-labels";
+import type { ProductText } from "@/server/content";
 import type { Product } from "@/server/crm";
 import { productFields } from "./fields";
+import { ProductTranslations } from "./product-texts";
 import { Badge, DeleteButton, Empty, NewButton, RecordModal, selectClass, useCrm } from "./kit";
 
 const FAMILY_LABEL: Record<string, string> = { equipe: "Travailler ensemble", media: "Créer et diffuser" };
 
-export function ProductList({ products, stats }: { products: Product[]; stats: { id: string; active: number; trial: number; mrr: number }[] }) {
+export function ProductList({ products, stats, texts = [] }: { products: Product[]; stats: { id: string; active: number; trial: number; mrr: number }[]; texts?: ProductText[] }) {
   const crm = useCrm();
   const [editing, setEditing] = useState<Product | null>(null);
   const stat = (id: string) => stats.find((s) => s.id === id);
@@ -51,6 +53,7 @@ export function ProductList({ products, stats }: { products: Product[]; stats: {
                       {[p.category, FAMILY_LABEL[p.family]].filter(Boolean).join(" · ")} · {p.price_cents != null ? `${money(p.price_cents)} / personne / mois` : "prix de la formule"}
                     </p>
                   </div>
+                  <ProductTranslations product={p} texts={texts.filter((t) => t.product_id === p.id)} />
                   <Button size="sm" variant="ghost" aria-label="Modifier" onClick={() => setEditing(p)}>
                     <Pencil className="size-3.5" /> Modifier
                   </Button>
