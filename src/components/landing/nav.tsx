@@ -3,7 +3,7 @@
 import { ArrowRight, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Logo } from "@/components/logo";
+import { SuiteLogo } from "@/components/logo";
 import { primaryClass } from "@/lib/styles";
 import { setTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -27,7 +27,7 @@ export function Nav({ suite, signedIn, admin, account }: { suite: string; signed
         style={{ transitionTimingFunction: "var(--ease-out)" }}
       >
         <Link href="/" className="flex items-center gap-2.5">
-          <Logo className="size-8" />
+          <SuiteLogo className="size-8" />
           <span className="font-display text-[24px] leading-none">{suite}</span>
         </Link>
         <div className="flex flex-1 items-center justify-center gap-6 text-[13.5px] text-ink-2 max-md:hidden">

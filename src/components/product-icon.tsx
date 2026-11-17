@@ -1,5 +1,9 @@
 import { Box, CalendarClock, Clapperboard, KanbanSquare, Megaphone, MessagesSquare, PenLine, Radio, Vault, type LucideIcon } from "lucide-react";
+import { BrandIcon } from "@/components/logo";
 import { cn } from "@/lib/utils";
+
+// Products with a picto in the identity kit (public/_compte/brand/<id>/).
+const PICTOS: Record<string, string> = { lamio: "lamio", cairn: "cairn", tickup: "tickup", alfred: "alfred", metricove: "metricove", nino: "nino", maya: "maya-studio" };
 
 const ICONS: Record<string, LucideIcon> = {
   lamio: MessagesSquare,
@@ -20,9 +24,10 @@ export function ProductGlyph({ id, className }: { id: string; className?: string
 
 /**
  * Each product keeps its own glyph and colour (the accent of its app), on the public page
- * and in the admin alike. Without a colour, the ink of the theme (TickUp is black and white).
+ * and in the admin alike. Products of the identity kit show their picto instead. Without a colour, the ink of the theme (TickUp is black and white).
  */
 export function ProductIcon({ id, color, className, size = "md" }: { id: string; color?: string; className?: string; size?: "sm" | "md" | "lg" }) {
+  if (PICTOS[id]) return <BrandIcon slug={PICTOS[id]} className={cn(size === "sm" ? "size-7" : size === "md" ? "size-10" : "size-14", className)} />;
   const Icon = ICONS[id] ?? Box;
   const c = color || "var(--ink)";
   return (
