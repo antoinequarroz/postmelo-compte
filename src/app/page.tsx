@@ -30,7 +30,7 @@ export default async function HomePage() {
   const products = listProducts(true);
   const signedIn = !!session;
   const admin = session?.user.role === "admin";
-  const apps = products.map((p) => ({ id: p.id, name: p.name, color: p.color, category: p.category, family: p.family }));
+  const apps = products.map((p) => ({ id: p.id, name: p.name, color: p.color, category: p.category, family: p.family, status: p.status }));
   const story = products.map((p) => ({
     ...apps.find((a) => a.id === p.id)!,
     tagline: p.tagline,

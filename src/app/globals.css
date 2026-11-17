@@ -273,19 +273,6 @@ body::before {
 }
 .rise-blur { animation: rise-blur 1.3s var(--ease-out) both; }
 
-/* The orbit: a ring of apps turning around a core of light. */
-@keyframes orbit-spin { to { transform: rotateX(72deg) rotateZ(360deg); } }
-@keyframes orbit-counter { to { transform: rotateZ(-360deg); } }
-.orbit-ring { transform: rotateX(72deg) rotateZ(0deg); animation: orbit-spin 48s linear infinite; transform-style: preserve-3d; }
-.orbit-counter { animation: orbit-counter 48s linear infinite; transform-style: preserve-3d; }
-@keyframes core-turn { to { transform: rotate(360deg); } }
-.core-aurora { animation: core-turn 14s linear infinite; }
-@keyframes core-breathe {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.08); opacity: 1; }
-}
-.core-breathe { animation: core-breathe 6s var(--ease-in-out) infinite; }
-
 /* Endless band. */
 @keyframes marquee { to { transform: translateX(-50%); } }
 .marquee { animation: marquee 45s linear infinite; }
@@ -343,7 +330,7 @@ body::before {
 .orbit-pulse { transform-box: fill-box; transform-origin: center; animation: orbit-pulse 3.2s var(--ease-in-out) infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-grain, .shine-text, .rise-blur, .orbit-ring, .orbit-counter, .core-aurora, .core-breathe, .marquee,
+  .landing-grain, .shine-text, .rise-blur, .marquee,
   .msg, .typing span, .card-move, .vu, .rec, .caret, .sweep::after, .graph, .flow, .bob, .orbit-pulse { animation: none !important; }
   .reveal { opacity: 1; transform: none; filter: none; transition: none; }
 }
