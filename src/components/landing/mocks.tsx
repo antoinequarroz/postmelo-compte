@@ -1,0 +1,419 @@
+import { Camera, CheckCircle2, Eye, FileText, Hash, Image as ImageIcon, Lock, Mic, MonitorPlay, Plus, Radio, Search, Sparkles, Wand2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+/**
+ * Miniature interfaces of each app, drawn in HTML: what people would see once inside.
+ * They come alive (messages arriving, a card moving, meters bouncing) when `on` is set.
+ */
+
+type MockProps = { color: string; on: boolean };
+
+function Window({ title, color, on, children, className }: { title: string; color: string; on: boolean; children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn("relative flex h-full w-full flex-col overflow-hidden rounded-[20px] border border-[rgba(255,252,245,0.12)] bg-[#0e0e10]/90 text-[12px] text-ink backdrop-blur-xl", on && "mock-on", className)}
+      style={{ boxShadow: `0 60px 120px -50px ${color}, 0 30px 60px -30px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06)` }}
+    >
+      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-[rgba(255,252,245,0.07)] px-4">
+        <span className="flex gap-1.5">
+          <span className="size-2.5 rounded-full bg-[#ff5f57]" />
+          <span className="size-2.5 rounded-full bg-[#febc2e]" />
+          <span className="size-2.5 rounded-full bg-[#28c840]" />
+        </span>
+        <span className="ml-3 text-[11.5px] font-medium text-ink-3">{title}</span>
+      </div>
+      <div className="relative min-h-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
+const soft = (c: string, pct = 16) => `color-mix(in oklab, ${c} ${pct}%, transparent)`;
+const Dot = ({ c }: { c: string }) => <span className="inline-block size-1.5 rounded-full" style={{ background: c }} />;
+
+function Lamio({ color, on }: MockProps) {
+  const msgs = [
+    { who: "Léa", hue: 200, text: "Le montage du podcast est en ligne 🎙️" },
+    { who: "Marc", hue: 30, text: "Top ! Je le programme sur Metricove pour jeudi." },
+    { who: "Antoine", hue: 150, text: "Parfait. @tous point d'équipe à 14 h ?" },
+    { who: "Julie", hue: 300, text: "Ça marche pour moi 👍" },
+  ];
+  return (
+    <Window title="Lamio — #studio" color={color} on={on}>
+      <div className="flex h-full">
+        <aside className="hidden w-[150px] shrink-0 flex-col gap-1 border-r border-[rgba(255,252,245,0.07)] p-3 sm:flex">
+          <p className="mb-1 text-[10px] uppercase tracking-wider text-ink-3">Canaux</p>
+          {["general", "studio", "design", "clients"].map((c) => (
+            <span key={c} className={cn("flex items-center gap-1.5 rounded-md px-2 py-1", c === "studio" ? "text-ink" : "text-ink-3")} style={c === "studio" ? { background: soft(color, 22) } : undefined}>
+              <Hash className="size-3" /> {c}
+              {c === "design" && <span className="ml-auto rounded-full px-1.5 text-[9.5px] font-semibold text-black" style={{ background: color }}>3</span>}
+            </span>
+          ))}
+          <p className="mb-1 mt-3 text-[10px] uppercase tracking-wider text-ink-3">Messages</p>
+          {["Léa", "Marc"].map((n) => (
+            <span key={n} className="flex items-center gap-1.5 px-2 py-1 text-ink-3">
+              <Dot c="#28c840" /> {n}
+            </span>
+          ))}
+        </aside>
+        <div className="flex min-w-0 flex-1 flex-col justify-end gap-3 p-4">
+          {msgs.map((m, i) => (
+            <div key={i} className="msg flex gap-2.5" style={{ animationDelay: `${300 + i * 650}ms` }}>
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-semibold" style={{ background: `oklch(0.62 0.13 ${m.hue} / 0.25)`, color: `oklch(0.8 0.12 ${m.hue})` }}>
+                {m.who[0]}
+              </span>
+              <div>
+                <p className="text-[11px] font-semibold">
+                  {m.who} <span className="font-normal text-ink-3">14:0{i + 2}</span>
+                </p>
+                <p className="text-ink-2">{m.text}</p>
+              </div>
+            </div>
+          ))}
+          <div className="msg flex items-center gap-2 text-ink-3" style={{ animationDelay: "3000ms" }}>
+            <span className="typing flex gap-0.5">
+              <span className="size-1.5 rounded-full bg-ink-3" />
+              <span className="size-1.5 rounded-full bg-ink-3" />
+              <span className="size-1.5 rounded-full bg-ink-3" />
+            </span>
+            Léa écrit…
+          </div>
+          <div className="flex h-9 items-center rounded-lg border border-[rgba(255,252,245,0.1)] px-3 text-ink-3">Écrire dans #studio</div>
+        </div>
+      </div>
+    </Window>
+  );
+}
+
+function Cairn({ color, on }: MockProps) {
+  return (
+    <Window title="Cairn — Notes" color={color} on={on}>
+      <div className="flex h-full">
+        <aside className="hidden w-[160px] shrink-0 flex-col gap-1 border-r border-[rgba(255,252,245,0.07)] p-3 text-ink-3 sm:flex">
+          <span className="mb-2 flex items-center gap-1.5 rounded-md border border-[rgba(255,252,245,0.1)] px-2 py-1">
+            <Search className="size-3" /> Rechercher <span className="ml-auto text-[9.5px]">⌘K</span>
+          </span>
+          {["📁 Clients", "📁 Studio", "📄 Charte Postmelo", "📄 Idées vidéo", "🔒 Accès VPS"].map((n, i) => (
+            <span key={n} className={cn("rounded-md px-2 py-1", i === 2 && "text-ink")} style={i === 2 ? { background: soft(color, 22) } : undefined}>
+              {n}
+            </span>
+          ))}
+        </aside>
+        <div className="min-w-0 flex-1 p-5">
+          <p className="font-display text-[24px] leading-none">Charte Postmelo</p>
+          <p className="mt-3 text-ink-2">
+            <span style={{ color }}>## </span>Ton
+          </p>
+          <p className="mt-1 leading-relaxed text-ink-3">Direct, chaleureux, sans jargon. On tutoie. Une idée par phrase.</p>
+          <p className="mt-3 text-ink-2">
+            <span style={{ color }}>## </span>Couleurs
+          </p>
+          <div className="mt-2 flex gap-1.5">
+            {["#12805c", "#efede8", "#181715", color].map((c) => (
+              <span key={c} className="size-6 rounded-md ring-1 ring-white/10" style={{ background: c }} />
+            ))}
+          </div>
+          <p className="mt-3 text-ink-3">
+            - [x] Logo validé
+            <br />- [ ] Déclinaison vidéo<span className="caret ml-0.5 inline-block h-3 w-px translate-y-0.5" style={{ background: color }} />
+          </p>
+          <div className="msg mt-4 flex items-center gap-3 rounded-xl border p-3" style={{ borderColor: soft(color, 40), background: soft(color, 10), animationDelay: "700ms" }}>
+            <Lock className="size-4" style={{ color }} />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">Serveur VPS</p>
+              <p className="tracking-[0.25em] text-ink-3">••••••••••••</p>
+            </div>
+            <span className="text-[10px] text-ink-3">Chiffré</span>
+          </div>
+        </div>
+      </div>
+    </Window>
+  );
+}
+
+function TickUp({ color, on }: MockProps) {
+  const cols = [
+    { name: "À faire", cards: ["Brief vidéo", "Maquette accueil"] },
+    { name: "En cours", cards: ["Montage épisode 12"] },
+    { name: "Terminé", cards: ["Logo final", "Charte"] },
+  ];
+  const c = color || "#f6f4ef";
+  return (
+    <Window title="TickUp — Studio · Sprint 4" color={c} on={on}>
+      <div className="grid h-full grid-cols-3 gap-2.5 p-4">
+        {cols.map((col, ci) => (
+          <div key={col.name} className="flex flex-col gap-2 rounded-xl bg-white/[0.03] p-2">
+            <p className="flex items-center gap-1.5 px-1 text-[10.5px] font-medium text-ink-2">
+              <span className="size-2 rounded-full border border-ink-3" style={ci === 2 ? { background: c } : undefined} /> {col.name}
+            </p>
+            {col.cards.map((t, i) => (
+              <div key={t} className={cn("relative rounded-lg border border-[rgba(255,252,245,0.1)] bg-[#17171a] p-2.5", ci === 0 && i === 0 && "card-move z-10")}>
+                <p className="text-[10px] text-ink-3">STU-{12 + ci * 3 + i}</p>
+                <p className="mt-0.5 font-medium leading-snug">{t}</p>
+                <div className="mt-2 flex items-center gap-1">
+                  <span className="h-1 flex-1 rounded-full bg-white/10">
+                    <span className="block h-full rounded-full" style={{ width: `${[30, 65, 100][ci]}%`, background: c }} />
+                  </span>
+                </div>
+              </div>
+            ))}
+            <span className="flex items-center gap-1 px-1 text-[10.5px] text-ink-3">
+              <Plus className="size-3" /> Ticket
+            </span>
+          </div>
+        ))}
+      </div>
+    </Window>
+  );
+}
+
+function Alfred({ color, on }: MockProps) {
+  const days = ["Lun", "Mar", "Mer", "Jeu", "Ven"];
+  const events = [
+    { d: 0, s: 1, l: 2, t: "Point équipe" },
+    { d: 1, s: 3, l: 2, t: "Tournage" },
+    { d: 2, s: 0, l: 1, t: "Client Rhône" },
+    { d: 3, s: 2, l: 3, t: "Podcast live" },
+    { d: 4, s: 1, l: 1, t: "RDV · Léa" },
+  ];
+  return (
+    <Window title="Alfred — Semaine 47" color={color} on={on}>
+      <div className="flex h-full flex-col p-4">
+        <div className="grid grid-cols-5 gap-1.5 text-center text-[10.5px] text-ink-3">
+          {days.map((d, i) => (
+            <span key={d} className={cn(i === 2 && "text-ink")}>
+              {d} <span className={cn("ml-0.5 inline-flex size-5 items-center justify-center rounded-full", i === 2 && "text-black")} style={i === 2 ? { background: color } : undefined}>{16 + i}</span>
+            </span>
+          ))}
+        </div>
+        <div className="relative mt-2 grid flex-1 grid-cols-5 gap-1.5">
+          {days.map((d, di) => (
+            <div key={d} className="relative rounded-lg bg-white/[0.025]">
+              {events
+                .filter((e) => e.d === di)
+                .map((e) => (
+                  <div key={e.t} className="msg absolute inset-x-1 rounded-md border-l-2 p-1.5 text-[10px] leading-tight" style={{ top: `${e.s * 18 + 4}%`, height: `${e.l * 17}%`, borderColor: color, background: soft(color, 22), animationDelay: `${200 + di * 180}ms` }}>
+                    {e.t}
+                  </div>
+                ))}
+            </div>
+          ))}
+        </div>
+        <div className="msg absolute bottom-4 right-4 flex items-center gap-2 rounded-xl border border-[rgba(255,252,245,0.12)] bg-[#17171a] px-3 py-2 shadow-2xl" style={{ animationDelay: "1500ms" }}>
+          <CheckCircle2 className="size-4" style={{ color }} />
+          <span>
+            <span className="block font-medium">Rendez-vous confirmé</span>
+            <span className="text-[10.5px] text-ink-3">Vendredi 10:30 · e-mail envoyé</span>
+          </span>
+        </div>
+      </div>
+    </Window>
+  );
+}
+
+function Metricove({ color, on }: MockProps) {
+  const nets = ["in", "IG", "X", "f", "▶"];
+  return (
+    <Window title="Metricove — Calendrier" color={color} on={on}>
+      <div className="grid h-full grid-cols-[1fr_1.1fr] gap-3 p-4">
+        <div className="grid grid-cols-7 content-start gap-1 text-center text-[9.5px] text-ink-3">
+          {Array.from({ length: 28 }, (_, i) => (
+            <span key={i} className="relative flex aspect-square items-center justify-center rounded-md bg-white/[0.03]">
+              {i + 1}
+              {[2, 5, 9, 12, 16, 19, 23, 26].includes(i) && <span className="absolute bottom-1 size-1 rounded-full" style={{ background: color }} />}
+            </span>
+          ))}
+        </div>
+        <div className="msg flex flex-col rounded-xl border border-[rgba(255,252,245,0.1)] bg-[#17171a] p-3" style={{ animationDelay: "300ms" }}>
+          <div className="flex items-center gap-2">
+            <span className="size-6 rounded-full" style={{ background: `linear-gradient(135deg, ${color}, #6f42e6)` }} />
+            <span className="font-medium">Postmelo</span>
+            <span className="ml-auto rounded-full px-2 py-0.5 text-[9.5px] font-medium text-black" style={{ background: color }}>
+              Jeu 18:00
+            </span>
+          </div>
+          <div className="mt-2.5 flex aspect-video items-end rounded-lg p-2" style={{ background: `linear-gradient(135deg, ${soft(color, 55)}, rgba(111,66,230,0.35))` }}>
+            <span className="font-display text-[18px] leading-none">Épisode 12</span>
+          </div>
+          <p className="mt-2 text-ink-2">Le nouvel épisode est là. On parle d&apos;outils, d&apos;équipe et de vidéo 🎬</p>
+          <div className="mt-auto flex gap-1.5 pt-2">
+            {nets.map((n, i) => (
+              <span key={n} className="msg flex size-6 items-center justify-center rounded-md bg-white/[0.06] text-[9.5px] font-bold" style={{ animationDelay: `${700 + i * 120}ms` }}>
+                {n}
+              </span>
+            ))}
+            <span className="ml-auto flex items-center gap-1 text-[10px] text-ink-3">
+              <Eye className="size-3" /> 12,4 k
+            </span>
+          </div>
+        </div>
+      </div>
+    </Window>
+  );
+}
+
+function Studio({ color, on }: MockProps) {
+  return (
+    <Window title="Postmelo Studio — Carrousel" color={color} on={on}>
+      <div className="flex h-full flex-col gap-3 p-4">
+        <div className="flex flex-1 gap-3">
+          <div className="relative flex flex-1 flex-col justify-between overflow-hidden rounded-xl p-4" style={{ background: "#efede8", color: "#181715" }}>
+            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color }}>
+              3 erreurs à éviter
+            </span>
+            <p className="font-display text-[26px] leading-[0.95]">
+              Ton équipe perd
+              <br />
+              <span className="italic" style={{ color }}>
+                2 h par jour
+              </span>
+            </p>
+            <span className="text-[10px]">postmelo.ch · 1/6</span>
+          </div>
+          <div className="hidden w-[38%] flex-col gap-2 sm:flex">
+            <div className="rounded-lg bg-white/[0.04] p-2.5">
+              <p className="text-[10px] text-ink-3">Ton de la marque</p>
+              <p className="mt-1">Direct, chaleureux</p>
+            </div>
+            <div className="rounded-lg bg-white/[0.04] p-2.5">
+              <p className="text-[10px] text-ink-3">Format</p>
+              <p className="mt-1">Carrousel LinkedIn</p>
+            </div>
+            <button className="sweep relative mt-auto flex items-center justify-center gap-1.5 overflow-hidden rounded-lg py-2 font-medium text-black" style={{ background: color }}>
+              <Wand2 className="size-3.5" /> Générer avec l&apos;IA
+            </button>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <span key={i} className={cn("msg aspect-square flex-1 rounded-md", i === 0 ? "ring-2" : "")} style={{ background: i === 0 ? "#efede8" : i % 2 ? soft(color, 30) : "rgba(255,255,255,0.06)", ["--tw-ring-color" as string]: color, animationDelay: `${200 + i * 120}ms` }} />
+          ))}
+        </div>
+      </div>
+    </Window>
+  );
+}
+
+function Nino({ color, on }: MockProps) {
+  return (
+    <Window title="Nino Studio — Régie" color={color} on={on}>
+      <div className="grid h-full grid-cols-[1.5fr_1fr] gap-3 p-4">
+        <div className="flex flex-col gap-2">
+          <div className="relative flex-1 overflow-hidden rounded-xl" style={{ background: "radial-gradient(circle at 40% 40%, #3a3a40, #121214)" }}>
+            <div className="absolute inset-0 flex items-center justify-center gap-6 opacity-70">
+              <span className="h-16 w-12 rounded-t-full bg-[#2a2a2f]" />
+              <span className="h-20 w-14 rounded-t-full bg-[#323238]" />
+            </div>
+            <span className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-[10px] font-semibold">
+              <span className="rec size-2 rounded-full bg-[#ff3b30]" /> REC 00:42:18
+            </span>
+            <span className="absolute right-2.5 top-2.5 rounded-md px-2 py-1 text-[10px] font-semibold text-white" style={{ background: color }}>
+              PROGRAMME
+            </span>
+            <span className="absolute bottom-2.5 left-2.5 text-[10px] text-ink-2">Plan large · automatique</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {["CAM 1", "CAM 2", "CAM 3"].map((c, i) => (
+              <span key={c} className={cn("flex aspect-video items-end rounded-md p-1 text-[9px]", i === 1 && "ring-2")} style={{ background: "linear-gradient(135deg, #2a2a30, #151517)", ["--tw-ring-color" as string]: color }}>
+                <Camera className="mr-1 size-2.5" /> {c}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-2">
+          <p className="text-[10px] uppercase tracking-wider text-ink-3">Micros</p>
+          <div className="flex flex-1 items-end justify-between gap-1.5 rounded-xl bg-white/[0.03] p-3">
+            {[0, 1, 2, 3].map((m) => (
+              <div key={m} className="flex h-full flex-1 flex-col items-center gap-1.5">
+                <div className="relative w-full flex-1 overflow-hidden rounded bg-white/[0.05]">
+                  <span className="vu absolute inset-x-0 bottom-0 h-full rounded" style={{ background: `linear-gradient(to top, #28c840, #febc2e 75%, ${color})`, animationDelay: `${m * -0.23}s`, animationDuration: `${0.7 + m * 0.15}s` }} />
+                </div>
+                <Mic className="size-3 text-ink-3" />
+              </div>
+            ))}
+          </div>
+          <button className="flex items-center justify-center gap-1.5 rounded-lg py-2 font-medium text-white" style={{ background: color }}>
+            <Radio className="size-3.5" /> En direct
+          </button>
+        </div>
+      </div>
+    </Window>
+  );
+}
+
+function Maya({ color, on }: MockProps) {
+  return (
+    <Window title="Maya Studio — Scène « Plateau »" color={color} on={on}>
+      <div className="grid h-full grid-cols-[110px_1fr] gap-3 p-4 max-sm:grid-cols-1">
+        <div className="flex flex-col gap-1.5 max-sm:hidden">
+          <p className="text-[10px] uppercase tracking-wider text-ink-3">Scènes</p>
+          {["Intro", "Plateau", "Invité", "Écran", "Fin"].map((s) => (
+            <span key={s} className={cn("rounded-md px-2 py-1", s === "Plateau" ? "text-ink" : "text-ink-3")} style={s === "Plateau" ? { background: soft(color, 25) } : undefined}>
+              {s}
+            </span>
+          ))}
+          <p className="mt-2 text-[10px] uppercase tracking-wider text-ink-3">Sources</p>
+          {[
+            [MonitorPlay, "Écran"],
+            [Camera, "Caméra"],
+            [ImageIcon, "Logo"],
+            [FileText, "Titre"],
+          ].map(([Icon, n]) => {
+            const I = Icon as typeof Camera;
+            return (
+              <span key={n as string} className="flex items-center gap-1.5 px-2 text-ink-3">
+                <I className="size-3" /> {n as string}
+              </span>
+            );
+          })}
+        </div>
+        <div className="flex flex-col gap-2">
+          <div className="relative flex-1 overflow-hidden rounded-xl bg-[#121214]" style={{ backgroundImage: `radial-gradient(circle at 70% 30%, ${soft(color, 35)}, transparent 60%)` }}>
+            <div className="absolute left-[8%] top-[14%] h-[62%] w-[55%] rounded-lg border border-white/10 bg-[#1d1d21]" />
+            <div className="absolute bottom-[12%] right-[8%] h-[40%] w-[30%] rounded-lg border-2 bg-[#2a2a30]" style={{ borderColor: color }} />
+            <div className="absolute bottom-[10%] left-[8%] rounded-md bg-black/70 px-2 py-1 text-[10px]">
+              <span className="font-semibold">Antoine Q.</span> · Postmelo
+            </div>
+            <span className="absolute right-2.5 top-2.5 flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold text-white" style={{ background: color }}>
+              <span className="rec size-1.5 rounded-full bg-white" /> LIVE · SRT
+            </span>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg bg-white/[0.03] px-3 py-2">
+            <span className="text-[10px] text-ink-3">Débit</span>
+            <svg viewBox="0 0 200 30" className="h-6 flex-1" aria-hidden>
+              <polyline className="graph" fill="none" stroke={color} strokeWidth="2" points="0,22 20,18 40,20 60,12 80,15 100,8 120,11 140,6 160,9 180,5 200,7" />
+            </svg>
+            <span className="tabular text-[10px]">6,2 Mb/s</span>
+          </div>
+        </div>
+      </div>
+    </Window>
+  );
+}
+
+function Generic({ color, on, name }: MockProps & { name: string }) {
+  return (
+    <Window title={name} color={color} on={on}>
+      <div className="flex h-full items-center justify-center">
+        <Sparkles className="size-10" style={{ color }} />
+      </div>
+    </Window>
+  );
+}
+
+const MOCKS: Record<string, (p: MockProps) => React.ReactElement> = {
+  lamio: Lamio,
+  cairn: Cairn,
+  tickup: TickUp,
+  alfred: Alfred,
+  metricove: Metricove,
+  "postmelo-studio": Studio,
+  nino: Nino,
+  maya: Maya,
+};
+
+export function AppMock({ id, name, color, on }: { id: string; name: string; color: string; on: boolean }) {
+  const Mock = MOCKS[id];
+  const c = color || "#f6f4ef";
+  return Mock ? <Mock color={c} on={on} /> : <Generic color={c} on={on} name={name} />;
+}
+
