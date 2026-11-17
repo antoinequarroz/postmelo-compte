@@ -82,6 +82,17 @@ function PlanCard({ plan, apps, period, account }: { plan: PricingPlan; apps: Pr
         </div>
       )}
 
+      {plan.scope === "suite" && apps.length > 0 && (
+        <ul className="mt-5 flex flex-wrap items-center gap-1.5" aria-label="Applications incluses">
+          {apps.map((a) => (
+            <li key={a.id} title={`${a.name} · ${a.category}`}>
+              <ProductIcon id={a.id} color={a.color || undefined} size="sm" className="size-8" />
+              <span className="sr-only">{a.name}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
       <div className="mt-6 flex items-end gap-2">
         {onRequest ? (
           <span className="font-display text-[46px] leading-none">Sur devis</span>
