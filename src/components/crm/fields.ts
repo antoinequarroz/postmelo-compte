@@ -1,4 +1,4 @@
-import { ACTIVITY_LABEL, KIND_LABEL, LICENSE_STATUS_LABEL, PLAN_LABEL, PLAN_SCOPE_LABEL, PLAN_STATUS_LABEL, PRODUCT_STATUS_LABEL, STAGE_LABEL } from "@/lib/crm-labels";
+import { ACTIVITY_LABEL, FIGURE_SOURCE_LABEL, PROOF_STATUS_LABEL, KIND_LABEL, LICENSE_STATUS_LABEL, PLAN_LABEL, PLAN_SCOPE_LABEL, PLAN_STATUS_LABEL, PRODUCT_STATUS_LABEL, STAGE_LABEL } from "@/lib/crm-labels";
 import type { FieldDef } from "./kit";
 
 type Option = { id: string; name: string };
@@ -71,3 +71,37 @@ export const planFields: FieldDef[] = [
 ];
 
 export const activityKinds = opts(ACTIVITY_LABEL, ["note", "appel", "email", "rdv"]);
+
+// ---- Social proof
+
+const proofStatus = { key: "status", label: "Sur le site", type: "select" as const, options: opts(PROOF_STATUS_LABEL), half: true, hint: "Un brouillon reste ici." };
+const sortField = { key: "sort", label: "Ordre", type: "int" as const, half: true, hint: "Du plus petit au plus grand." };
+
+export const testimonialFields = (products: Option[], companies: Option[]): FieldDef[] => [
+  { key: "quote", label: "Citation", type: "textarea", required: true, hint: "Les mots exacts de la personne, publiés avec son accord." },
+  { key: "author", label: "Nom", required: true, half: true },
+  { key: "role", label: "Fonction", half: true, placeholder: "Directrice, Atelier Rhône" },
+  { key: "company_id", label: "Client du CRM", type: "select", options: pick(companies, "Aucun"), half: true },
+  { key: "company", label: "Entreprise affichée", half: true, hint: "Vide : le nom du client du CRM." },
+  { key: "product_id", label: "Application", type: "select", options: pick(products, "Toute la suite"), half: true },
+  proofStatus,
+  sortField,
+];
+
+export const logoFields = (companies: Option[]): FieldDef[] => [
+  { key: "name", label: "Nom", required: true, half: true, hint: "Affiché en toutes lettres s'il n'y a pas d'image." },
+  { key: "company_id", label: "Client du CRM", type: "select", options: pick(companies, "Aucun"), half: true },
+  { key: "image", label: "Logo", type: "image", hint: "SVG ou PNG transparent, 300 Ko au plus. Il s'affiche en monochrome, en couleur au survol." },
+  { key: "link", label: "Lien", type: "url", placeholder: "https://", half: true },
+  proofStatus,
+  sortField,
+];
+
+export const figureFields: FieldDef[] = [
+  { key: "label", label: "Libellé", required: true, placeholder: "équipes utilisent la suite" },
+  { key: "source", label: "Source", type: "select", options: opts(FIGURE_SOURCE_LABEL), hint: "Compté dans le CRM : le chiffre suit tout seul, et se cache tant qu'il vaut zéro." },
+  { key: "value", label: "Chiffre", half: true, placeholder: "1200", hint: "Seulement pour « Saisi à la main »." },
+  { key: "suffix", label: "Après le chiffre", half: true, placeholder: "+ ou %" },
+  proofStatus,
+  sortField,
+];

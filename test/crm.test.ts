@@ -80,3 +80,37 @@ test("the CSV export neutralises formulas", async () => {
   expect(csv).toContain(`"'=HYPERLINK(""x"")"`);
   expect(crm.exportCsv("licences")).toContain("Atelier Rhône;TickUp");
 });
+
+test("social proof stays hidden until something real is published", async () => {
+  const crm = await import("@/server/crm");
+  // Nothing is invented: no proof entered, nothing shown.
+  expect(crm.publicProof()).toEqual({ testimonials: [], logos: [], figures: [] });
+
+  const company = crm.create("company", { name: "Studio Léman", kind: "client" });
+  const t = crm.create("testimonial", { quote: "On a tout réuni.", author: "Léa", role: "Productrice", company_id: company, product_id: "nino", status: "brouillon" });
+  expect(crm.publicProof().testimonials).toEqual([]);
+  crm.update("testimonial", t, { status: "publie" });
+  expect(crm.publicProof().testimonials[0]).toMatchObject({ author: "Léa", company: "Studio Léman", product: { id: "nino" } });
+
+  // A figure counted from the CRM follows it, and hides while it is zero.
+  crm.create("figure", { label: "places actives", source: "places" });
+  crm.create("figure", { label: "satisfaits", source: "manuel", value: "98", suffix: "%" });
+  crm.create("figure", { label: "vide", source: "manuel", value: "" });
+  const before = crm.liveFigures();
+  crm.create("license", { company_id: company, product_id: "maya", seats: 4, status: "actif" });
+  expect(crm.liveFigures().places).toBe(before.places + 4);
+  expect(crm.publicProof().figures.find((f) => f.label === "places actives")?.value).toBe(String(before.places + 4));
+  expect(crm.publicProof().figures.map((f) => f.label)).not.toContain("vide");
+  expect(crm.figureValue({ source: "clients", value: "" }, { clients: 0, licences: 0, places: 0, produits: 0 })).toBe("");
+
+  // Logos: an image or an https address, never a script.
+  expect(() => crm.create("logo", { name: "X", image: "javascript:alert(1)" })).toThrow(/logo/);
+  expect(() => crm.create("logo", { name: "X", link: "javascript:alert(1)" })).toThrow(/lien/);
+  expect(() => crm.create("figure", { label: "X", value: "beaucoup" })).toThrow(/nombre/);
+  crm.create("logo", { name: "Studio Léman", image: "data:image/svg+xml;base64,PHN2Zy8+", link: "https://studio.ch" });
+  expect(crm.publicProof().logos).toHaveLength(1);
+
+  // A client that goes away leaves its testimonial in place.
+  crm.remove("company", company);
+  expect(crm.publicProof().testimonials[0].company).toBe("");
+});

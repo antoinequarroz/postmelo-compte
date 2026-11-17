@@ -427,6 +427,14 @@ html:has(.landing) body {
 @keyframes marquee { to { transform: translateX(-50%); } }
 .marquee { animation: marquee 45s linear infinite; }
 
+/* Client logos of the home page: one ink for all, their own colours on hover (components/landing/proof.tsx). */
+.proof-logo { filter: grayscale(1) brightness(0); opacity: 0.55; transition: filter 0.5s var(--ease-out), opacity 0.5s var(--ease-out); }
+.proof-logo:hover { filter: none; opacity: 1; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .proof-logo:not(:hover) { filter: grayscale(1) brightness(0) invert(1); }
+}
+:root[data-theme="dark"] .proof-logo:not(:hover) { filter: grayscale(1) brightness(0) invert(1); }
+
 /* Appears when scrolled into view (components/landing/reveal.tsx). */
 .reveal {
   opacity: 0;

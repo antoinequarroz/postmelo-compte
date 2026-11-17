@@ -20,6 +20,10 @@ export const ACTIVITY_KINDS = ["note", "appel", "email", "rdv", "systeme"] as co
 export const PLAN_SCOPES = ["app", "suite"] as const;
 /** Only published formulas are shown on /tarifs and can be bought. */
 export const PLAN_STATUSES = ["brouillon", "publie", "masque"] as const;
+/** Social proof (testimonials, client logos, figures): shown on the home page once published. */
+export const PROOF_STATUSES = ["publie", "brouillon"] as const;
+/** Where a figure comes from: typed in the admin, or counted live from the CRM. */
+export const FIGURE_SOURCES = ["manuel", "clients", "licences", "places", "produits"] as const;
 
 /** Chance that a deal at this stage is won, for the weighted pipeline. */
 export const STAGE_ODDS: Record<(typeof DEAL_STAGES)[number], number> = { nouveau: 0.1, qualifie: 0.25, proposition: 0.5, negociation: 0.75, gagne: 1, perdu: 0 };
@@ -175,6 +179,39 @@ function crm() {
       sort integer not null default 0,
       created_at text not null
     );
+    -- Social proof for the home page. Nothing is shown until real entries are added here.
+    create table if not exists crm_testimonial (
+      id text primary key,
+      quote text not null,
+      author text not null,
+      role text not null default '',
+      company text not null default '',
+      company_id text references crm_company(id) on delete set null,
+      product_id text references crm_product(id) on delete set null,
+      status text not null default 'publie',
+      sort integer not null default 0,
+      created_at text not null
+    );
+    create table if not exists crm_logo (
+      id text primary key,
+      name text not null,
+      image text not null default '',
+      link text not null default '',
+      company_id text references crm_company(id) on delete set null,
+      status text not null default 'publie',
+      sort integer not null default 0,
+      created_at text not null
+    );
+    create table if not exists crm_figure (
+      id text primary key,
+      label text not null,
+      source text not null default 'manuel',
+      value text not null default '',
+      suffix text not null default '',
+      status text not null default 'publie',
+      sort integer not null default 0,
+      created_at text not null
+    );
     create index if not exists crm_contact_company on crm_contact(company_id);
     create index if not exists crm_license_company on crm_license(company_id);
     create index if not exists crm_deal_company on crm_deal(company_id);
@@ -247,6 +284,9 @@ export type License = { id: string; company_id: string; product_id: string; plan
 export type Plan = { id: string; name: string; tagline: string; features: string; scope: (typeof PLAN_SCOPES)[number]; monthly_cents: number | null; yearly_discount: number; trial_days: number; highlight: number; status: string; sort: number };
 export type Deal = { id: string; company_id: string; product_id: string | null; title: string; value_cents: number; stage: string; expected_close: string | null; created_at: string; updated_at: string };
 export type Activity = { id: string; company_id: string; kind: string; body: string; author: string; at: string };
+export type Testimonial = { id: string; quote: string; author: string; role: string; company: string; company_id: string | null; product_id: string | null; status: string; sort: number; created_at: string };
+export type Logo = { id: string; name: string; image: string; link: string; company_id: string | null; status: string; sort: number; created_at: string };
+export type Figure = { id: string; label: string; source: string; value: string; suffix: string; status: string; sort: number; created_at: string };
 
 // ---- Validation: one description per kind of record, used for creating and for editing
 
@@ -324,14 +364,43 @@ const SPECS = {
     kind: { type: "enum", values: ACTIVITY_KINDS.filter((k) => k !== "systeme") },
     body: { type: "text", max: 4000, required: true },
   },
+  testimonial: {
+    quote: { type: "text", max: 600, required: true },
+    author: { type: "text", max: 120, required: true },
+    role: { type: "text", max: 120 },
+    company: { type: "text", max: 120 },
+    company_id: { type: "ref", table: "crm_company", nullable: true },
+    product_id: { type: "ref", table: "crm_product", nullable: true },
+    status: { type: "enum", values: PROOF_STATUSES },
+    sort: { type: "int", min: 0, max: 999 },
+  },
+  logo: {
+    name: { type: "text", max: 80, required: true },
+    image: { type: "text", max: 400_000 },
+    link: { type: "text", max: 300 },
+    company_id: { type: "ref", table: "crm_company", nullable: true },
+    status: { type: "enum", values: PROOF_STATUSES },
+    sort: { type: "int", min: 0, max: 999 },
+  },
+  figure: {
+    label: { type: "text", max: 80, required: true },
+    source: { type: "enum", values: FIGURE_SOURCES },
+    value: { type: "text", max: 16 },
+    suffix: { type: "text", max: 6 },
+    status: { type: "enum", values: PROOF_STATUSES },
+    sort: { type: "int", min: 0, max: 999 },
+  },
 } satisfies Record<string, Record<string, Spec>>;
 
 export type Kind = keyof typeof SPECS;
 export const KINDS = Object.keys(SPECS) as Kind[];
-const TABLE: Record<Kind, string> = { plan: "crm_plan", product: "crm_product", company: "crm_company", contact: "crm_contact", license: "crm_license", deal: "crm_deal", activity: "crm_activity" };
+const TABLE: Record<Kind, string> = {
+  plan: "crm_plan", product: "crm_product", company: "crm_company", contact: "crm_contact", license: "crm_license", deal: "crm_deal", activity: "crm_activity",
+  testimonial: "crm_testimonial", logo: "crm_logo", figure: "crm_figure",
+};
 
 const LABEL: Record<string, string> = {
-  name: "Le nom", title: "Le titre", body: "Le texte", company_id: "Le client", product_id: "Le produit", email: "L'e-mail",
+  name: "Le nom", title: "Le titre", quote: "La citation", author: "L'auteur", label: "Le libellé", image: "Le logo", link: "Le lien", body: "Le texte", company_id: "Le client", product_id: "Le produit", email: "L'e-mail",
   seats: "Le nombre de places", sort: "L'ordre", start_date: "La date de début", renewal_date: "La date de renouvellement", expected_close: "La date prévue",
 };
 const label = (key: string) => LABEL[key] ?? `Le champ « ${key} »`;
@@ -353,6 +422,11 @@ export function clean(kind: Kind, input: Record<string, unknown>, partial = fals
         if (value.length > spec.max) throw new CrmError(`${label(key)} est trop long (${spec.max} caractères au plus).`);
         if (spec.email && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) throw new CrmError("Cette adresse e-mail n'est pas valide.");
         if (key === "color" && value && !/^#[0-9a-f]{6}$/i.test(value)) throw new CrmError("La couleur doit s'écrire #RRGGBB.");
+        // A logo is an image sent from the admin, or the address of one. Never anything a browser would run.
+        if (key === "image" && value && !/^data:image\/(png|jpeg|webp|gif|svg\+xml);base64,[A-Za-z0-9+/]+=*$/.test(value) && !/^https:\/\/[^\s"'<>]+$/.test(value) && !/^\/[^\s"'<>]*$/.test(value))
+          throw new CrmError("Le logo doit être une image PNG, JPEG, WebP, GIF ou SVG, ou une adresse https://.");
+        if (key === "link" && value && !/^https?:\/\/[^\s"'<>]+$/.test(value)) throw new CrmError("Le lien doit commencer par https://.");
+        if (kind === "figure" && key === "value" && value && !/\d/.test(value)) throw new CrmError("Le chiffre doit contenir un nombre.");
         out[key] = key === "country" ? value.toUpperCase() : spec.email ? value.toLowerCase() : value;
         break;
       }
@@ -669,6 +743,65 @@ export function dashboard() {
 }
 
 export type Dashboard = ReturnType<typeof dashboard>;
+
+// ---- Social proof: testimonials, client logos and figures for the home page
+
+/** The figures counted live from the CRM, by source. */
+export function liveFigures(): Record<Exclude<(typeof FIGURE_SOURCES)[number], "manuel">, number> {
+  const conn = crm();
+  const one = (sql: string) => (conn.prepare(sql).get() as { n: number }).n;
+  return {
+    clients: one("select count(*) as n from crm_company where kind = 'client'"),
+    licences: one("select count(*) as n from crm_license where status = 'actif'"),
+    places: one("select coalesce(sum(seats), 0) as n from crm_license where status = 'actif'"),
+    produits: one("select count(*) as n from crm_product where status != 'masque'"),
+  };
+}
+
+/** What a figure shows: its typed value, or the live count of its source ("" when there is nothing to show). */
+export function figureValue(f: Pick<Figure, "source" | "value">, live = liveFigures()) {
+  if (f.source === "manuel") return f.value;
+  const n = live[f.source as keyof typeof live] ?? 0;
+  return n > 0 ? String(n) : "";
+}
+
+/** Everything, for the admin. */
+export function listProof() {
+  const conn = crm();
+  const live = liveFigures();
+  return {
+    testimonials: conn.prepare("select * from crm_testimonial order by sort, created_at").all() as Testimonial[],
+    logos: conn.prepare("select * from crm_logo order by sort, created_at").all() as Logo[],
+    figures: (conn.prepare("select * from crm_figure order by sort, created_at").all() as Figure[]).map((f) => ({ ...f, shown: figureValue(f, live) })),
+    live,
+  };
+}
+
+export type PublicProof = {
+  testimonials: { id: string; quote: string; author: string; role: string; company: string; product: { id: string; name: string; color: string } | null }[];
+  logos: { id: string; name: string; image: string; link: string }[];
+  figures: { id: string; label: string; value: string; suffix: string }[];
+};
+
+/** Only what is published, and only figures that have something to show. */
+export function publicProof(): PublicProof {
+  const conn = crm();
+  const live = liveFigures();
+  const testimonials = conn
+    .prepare(
+      `select t.id, t.quote, t.author, t.role, coalesce(nullif(t.company, ''), c.name, '') as company, p.id as product_id, p.name as product_name, p.color as product_color
+       from crm_testimonial t left join crm_company c on c.id = t.company_id left join crm_product p on p.id = t.product_id and p.status != 'masque'
+       where t.status = 'publie' order by t.sort, t.created_at`,
+    )
+    .all() as { id: string; quote: string; author: string; role: string; company: string; product_id: string | null; product_name: string | null; product_color: string | null }[];
+  return {
+    testimonials: testimonials.map(({ product_id, product_name, product_color, ...t }) => ({ ...t, product: product_id ? { id: product_id, name: product_name ?? "", color: product_color ?? "" } : null })),
+    logos: conn.prepare("select id, name, image, link from crm_logo where status = 'publie' order by sort, created_at").all() as PublicProof["logos"],
+    figures: (conn.prepare("select * from crm_figure where status = 'publie' order by sort, created_at").all() as Figure[])
+      .map((f) => ({ id: f.id, label: f.label, value: figureValue(f, live), suffix: f.suffix }))
+      .filter((f) => f.value),
+  };
+}
 
 // ---- CSV export
 
