@@ -1,95 +1,550 @@
 import React from "react";
-import { Bell, Check, CircleDot, Clock, FileText, Fingerprint, Hash, KeyRound, Lock, Mic, Plus, Radio, Search, ShieldCheck, Sparkles, Wifi } from "lucide-react";
+import { Check, ChartGantt, Download, GitMerge, GitPullRequest, Hand, List, Map as MapIcon, Plus, Search, SquareKanban } from "lucide-react";
 import { interpolate } from "remotion";
-import { alpha, app, C, EASE_IN_OUT, MONO, SERIF } from "../theme";
-import { Avatar, Label, Meter, mix, MOCK_H, MOCK_W, pop, prog, Shot, Side, SideItem, typed } from "../kit";
+import { alpha, C, EASE, EASE_IN_OUT, MONO } from "../theme";
+import { Avatar, mix, prog } from "../kit";
 import type { AppAd } from "../ad";
 
 /* ───────────────────────────── TickUp ───────────────────────────── */
 
-export const Mock: React.FC<{ f: number }> = ({ f }) => {
-  const ink = "#e9e6df";
-  const cols = ["À faire", "En cours", "Terminé"];
-  const card = (id: string, t: string, p: number, extra?: React.CSSProperties) => (
-    <div style={{ padding: "14px 16px", borderRadius: 14, background: C.surface2, border: `1px solid ${C.lineStrong}`, boxShadow: "0 10px 24px -14px rgba(0,0,0,0.8)", ...extra }}>
-      <div style={{ fontSize: 13, color: C.ink3, fontFamily: MONO }}>{id}</div>
-      <div style={{ fontSize: 18, marginTop: 4 }}>{t}</div>
-      <div style={{ height: 5, borderRadius: 3, background: "rgba(255,255,255,0.08)", marginTop: 12 }}>
-        <div style={{ width: `${p * 100}%`, height: "100%", borderRadius: 3, background: ink }} />
-      </div>
-    </div>
-  );
-  // « Brief vidéo » fills its bar, lifts and lands in Terminé.
-  const fill = interpolate(f, [16, 52], [0.35, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: EASE_IN_OUT });
-  const lift = prog(f, 54, 10);
-  const move = prog(f, 60, 30, EASE_IN_OUT);
-  const drop = prog(f, 88, 10);
-  const colW = 300;
-  const gap = 18;
-  const cardX = mix(move, colW + gap, 2 * (colW + gap));
-  const cardY = mix(move, 0, 0);
-  const shift = prog(f, 62, 26, EASE_IN_OUT); // Terminé makes room
-  const newCard = prog(f, 104, 16);
+const INK = "#e9e6df";
+const MERGE = "#a68cf0";
+
+/* Layout, in mock pixels. Everything is absolutely placed so the cursor can grab exact spots. */
+const COL_W = 241;
+const COL_GAP = 12;
+const BOARD_X = 20;
+const COL_Y = 122;
+const CARD_W = COL_W - 20;
+const CARD_H = 104;
+const SLOT0 = 170;
+const SLOT = CARD_H + 10;
+const colX = (i: number) => BOARD_X + i * (COL_W + COL_GAP);
+const cardX = (i: number) => colX(i) + 10;
+const slotY = (i: number) => SLOT0 + i * SLOT;
+
+const TAB_W = 104;
+const TAB_X0 = 20;
+const tabX = (i: number) => TAB_X0 + i * (TAB_W + 6);
+
+/* Timeline of the action (mock frames, all on beats). */
+const GRAB = 30;
+const DROP = 60;
+const MERGED = 75;
+const AUTO = 90;
+const AUTO_END = 102;
+const GANTT = 105;
+
+// The cursor grabs the card at this point inside it.
+const GRIP = { x: 132, y: 22 };
+
+const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
+const ramp = (f: number, keys: [number, number][], dur = 9) => {
+  // value steps on beats: each key = [frame, value], eased over `dur` frames
+  let v = keys[0][1];
+  for (let i = 1; i < keys.length; i++) v = mix(prog(f, keys[i][0], dur, EASE), v, keys[i][1]);
+  return v;
+};
+
+const springy = (t: number) => {
+  const s = 1.70158 * 1.2;
+  return 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
+};
+
+type CardData = { id: string; t: string; tag: string; who: [string, string]; p: number; done?: boolean; pr?: "review" | "merged" };
+
+const Card: React.FC<{ d: CardData; x: number; y: number; f: number; style?: React.CSSProperties; enter?: number; glow?: number }> = ({ d, x, y, f, style, enter = 0, glow = 0 }) => {
+  const e = prog(f, enter, 12, EASE);
   return (
-    <div style={{ height: "100%", padding: 22, display: "flex", flexDirection: "column" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-        {["Kanban", "Liste", "Gantt", "Roadmap"].map((v, i) => (
-          <span key={v} style={{ fontSize: 15, padding: "6px 14px", borderRadius: 99, background: i === 0 ? "rgba(255,255,255,0.1)" : "transparent", color: i === 0 ? C.ink : C.ink3 }}>
-            {v}
+    <div
+      style={{
+        position: "absolute",
+        left: x,
+        top: y,
+        width: CARD_W,
+        height: CARD_H,
+        boxSizing: "border-box",
+        padding: "12px 14px",
+        borderRadius: 14,
+        background: C.surface2,
+        border: `1px solid ${glow > 0 ? alpha(INK, 0.2 + 0.5 * glow) : C.lineStrong}`,
+        boxShadow: `0 10px 24px -14px rgba(0,0,0,0.85)${glow > 0 ? `, 0 0 ${30 * glow}px -4px ${alpha(INK, 0.35 * glow)}` : ""}`,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        opacity: e,
+        filter: e < 1 ? `blur(${mix(e, 6, 0)}px)` : undefined,
+        ...style,
+        transform: `translateY(${mix(e, 16, 0)}px) ${style?.transform ?? ""}`,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: C.ink3 }}>
+        {d.done ? (
+          <span style={{ width: 16, height: 16, borderRadius: 8, background: INK, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Check size={11} color="#111" strokeWidth={3} />
           </span>
-        ))}
-        <span style={{ marginLeft: "auto", fontSize: 15, color: C.ink3, display: "flex", alignItems: "center", gap: 8 }}>
-          <CircleDot size={15} /> Sprint 4 · 12 tickets
-        </span>
+        ) : (
+          <span style={{ width: 14, height: 14, borderRadius: 7, border: `1.5px solid ${C.ink3}` }} />
+        )}
+        <span style={{ fontFamily: MONO }}>{d.id}</span>
+        <span style={{ marginLeft: "auto", padding: "1px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", color: C.ink2 }}>{d.tag}</span>
       </div>
-      <div style={{ flex: 1, display: "flex", gap, position: "relative" }}>
-        {cols.map((name, ci) => (
-          <div key={name} style={{ width: colW, borderRadius: 16, background: "rgba(255,255,255,0.025)", border: `1px solid ${C.line}`, padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ fontSize: 15, color: C.ink2, display: "flex", alignItems: "center", gap: 8, padding: "2px 2px 4px" }}>
-              <span style={{ width: 10, height: 10, borderRadius: 5, border: `1.5px solid ${C.ink2}`, background: ci === 2 ? C.ink2 : "transparent" }} /> {name}
-            </div>
-            {ci === 0 && (
-              <>
-                {card("STU-13", "Maquette accueil", 0.25)}
-                {card("STU-14", "Sous-titres épisode 13", 0.25)}
-                <div style={{ ...pop(f, 104), fontSize: 15, color: C.ink3 }}>
-                  <Plus size={14} style={{ verticalAlign: -2 }} /> Ticket
-                </div>
-              </>
-            )}
-            {ci === 1 && (
-              <>
-                <div style={{ height: 100 * (1 - drop), marginBottom: -12 * drop, borderRadius: 14, border: `1.5px dashed ${alpha(ink, 0.18 * lift * (1 - drop))}` }} />
-                {card("STU-16", "Visuels LinkedIn", 0.65)}
-                <div style={{ opacity: newCard, transform: `translateY(${mix(newCard, 10, 0)}px)` }}>{card("STU-21", "Teaser épisode 15", 0.1)}</div>
-              </>
-            )}
-            {ci === 2 && (
-              <>
-                <div style={{ height: shift * 112, flexShrink: 0 }} />
-                {card("STU-18", "Logo final", 1)}
-                {card("STU-19", "Charte", 1)}
-              </>
-            )}
+      <div style={{ fontSize: 17, color: C.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.t}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {d.pr ? (
+          <PrBadge kind={d.pr} f={f} />
+        ) : (
+          <div style={{ flex: 1, height: 5, borderRadius: 3, background: "rgba(255,255,255,0.08)" }}>
+            <div style={{ width: `${Math.min(1, d.p) * 100}%`, height: "100%", borderRadius: 3, background: INK }} />
           </div>
-        ))}
-        <div
-          style={{
-            position: "absolute",
-            left: cardX + 14,
-            top: 44 + cardY,
-            width: colW - 28,
-            transform: `rotate(${mix(lift, 0, 2.5) * (1 - drop)}deg) scale(${1 + 0.04 * lift * (1 - drop)})`,
-            zIndex: 2,
-          }}
-        >
-          {card("STU-12", "Brief vidéo", fill, {
-            boxShadow: `0 ${mix(lift * (1 - drop), 10, 40)}px ${mix(lift * (1 - drop), 24, 60)}px -14px rgba(0,0,0,0.9)`,
-            border: `1px solid ${drop > 0.5 ? C.lineStrong : alpha(ink, 0.35)}`,
-          })}
-        </div>
+        )}
+        <span style={{ marginLeft: "auto" }}>
+          <Avatar l={d.who[0]} c={d.who[1]} s={22} />
+        </span>
       </div>
     </div>
   );
 };
 
+const PrBadge: React.FC<{ kind: "review" | "merged"; f: number; at?: number }> = ({ kind }) => {
+  const merged = kind === "merged";
+  const c = merged ? MERGE : C.ink2;
+  const Icon = merged ? GitMerge : GitPullRequest;
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        fontSize: 14,
+        padding: "2px 9px",
+        borderRadius: 99,
+        color: merged ? "#efe9ff" : C.ink2,
+        background: alpha(merged ? MERGE : "#ffffff", merged ? 0.28 : 0.06),
+        border: `1px solid ${alpha(merged ? MERGE : "#ffffff", merged ? 0.55 : 0.1)}`,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <Icon size={13} color={c} />
+      {merged ? "PR #42 fusionnée" : "PR #40 en revue"}
+    </span>
+  );
+};
+
+/* ─────────── Gantt view ─────────── */
+
+const G_X = 262;
+const G_W = 1020 - G_X;
+const WEEKS = ["S47", "S48", "S49", "S50", "S51", "S52"];
+const WK = G_W / WEEKS.length;
+const G_ROW0 = 176;
+const G_ROW = 54;
+const ROWS: { id: string; t: string; s: number; l: number; p: number; at: number; who: [string, string]; hot?: boolean }[] = [
+  { id: "ATN-05", t: "Refonte accueil", s: 0, l: 1.3, p: 1, at: GANTT, who: ["J", "#8b63f5"] },
+  { id: "ATN-06", t: "Correctif paiement", s: 0.7, l: 0.9, p: 1, at: GANTT, who: ["M", "#e0803a"] },
+  { id: "ATN-12", t: "Mode sombre", s: 1.0, l: 1.3, p: 1, at: GANTT, who: ["C", "#5fd3a8"], hot: true },
+  { id: "ATN-09", t: "Connexion Apple", s: 1.5, l: 1.7, p: 0.8, at: 120, who: ["L", "#2fc7b5"] },
+  { id: "ATN-11", t: "Notifications push", s: 2.3, l: 1.6, p: 0.55, at: 120, who: ["N", "#e85d9a"] },
+  { id: "ATN-14", t: "Export PDF", s: 3.4, l: 1.4, p: 0, at: 135, who: ["M", "#e0803a"] },
+  { id: "ATN-15", t: "Page tarifs", s: 3.9, l: 1.5, p: 0, at: 135, who: ["J", "#8b63f5"] },
+];
+const TODAY = 2.05;
+
+const Gantt: React.FC<{ f: number; show: number }> = ({ f, show }) => {
+  const today = prog(f, GANTT + 4, 14, EASE);
+  const mile = prog(f, 135, 12, springy);
+  const dep = prog(f, 137, 10, EASE);
+  const rowY = (i: number) => G_ROW0 + i * G_ROW;
+  const barEnd = (i: number) => G_X + (ROWS[i].s + ROWS[i].l) * WK;
+  const barStart = (i: number) => G_X + ROWS[i].s * WK;
+  const depPath = (a: number, b: number) => {
+    const x1 = barEnd(a);
+    const y1 = rowY(a) + G_ROW / 2;
+    const x2 = barStart(b);
+    const y2 = rowY(b) + G_ROW / 2;
+    return `M ${x1} ${y1} H ${x1 + 14} V ${y2} H ${x2 - 4}`;
+  };
+  return (
+    <div style={{ position: "absolute", inset: 0, opacity: show, transform: `translateX(${mix(show, 40, 0)}px)` }}>
+      {/* week header */}
+      <div style={{ position: "absolute", left: 20, top: COL_Y + 6, width: G_X - 40, fontSize: 14, color: C.ink3, letterSpacing: "0.08em", textTransform: "uppercase" }}>Ticket</div>
+      {WEEKS.map((w, i) => (
+        <div key={w} style={{ position: "absolute", left: G_X + i * WK, top: COL_Y, width: WK, height: 660 - COL_Y - 24, borderLeft: `1px solid ${C.line}`, background: i % 2 ? "rgba(255,255,255,0.012)" : "transparent" }}>
+          <div style={{ padding: "6px 10px", fontSize: 14, fontFamily: MONO, color: C.ink3 }}>{w}</div>
+        </div>
+      ))}
+      <div style={{ position: "absolute", left: 20, right: 20, top: COL_Y + 38, height: 1, background: C.line }} />
+      {/* rows */}
+      {ROWS.map((r, i) => {
+        const g = prog(f, r.at, 12, EASE);
+        const label = prog(f, r.at - 2, 10, EASE);
+        const done = r.p >= 1;
+        const w = r.l * WK * g;
+        return (
+          <React.Fragment key={r.id}>
+            <div
+              style={{
+                position: "absolute",
+                left: 20,
+                top: rowY(i),
+                width: G_X - 34,
+                height: G_ROW,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                fontSize: 16,
+                color: r.hot ? C.ink : C.ink2,
+                opacity: label,
+                transform: `translateX(${mix(label, -14, 0)}px)`,
+              }}
+            >
+              <span style={{ fontFamily: MONO, fontSize: 14, color: C.ink3 }}>{r.id.slice(4)}</span>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.t}</span>
+            </div>
+            <div style={{ position: "absolute", left: 20, right: 20, top: rowY(i) + G_ROW, height: 1, background: C.line, opacity: label }} />
+            <div
+              style={{
+                position: "absolute",
+                left: G_X + r.s * WK,
+                top: rowY(i) + 11,
+                width: w,
+                opacity: g > 0.02 ? 1 : 0,
+                height: G_ROW - 22,
+                borderRadius: 9,
+                overflow: "hidden",
+                background: done ? INK : "rgba(255,255,255,0.05)",
+                border: done ? "none" : `1px solid ${alpha(INK, 0.35)}`,
+                boxShadow: r.hot ? `0 0 26px -2px ${alpha(INK, 0.55)}` : "0 8px 18px -10px rgba(0,0,0,0.8)",
+                display: "flex",
+                alignItems: "center",
+                boxSizing: "border-box",
+              }}
+            >
+              {!done && r.p > 0 && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${r.p * 100 * prog(f, r.at + 6, 12, EASE)}%`, background: alpha(INK, 0.3) }} />}
+              <span style={{ position: "relative", padding: "0 10px", fontSize: 14, fontWeight: 600, color: done ? "#151513" : C.ink, whiteSpace: "nowrap", opacity: prog(f, r.at + 6, 6) }}>
+                {done ? "Livré" : r.p > 0 ? `${Math.round(r.p * 100 * prog(f, r.at + 6, 12, EASE))} %` : "Planifié"}
+              </span>
+              <span style={{ marginLeft: "auto", marginRight: 5, position: "relative", opacity: prog(f, r.at + 8, 6) }}>
+                <Avatar l={r.who[0]} c={r.who[1]} s={22} />
+              </span>
+            </div>
+          </React.Fragment>
+        );
+      })}
+      {/* dependencies */}
+      <svg width={1040} height={660} style={{ position: "absolute", left: 0, top: 0, pointerEvents: "none" }}>
+        {[
+          [3, 5],
+          [4, 6],
+        ].map(([a, b]) => (
+          <path key={a} d={depPath(a, b)} fill="none" stroke={alpha(INK, 0.45)} strokeWidth={1.5} strokeDasharray="400" strokeDashoffset={400 * (1 - dep)} />
+        ))}
+      </svg>
+      {/* today line */}
+      <div style={{ position: "absolute", left: G_X + TODAY * WK, top: COL_Y + 34, width: 2, height: (660 - COL_Y - 60) * today, background: INK, boxShadow: `0 0 14px ${alpha(INK, 0.6)}` }} />
+      <div
+        style={{
+          position: "absolute",
+          left: G_X + TODAY * WK,
+          top: COL_Y + 4,
+          transform: `translateX(-50%) scale(${today})`,
+          fontSize: 14,
+          fontWeight: 600,
+          padding: "3px 10px",
+          borderRadius: 99,
+          background: INK,
+          color: "#151513",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Aujourd'hui
+      </div>
+      {/* milestone */}
+      <div style={{ position: "absolute", left: 1000, top: G_ROW0 + 6 * G_ROW + 13, transform: `translate(-100%, 0) scale(${Math.max(0, mile)})`, transformOrigin: "85% 13px", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+        <div style={{ width: 26, height: 26, marginRight: 14, transform: "rotate(45deg)", background: INK, borderRadius: 4, boxShadow: `0 0 22px ${alpha(INK, 0.6)}` }} />
+        <div style={{ fontSize: 16, fontWeight: 600, color: C.ink, whiteSpace: "nowrap", padding: "2px 8px", borderRadius: 8, background: C.bg2 }}>Lancement v2</div>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────── the screen ─────────── */
+
+export const Mock: React.FC<{ f: number }> = ({ f }) => {
+  // Drag of ATN-12, glued to the cursor (same easing as the shell's cursor).
+  const lift = prog(f, GRAB, 6, EASE);
+  const land = prog(f, DROP, 8, EASE);
+  const held = lift * (1 - land);
+  const dragT = interpolate(f, [GRAB, DROP], [0, 1], { ...clamp, easing: EASE_IN_OUT });
+  const autoT = interpolate(f, [AUTO, AUTO_END], [0, 1], { ...clamp, easing: EASE_IN_OUT });
+  const autoLand = prog(f, AUTO_END, 8, EASE);
+  const mx = f < AUTO ? mix(dragT, cardX(0), cardX(2)) : mix(autoT, cardX(2), cardX(3));
+  const my = slotY(0) - 26 * Math.sin(Math.PI * autoT);
+  const autoHeld = Math.sin(Math.PI * autoT);
+  const overCol = Math.round((mx - BOARD_X) / (COL_W + COL_GAP));
+  const dragging = f >= GRAB && f < DROP;
+
+  // Board reshuffles.
+  const col0Up = prog(f, 45, 12, EASE_IN_OUT);
+  const col2Down = prog(f, 48, 12, EASE_IN_OUT) * (1 - prog(f, AUTO + 2, 12, EASE_IN_OUT));
+  const col3Down = prog(f, AUTO - 2, 12, EASE_IN_OUT);
+
+  // Progress bars stepping on beats.
+  const pApple = ramp(f, [[0, 0.35], [15, 0.55], [45, 0.7], [75, 0.8]]);
+  const pPush = ramp(f, [[0, 0.15], [30, 0.3], [60, 0.45], [90, 0.55]]);
+  const pDark = ramp(f, [[0, 0.6], [DROP, 0.9], [AUTO, 1]]);
+  const sprint = ramp(f, [[-6, 0], [4, 0.42], [DROP, 0.5], [AUTO, 0.67], [120, 0.71]], 10);
+  const merged = f >= MERGED;
+  const mergePop = prog(f, MERGED, 12, springy);
+  const mergeGlow = prog(f, MERGED, 6) * (1 - prog(f, AUTO + 4, 14));
+
+  // View switch.
+  const sw = prog(f, GANTT, 9, EASE);
+  const tabPos = interpolate(f, [GANTT, GANTT + 9], [0, 2], { ...clamp, easing: EASE });
+  const hoverGantt = f > 96 && f < GANTT ? 1 : 0;
+
+  const dark: CardData = { id: "ATN-12", t: "Mode sombre", tag: "Front", who: ["C", "#5fd3a8"], p: pDark, done: f >= AUTO_END - 4, pr: merged ? "merged" : undefined };
+  const counts = [f >= GRAB ? 2 : 3, 2, f >= DROP && f < AUTO + 6 ? 2 : 1, f >= AUTO_END ? 3 : 2];
+  const cols = ["À faire", "En cours", "En revue", "Terminé"];
+
+  return (
+    <div style={{ position: "relative", width: 1040, height: 660, overflow: "hidden", background: C.bg2 }}>
+      {/* header */}
+      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 60, display: "flex", alignItems: "center", gap: 12, padding: "0 20px", borderBottom: `1px solid ${C.line}` }}>
+        <span style={{ fontSize: 15, color: C.ink3 }}>Projets /</span>
+        <span style={{ fontSize: 18, fontWeight: 600 }}>Site Studio Lumen</span>
+        <span style={{ fontSize: 14, color: C.ink3, padding: "2px 9px", borderRadius: 6, border: `1px solid ${C.line}` }}>v2</span>
+        <span style={{ marginLeft: "auto", display: "flex" }}>
+          {[
+            ["C", "#5fd3a8"],
+            ["L", "#2fc7b5"],
+            ["M", "#e0803a"],
+            ["J", "#8b63f5"],
+          ].map(([l, c], i) => (
+            <span key={l} style={{ marginLeft: i ? -8 : 0, borderRadius: 14, boxShadow: `0 0 0 2px ${C.bg2}` }}>
+              <Avatar l={l} c={c} s={26} />
+            </span>
+          ))}
+        </span>
+        <span style={{ fontSize: 15, color: C.ink2, marginLeft: 10 }}>Sprint 4</span>
+        <span style={{ width: 130, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)" }}>
+          <span style={{ display: "block", width: `${sprint * 100}%`, height: "100%", borderRadius: 3, background: INK, boxShadow: `0 0 10px ${alpha(INK, 0.5)}` }} />
+        </span>
+        <span style={{ fontSize: 15, fontFamily: MONO, color: C.ink, width: 44, textAlign: "right" }}>{Math.round(sprint * 100)} %</span>
+      </div>
+      {/* tabs */}
+      <div style={{ position: "absolute", left: 0, right: 0, top: 60, height: 48, borderBottom: `1px solid ${C.line}` }}>
+        <div style={{ position: "absolute", left: tabX(0) + tabPos * (TAB_W + 6), top: 7, width: TAB_W, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.1)", boxShadow: `inset 0 0 0 1px ${C.lineStrong}` }} />
+        {[
+          ["Kanban", SquareKanban],
+          ["Liste", List],
+          ["Gantt", ChartGantt],
+          ["Roadmap", MapIcon],
+        ].map(([label, Icon], i) => {
+          const I = Icon as typeof List;
+          const active = (i === 0 && sw < 0.5) || (i === 2 && sw >= 0.5);
+          return (
+            <div
+              key={label as string}
+              style={{
+                position: "absolute",
+                left: tabX(i),
+                top: 7,
+                width: TAB_W,
+                height: 34,
+                borderRadius: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 7,
+                fontSize: 15,
+                color: active ? C.ink : C.ink3,
+                background: i === 2 && hoverGantt ? "rgba(255,255,255,0.05)" : "transparent",
+              }}
+            >
+              <I size={15} /> {label as string}
+            </div>
+          );
+        })}
+        <div style={{ position: "absolute", right: 20, top: 7, height: 34, display: "flex", gap: 10, alignItems: "center" }}>
+          <Search size={17} color={C.ink3} style={{ marginRight: 4 }} />
+          <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 15, color: C.ink2, padding: "6px 12px", borderRadius: 9, border: `1px solid ${C.lineStrong}` }}>
+            <Download size={15} /> Importer de Linear
+          </span>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 600, color: "#151513", padding: "6px 12px", borderRadius: 9, background: INK }}>
+            <Plus size={15} strokeWidth={2.5} /> Ticket
+          </span>
+        </div>
+      </div>
+
+      {/* kanban */}
+      {sw < 1 && (
+        <div style={{ position: "absolute", inset: 0, opacity: 1 - sw, transform: `translateX(${-40 * sw}px) scale(${1 - 0.03 * sw})`, filter: sw > 0 ? `blur(${sw * 6}px)` : undefined }}>
+          {cols.map((name, ci) => {
+            const hot = dragging && overCol === ci ? prog(f, GRAB, 4) : 0;
+            const target = (ci === 2 && f >= 48 && f < DROP + 4) || (ci === 3 && f >= AUTO - 2 && f < AUTO_END + 2);
+            return (
+              <div
+                key={name}
+                style={{
+                  position: "absolute",
+                  left: colX(ci),
+                  top: COL_Y,
+                  width: COL_W,
+                  height: 660 - COL_Y - 18,
+                  boxSizing: "border-box",
+                  borderRadius: 16,
+                  background: hot || target ? "rgba(255,255,255,0.045)" : "rgba(255,255,255,0.022)",
+                  border: `1px solid ${hot || target ? alpha(INK, 0.28) : C.line}`,
+                  ...(f < 14 ? { opacity: prog(f, ci * 2 - 4, 10), transform: `translateY(${mix(prog(f, ci * 2 - 4, 10, EASE), 20, 0)}px)` } : {}),
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "13px 14px", fontSize: 15, color: C.ink2 }}>
+                  <span style={{ width: 11, height: 11, borderRadius: 6, border: `1.5px solid ${C.ink2}`, background: ci === 3 ? C.ink2 : ci === 2 ? `linear-gradient(90deg, ${C.ink2} 50%, transparent 50%)` : "transparent" }} />
+                  {name}
+                  <span style={{ fontFamily: MONO, fontSize: 14, color: C.ink3 }}>{counts[ci]}</span>
+                  <Plus size={15} color={C.ink3} style={{ marginLeft: "auto" }} />
+                </div>
+              </div>
+            );
+          })}
+          {/* drop placeholders */}
+          <div style={{ position: "absolute", left: cardX(2), top: slotY(0), width: CARD_W, height: CARD_H, boxSizing: "border-box", borderRadius: 14, border: `1.5px dashed ${alpha(INK, 0.4)}`, opacity: prog(f, 48, 6) * (1 - prog(f, DROP, 4)) }} />
+          <div style={{ position: "absolute", left: cardX(3), top: slotY(0), width: CARD_W, height: CARD_H, boxSizing: "border-box", borderRadius: 14, border: `1.5px dashed ${alpha(INK, 0.4)}`, opacity: prog(f, AUTO - 2, 6) * (1 - prog(f, AUTO_END, 4)) }} />
+
+          {/* À faire */}
+          <Card d={{ id: "ATN-14", t: "Export PDF", tag: "Back", who: ["M", "#e0803a"], p: 0.1 }} x={cardX(0)} y={slotY(1) - SLOT * col0Up} f={f} enter={2} />
+          <Card d={{ id: "ATN-15", t: "Page tarifs", tag: "Design", who: ["J", "#8b63f5"], p: 0 }} x={cardX(0)} y={slotY(2) - SLOT * col0Up} f={f} enter={4} />
+          {/* En cours */}
+          <Card d={{ id: "ATN-09", t: "Connexion Apple", tag: "iOS", who: ["L", "#2fc7b5"], p: pApple }} x={cardX(1)} y={slotY(0)} f={f} enter={3} />
+          <Card d={{ id: "ATN-11", t: "Notifications push", tag: "iOS", who: ["N", "#e85d9a"], p: pPush }} x={cardX(1)} y={slotY(1)} f={f} enter={5} />
+          {/* En revue */}
+          <Card d={{ id: "ATN-08", t: "Onboarding", tag: "Front", who: ["L", "#2fc7b5"], p: 0.9, pr: "review" }} x={cardX(2)} y={slotY(0) + SLOT * col2Down} f={f} enter={5} />
+          {/* Terminé */}
+          <Card d={{ id: "ATN-05", t: "Refonte accueil", tag: "Design", who: ["J", "#8b63f5"], p: 1, done: true }} x={cardX(3)} y={slotY(0) + SLOT * col3Down} f={f} enter={6} />
+          <Card d={{ id: "ATN-06", t: "Correctif paiement", tag: "Back", who: ["M", "#e0803a"], p: 1, done: true }} x={cardX(3)} y={slotY(1) + SLOT * col3Down} f={f} enter={8} />
+
+          {/* the card that travels */}
+          <Card
+            d={dark}
+            x={mx}
+            y={my}
+            f={f}
+            glow={mergeGlow}
+            style={{
+              zIndex: 5,
+              transform: `rotate(${3 * held - 2 * autoHeld}deg) scale(${1 + 0.06 * held + 0.04 * autoHeld + 0.05 * (1 - autoLand) * (f >= AUTO_END ? 1 : 0)})`,
+              boxShadow: `0 ${mix(Math.max(held, autoHeld), 10, 44)}px ${mix(Math.max(held, autoHeld), 24, 60)}px -14px rgba(0,0,0,0.95)${mergeGlow > 0 ? `, 0 0 ${34 * mergeGlow}px -4px ${alpha(MERGE, 0.55 * mergeGlow)}` : ""}`,
+            }}
+          />
+          {/* merge pop: a floating GitHub notice above the card */}
+          {f >= MERGED && f < AUTO + 4 && (
+            <div
+              style={{
+                position: "absolute",
+                left: cardX(2) + CARD_W / 2,
+                top: slotY(2) + 6,
+                transform: `translate(-50%, 0) scale(${Math.max(0, mergePop)}) translateY(${-6 * prog(f, MERGED, 30)}px)`,
+                opacity: 1 - prog(f, AUTO - 2, 6),
+                zIndex: 6,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "9px 14px",
+                borderRadius: 12,
+                background: C.surface,
+                border: `1px solid ${alpha(MERGE, 0.6)}`,
+                boxShadow: `0 16px 34px -12px rgba(0,0,0,0.9), 0 0 30px -6px ${alpha(MERGE, 0.6)}`,
+                whiteSpace: "nowrap",
+                fontSize: 15,
+              }}
+            >
+              <span style={{ width: 26, height: 26, borderRadius: 8, background: alpha(MERGE, 0.3), display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <GitMerge size={15} color={MERGE} />
+              </span>
+              <span>
+                <span style={{ color: C.ink3, fontFamily: MONO, fontSize: 14 }}>main</span> <span style={{ color: C.ink }}>PR #42 fusionnée</span>
+              </span>
+            </div>
+          )}
+          {/* landing ripple in Terminé */}
+          {f >= AUTO_END - 2 && f < AUTO_END + 16 &&
+            [0, 4].map((d) => {
+              const p = prog(f, AUTO_END - 2 + d, 14, EASE);
+              return (
+                <div
+                  key={d}
+                  style={{
+                    position: "absolute",
+                    left: cardX(3),
+                    top: slotY(0),
+                    width: CARD_W,
+                    height: CARD_H,
+                    boxSizing: "border-box",
+                    borderRadius: 14,
+                    border: `2px solid ${alpha(INK, 0.7 * (1 - p))}`,
+                    transform: `scale(${mix(p, 1, 1.25)})`,
+                    zIndex: 4,
+                  }}
+                />
+              );
+            })}
+        </div>
+      )}
+
+      {/* gantt */}
+      {sw > 0 && <Gantt f={f} show={prog(f, GANTT + 2, 10, EASE)} />}
+    </div>
+  );
+};
+
+const gripAt = (x: number) => ({ x: x + GRIP.x, y: slotY(0) + GRIP.y });
+
+export const ad: AppAd = {
+  id: "tickup",
+  title: "TickUp · Studio · Sprint 4",
+  hook: "Tes projets, livrés.",
+  Mock,
+  cursor: [
+    { f: 4, x: 520, y: 520 },
+    { f: 26, ...gripAt(cardX(0)) },
+    { f: GRAB, ...gripAt(cardX(0)), click: true },
+    { f: DROP, ...gripAt(cardX(2)), click: true },
+    { f: 80, x: 505, y: 330 },
+    { f: 100, x: tabX(2) + TAB_W / 2, y: 84 },
+    { f: GANTT, x: tabX(2) + TAB_W / 2, y: 84, click: true },
+    { f: 126, x: 560, y: 470 },
+    { f: 140, x: 600, y: 490 },
+  ],
+  chips: [
+    { f: DROP, text: "Glisser, déposer, livré", x: 640, y: 530, icon: Hand, until: 86 },
+    { f: AUTO, text: "Relié à GitHub", x: 880, y: 570, icon: GitMerge, until: 114 },
+    { f: 120, text: "Gantt et roadmap", x: 760, y: 610, icon: ChartGantt },
+  ],
+  focus: [
+    { f: 0, x: 520, y: 330, zoom: 1 },
+    { f: 28, x: 200, y: 250, zoom: 1.2 },
+    { f: 45, x: 400, y: 250, zoom: 1.26 },
+    { f: 62, x: 640, y: 240, zoom: 1.3 },
+    { f: 80, x: 660, y: 220, zoom: 1.34 },
+    { f: 96, x: 820, y: 240, zoom: 1.24 },
+    { f: 106, x: 420, y: 200, zoom: 1.14 },
+    { f: 122, x: 600, y: 380, zoom: 1.1 },
+    { f: 140, x: 520, y: 330, zoom: 1.02 },
+  ],
+  sfx: [
+    { f: 2, kind: "pop" },
+    { f: GRAB, kind: "click" },
+    { f: 36, kind: "swish" },
+    { f: DROP, kind: "click" },
+    { f: DROP, kind: "pop" },
+    { f: MERGED, kind: "ding" },
+    { f: AUTO, kind: "swish" },
+    { f: AUTO_END, kind: "pop" },
+    { f: GANTT, kind: "click" },
+    { f: GANTT, kind: "cut" },
+    { f: 120, kind: "pop" },
+    { f: 135, kind: "pop" },
+    { f: 135, kind: "ding" },
+  ],
+};

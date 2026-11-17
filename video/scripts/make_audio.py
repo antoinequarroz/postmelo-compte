@@ -268,7 +268,8 @@ if __name__ == "__main__":
 
     sfx()
     print("sfx ok")
-    # The ad: hook bars 0-2 hats only, drop at bar 3, full until the end, breakdown on the outro.
-    bed(34, lambda b: 1 if b < 3 else (2 if b < 31 else 1), "ad")
-    bed(12, lambda b: 1 if b < 2 else (2 if b < 11 else 1), "short")
+    # Drop on the downbeat after the hook, full beat, breakdown on the call to action.
+    bed(36, lambda b: 1 if b < 3 else (2 if b < 34 else 1), "ad")
+    bed(14, lambda b: 1 if b < 2 else (2 if b < 12 else 1), "teaser")
+    bed(16, lambda b: 1 if b < 1 else (2 if b < 14 else 1), "cut")
     print("music ok")
