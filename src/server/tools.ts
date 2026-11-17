@@ -8,7 +8,7 @@ import "server-only";
  * Its OpenID Connect client id is its id below, and its return address is fixed:
  * <its URL>/api/auth/compte/callback.
  */
-const KNOWN = [
+export const SUITE = [
   { id: "lamio", name: "Lamio", description: "Messagerie d'équipe" },
   { id: "cairn", name: "Cairn", description: "Notes et coffre de clés" },
   { id: "metricove", name: "Metricove", description: "Publication et statistiques" },
@@ -24,7 +24,7 @@ export type Tool = { id: string; name: string; description: string; url: string;
 
 export function tools(): Tool[] {
   const list: Tool[] = [];
-  for (const t of KNOWN) {
+  for (const t of SUITE) {
     const key = t.id.toUpperCase();
     const url = (process.env[`${key}_URL`] ?? "").trim().replace(/\/+$/, "");
     const secret = (process.env[`${key}_CLIENT_SECRET`] ?? "").trim();

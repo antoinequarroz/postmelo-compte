@@ -21,3 +21,9 @@ export function sameOrigin(req: Request) {
   const origin = req.headers.get("origin");
   return !!origin && origin === new URL(baseUrl()).origin;
 }
+
+/** The signed-in admin, or null: the CRM and its API are for admins only. */
+export async function adminSession() {
+  const session = await currentSession();
+  return session && session.user.role === "admin" ? session : null;
+}

@@ -40,7 +40,7 @@ export function Admin({ me }: { me: Me }) {
   };
 
   return (
-    <Card className="flex flex-col gap-3">
+    <Card id="personnes" className="flex scroll-mt-6 flex-col gap-3">
       <div className="flex items-start gap-3">
         <div className="flex-1">
           <Title hint="Tu crées les comptes et tu choisis les outils ouverts à chacun. Les administrateurs ont accès à tout.">Personnes et accès</Title>

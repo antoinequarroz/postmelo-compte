@@ -87,7 +87,7 @@ export function Avatar({ id, name, size = "md", className }: { id: string; name:
   );
 }
 
-export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -95,9 +95,9 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-start justify-center p-4 pt-[14vh]">
+    <div className={cn("fixed inset-0 z-40 flex items-start justify-center overflow-y-auto p-4", wide ? "pt-[8vh]" : "pt-[14vh]")}>
       <div className="dialog-backdrop absolute inset-0 bg-[rgba(15,14,12,0.3)] backdrop-blur-[2px]" onClick={onClose} />
-      <div role="dialog" aria-modal aria-label={title} className="dialog-popup relative w-full max-w-[440px] rounded-2xl border border-line-strong bg-surface p-6 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.45)]">
+      <div role="dialog" aria-modal aria-label={title} className={cn("dialog-popup relative mb-8 w-full rounded-2xl border border-line-strong bg-surface p-6 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.45)]", wide ? "max-w-[560px]" : "max-w-[440px]")}>
         <div className="mb-4 flex items-center">
           <h2 className="flex-1 font-display text-[24px] leading-none">{title}</h2>
           <button onClick={onClose} aria-label="Fermer" className="press -mr-1.5 flex size-8 items-center justify-center rounded-lg text-ink-3 hover:bg-ink/5 hover:text-ink">
