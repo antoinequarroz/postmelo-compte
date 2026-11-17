@@ -185,10 +185,10 @@ export const AppAdScene: React.FC<{ ad: AppAd; index: number; total?: number; du
   const s = baseScale * zoom;
   // Keep the focus point near the stage centre, but never pull the window too far.
   const txRaw = stageCx - (MOCK_W / 2) * s - (fx - MOCK_W / 2) * s * Math.min(1, (zoom - 1) * 2.2);
-  const ty = v ? Math.max(tyRaw, 420 - MOCK_H * s * 0.15) : Math.max(tyRaw, 250 - MOCK_H * s * 0.2);
   // In 16:9 the window never slides under the title column.
   const tx = v ? txRaw : Math.max(txRaw, 640 - MOCK_W * s * 0.08);
   const tyRaw = stageCy - (MOCK_H / 2) * s - (fy - MOCK_H / 2) * s * Math.min(1, (zoom - 1) * 2.2);
+  const ty = v ? Math.max(tyRaw, 420 - MOCK_H * s * 0.15) : Math.max(tyRaw, 250 - MOCK_H * s * 0.2);
 
   const titleBig = (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 26 }}>
