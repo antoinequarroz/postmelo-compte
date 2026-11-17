@@ -1,13 +1,22 @@
 import { ProductIcon } from "@/components/product-icon";
+import type { Locale } from "@/lib/i18n";
 import type { PublicProof } from "@/server/crm";
 import { CountUp, Reveal } from "./reveal";
+
+/** The words of the section, in each language. The figures, logos and quotes come from the admin as typed. */
+const T = {
+  fr: { eyebrow: "Ils l'utilisent", title: ["Des équipes qui ont", "tout réuni."], logos: "Ils nous font confiance" },
+  en: { eyebrow: "Who uses it", title: ["Teams that brought", "it all together."], logos: "They trust us" },
+  de: { eyebrow: "Wer es nutzt", title: ["Teams, die alles", "vereint haben."], logos: "Sie vertrauen uns" },
+};
 
 /**
  * Who uses the suite: figures, client logos and testimonials, all from the admin
  * (Preuves sociales). Each block shows only when it has something published, and the
  * whole section stays out of the page while there is nothing at all.
  */
-export function Proof({ proof }: { proof: PublicProof }) {
+export function Proof({ proof, locale = "fr" }: { proof: PublicProof; locale?: Locale }) {
+  const t = T[locale];
   const { logos, testimonials } = proof;
   // One row: four figures at most, the first ones in the admin's order.
   const figures = proof.figures.slice(0, 4);
@@ -16,11 +25,11 @@ export function Proof({ proof }: { proof: PublicProof }) {
   return (
     <section id="preuves" className="relative mx-auto max-w-[1160px] scroll-mt-20 px-4 py-28 sm:px-6">
       <Reveal className="text-center">
-        <p className="text-[12.5px] font-medium uppercase tracking-[0.2em] text-accent">Ils l&apos;utilisent</p>
+        <p className="text-[12.5px] font-medium uppercase tracking-[0.2em] text-accent">{t.eyebrow}</p>
         <h2 className="mx-auto mt-4 max-w-[820px] font-display text-[clamp(40px,6vw,84px)] leading-[0.92]">
-          Des équipes qui ont
+          {t.title[0]}
           <br />
-          <span className="italic text-ink-2">tout réuni.</span>
+          <span className="italic text-ink-2">{t.title[1]}</span>
         </h2>
       </Reveal>
 
@@ -42,7 +51,7 @@ export function Proof({ proof }: { proof: PublicProof }) {
         </Reveal>
       )}
 
-      {logos.length > 0 && <Logos logos={logos} />}
+      {logos.length > 0 && <Logos logos={logos} label={t.logos} />}
 
       {testimonials.length > 0 && (
         <div className="mt-16 flex flex-col gap-5">
@@ -108,7 +117,7 @@ function Author({ t, className = "" }: { t: PublicProof["testimonials"][number];
 }
 
 /** A quiet wall of logos, in the ink of the theme; their own colours come back on hover. A long list scrolls by. */
-function Logos({ logos }: { logos: PublicProof["logos"] }) {
+function Logos({ logos, label }: { logos: PublicProof["logos"]; label: string }) {
   const band = logos.length >= 6;
   const item = (l: PublicProof["logos"][number], hidden = false) => {
     const inner = l.image ? (
@@ -127,7 +136,7 @@ function Logos({ logos }: { logos: PublicProof["logos"] }) {
   };
   return (
     <Reveal delay={150} className="mt-14">
-      <p className="text-center text-[12.5px] uppercase tracking-[0.16em] text-ink-3">Ils nous font confiance</p>
+      <p className="text-center text-[12.5px] uppercase tracking-[0.16em] text-ink-3">{label}</p>
       {band ? (
         <div className="relative mt-7 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)]">
           <ul className="marquee flex w-max items-center gap-16">
