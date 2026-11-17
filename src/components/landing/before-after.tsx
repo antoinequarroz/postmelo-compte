@@ -16,12 +16,12 @@ export function BeforeAfter() {
         </h2>
       </Reveal>
       <div className="mt-16 grid gap-5 md:grid-cols-2">
-        <Reveal className="rounded-[28px] border border-line bg-white/[0.02] p-8">
+        <Reveal className="rounded-[28px] border border-line bg-[var(--glass-02)] p-8">
           <p className="text-[13px] font-medium uppercase tracking-[0.14em] text-ink-3">Sans la suite</p>
           <ul className="mt-6 flex flex-col gap-4">
             {BEFORE.map((t) => (
-              <li key={t} className="flex items-start gap-3 text-[16px] text-ink-3 line-through decoration-white/20">
-                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-white/[0.06]">
+              <li key={t} className="flex items-start gap-3 text-[16px] text-ink-3 line-through decoration-wash/20">
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-wash/[0.06]">
                   <X className="size-3" />
                 </span>
                 {t}
@@ -29,7 +29,7 @@ export function BeforeAfter() {
             ))}
           </ul>
         </Reveal>
-        <Reveal delay={150} className="relative overflow-hidden rounded-[28px] border border-accent/30 bg-[linear-gradient(160deg,rgba(95,211,168,0.14),rgba(95,211,168,0.02)_60%)] p-8">
+        <Reveal delay={150} className="relative overflow-hidden rounded-[28px] border border-accent/30 bg-[image:var(--after-gradient)] p-8">
           <div aria-hidden className="absolute -right-20 -top-20 size-64 rounded-full bg-accent/20 blur-3xl" />
           <p className="relative text-[13px] font-medium uppercase tracking-[0.14em] text-accent">Avec Postmelo</p>
           <ul className="relative mt-6 flex flex-col gap-4">

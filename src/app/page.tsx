@@ -1,5 +1,5 @@
 import { Fingerprint, KeyRound, ShieldCheck, Users } from "lucide-react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { ContactForm } from "@/components/landing-contact";
 import { BeforeAfter } from "@/components/landing/before-after";
@@ -17,14 +17,22 @@ import { currentSession } from "@/server/http";
 
 export const dynamic = "force-dynamic";
 
+// The bar of mobile browsers takes the paper or the night of the page.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f2ed" },
+    { media: "(prefers-color-scheme: dark)", color: "#060607" },
+  ],
+};
+
 export const metadata: Metadata = {
-  title: `${SUITE_NAME} — la suite d'applications pour ton équipe et tes médias`,
+  title: `${SUITE_NAME} · la suite d'applications pour ton équipe et tes médias`,
   description: SUITE_TAGLINE,
   // The only page meant to be found: the rest of the service stays out of search engines.
   robots: { index: true, follow: true },
 };
 
-/** The public home page of the suite. Always at night, whatever the theme of the device. */
+/** The public home page of the suite. It follows the theme of the device, or the one picked with the toggle of the nav. */
 export default async function HomePage() {
   const session = await currentSession().catch(() => null);
   const products = listProducts(true);
@@ -54,7 +62,7 @@ export default async function HomePage() {
           <ul className="marquee flex w-max items-center gap-14">
             {[...products, ...products, ...products, ...products].map((p, n) => (
               <li key={`${p.id}-${n}`} className="flex items-center gap-3.5" aria-hidden={n >= products.length}>
-                <ProductIcon id={p.id} color={p.color || "#f6f4ef"} size="sm" className="size-8" />
+                <ProductIcon id={p.id} color={p.color || undefined} size="sm" className="size-8" />
                 <span className="font-display text-[30px] leading-none">{p.name}</span>
                 <span className="text-[11.5px] uppercase tracking-[0.12em] text-ink-3">{p.category}</span>
               </li>
@@ -86,7 +94,7 @@ export default async function HomePage() {
                   { icon: Users, title: "Les bons accès", text: "Chacun voit uniquement les applications que tu lui ouvres." },
                   { icon: ShieldCheck, title: "Standard et ouvert", text: "OpenID Connect, le standard de Google et Microsoft." },
                 ].map(({ icon: Icon, title, text }, n) => (
-                  <Reveal as="li" key={title} delay={120 + n * 90} className="group rounded-2xl border border-line bg-white/[0.025] p-5 transition-colors duration-500 hover:border-accent/30 hover:bg-white/[0.04]">
+                  <Reveal as="li" key={title} delay={120 + n * 90} className="group rounded-2xl border border-line bg-[var(--glass-025)] p-5 transition-colors duration-500 hover:border-accent/30 hover:bg-[var(--glass-04)]">
                     <span className="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110">
                       <Icon className="size-5" />
                     </span>
@@ -106,7 +114,7 @@ export default async function HomePage() {
 
         {/* Contact */}
         <section id="contact" className="relative scroll-mt-20 overflow-hidden">
-          <div aria-hidden className="absolute inset-x-0 top-0 -z-0 mx-auto h-[70%] max-w-[1200px] bg-[radial-gradient(closest-side,rgba(95,211,168,0.16),transparent)] blur-2xl" />
+          <div aria-hidden className="absolute inset-x-0 top-0 -z-0 mx-auto h-[70%] max-w-[1200px] contact-glow" />
           <div className="relative mx-auto grid max-w-[1160px] gap-14 px-4 py-28 sm:px-6 lg:grid-cols-[1fr_1fr]">
             <Reveal>
               <p className="text-[12.5px] font-medium uppercase tracking-[0.2em] text-accent">Contact</p>
@@ -143,8 +151,8 @@ export default async function HomePage() {
             {signedIn ? "Mon compte" : "Se connecter"}
           </Link>
         </div>
-        <p aria-hidden className="pointer-events-none mt-4 select-none text-center font-display text-[25vw] leading-[0.75] tracking-[-0.03em] text-transparent [-webkit-text-stroke:1px_rgba(255,252,245,0.10)]"
-          style={{ backgroundImage: "linear-gradient(180deg, rgba(255,252,245,0.10), transparent 85%)", WebkitBackgroundClip: "text", backgroundClip: "text" }}
+        <p aria-hidden className="pointer-events-none mt-4 select-none text-center font-display text-[25vw] leading-[0.75] tracking-[-0.03em] text-transparent [-webkit-text-stroke:1px_var(--outline)]"
+          style={{ backgroundImage: "linear-gradient(180deg, var(--outline-fill), transparent 85%)", WebkitBackgroundClip: "text", backgroundClip: "text" }}
         >
           {SUITE_NAME}
         </p>

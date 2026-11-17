@@ -15,7 +15,7 @@ export function Hub({ apps }: { apps: App[] }) {
     <div className="relative mx-auto aspect-square w-full max-w-[460px]">
       <svg viewBox="0 0 100 100" className="absolute inset-0 size-full" aria-hidden>
         <circle cx="50" cy="50" r={R} fill="none" stroke="var(--line-strong)" strokeWidth="0.25" strokeDasharray="0.6 1.4" />
-        <circle cx="50" cy="50" r="13" fill="var(--accent-soft)" className="orbit-pulse" />
+        <circle cx="50" cy="50" r="13" fill="var(--hub-halo)" className="orbit-pulse" />
         {list.map((a, n) => {
           const p = at(n);
           return (
@@ -37,7 +37,7 @@ export function Hub({ apps }: { apps: App[] }) {
         })}
       </svg>
       <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2">
-        <span className="rounded-[22px] bg-surface p-3 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.45)] ring-1 ring-line-strong">
+        <span className="rounded-[22px] bg-surface p-3 shadow-[0_20px_50px_-20px_var(--deep-3)] ring-1 ring-line-strong">
           <Logo className="size-14" />
         </span>
         <span className="rounded-full bg-surface px-2.5 py-0.5 text-[11.5px] font-medium shadow-card ring-1 ring-line">Ton compte</span>

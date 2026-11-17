@@ -13,12 +13,16 @@ export type StoryApp = { id: string; name: string; color: string; category: stri
 
 const FAMILY: Record<string, string> = { equipe: "Travailler ensemble", media: "Créer et diffuser" };
 
+/** An app colour as text: as is at night, a shade deeper on the paper so it stays readable. */
+const readable = (c: string) => `light-dark(color-mix(in oklab, ${c} 78%, black), ${c})`;
+
 function Copy({ a, n, total }: { a: StoryApp; n: number; total: number }) {
-  const c = a.color || "#f6f4ef";
+  // Without a colour (TickUp), the ink of the theme.
+  const c = a.color || "var(--ink)";
   return (
     <div>
       <p className="flex items-center gap-3 text-[12px] font-medium uppercase tracking-[0.16em] text-ink-3">
-        <span className="tabular" style={{ color: c }}>
+        <span className="tabular" style={{ color: readable(c) }}>
           {String(n + 1).padStart(2, "0")}
         </span>
         <span className="h-px w-8 bg-line-strong" />
@@ -32,7 +36,7 @@ function Copy({ a, n, total }: { a: StoryApp; n: number; total: number }) {
           <p className="mt-1.5 flex items-center gap-2 text-[13px] text-ink-3">
             {a.category}
             {a.status !== "disponible" && (
-              <span className="rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ background: `color-mix(in oklab, ${c} 18%, transparent)`, color: `color-mix(in oklab, ${c} 75%, white)` }}>
+              <span className="rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ background: `color-mix(in oklab, ${c} 18%, transparent)`, color: `color-mix(in oklab, ${c} 75%, var(--lift))` }}>
                 {PRODUCT_STATUS_LABEL[a.status]}
               </span>
             )}
@@ -44,13 +48,13 @@ function Copy({ a, n, total }: { a: StoryApp; n: number; total: number }) {
         {a.points.map((p) => (
           <li key={p} className="flex items-start gap-3 text-[14.5px] leading-snug text-ink-2">
             <span className="mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full" style={{ background: `color-mix(in oklab, ${c} 22%, transparent)` }}>
-              <Check className="size-2.5" strokeWidth={3} style={{ color: c }} />
+              <Check className="size-2.5" strokeWidth={3} style={{ color: readable(c) }} />
             </span>
             {p}
           </li>
         ))}
       </ul>
-      <a href="#contact" data-product={a.id} className="group mt-8 inline-flex items-center gap-2 text-[14px] font-medium" style={{ color: c }}>
+      <a href="#contact" data-product={a.id} className="group mt-8 inline-flex items-center gap-2 text-[14px] font-medium" style={{ color: readable(c) }}>
         {a.status === "bientot" ? "Être prévenu du lancement" : `Essayer ${a.name}`}
         <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
       </a>
@@ -73,7 +77,7 @@ export function Story({ apps }: { apps: StoryApp[] }) {
     if (fill.current) fill.current.style.transform = `scaleY(${Math.min(1, x - i)})`;
   });
   const a = apps[active];
-  const color = a?.color || "#f6f4ef";
+  const color = a?.color || "var(--ink)";
 
   return (
     <section id="suite" className="relative scroll-mt-0">
@@ -89,16 +93,16 @@ export function Story({ apps }: { apps: StoryApp[] }) {
       {/* Large screens: pinned tour */}
       <div ref={ref} className="relative hidden lg:block" style={{ height: `${apps.length * 85 + 40}vh` }}>
         <div className="sticky top-0 flex h-screen items-center overflow-hidden">
-          <div aria-hidden className="absolute inset-0 -z-10 transition-[background] duration-1000" style={{ background: `radial-gradient(60% 55% at 72% 50%, color-mix(in oklab, ${color} 20%, transparent), transparent 70%)` }} />
+          <div aria-hidden className="absolute inset-0 -z-10 transition-[background] duration-1000" style={{ background: `radial-gradient(60% 55% at 72% 50%, light-dark(color-mix(in oklab, ${color} 13%, transparent), color-mix(in oklab, ${color} 20%, transparent)), transparent 70%)` }} />
           <div className="mx-auto grid w-full max-w-[1240px] grid-cols-[64px_minmax(0,0.85fr)_minmax(0,1.15fr)] items-center gap-10 px-6">
             {/* Rail */}
             <ol className="relative flex flex-col gap-3">
-              <span aria-hidden className="absolute -left-4 top-0 h-9 w-[2px] overflow-hidden rounded-full bg-white/10 transition-transform duration-500" style={{ transform: `translateY(${active * 48}px)` }}>
+              <span aria-hidden className="absolute -left-4 top-0 h-9 w-[2px] overflow-hidden rounded-full bg-wash/10 transition-transform duration-500" style={{ transform: `translateY(${active * 48}px)` }}>
                 <span ref={fill} className="block h-full w-full origin-top rounded-full" style={{ background: color, transform: "scaleY(0)" }} />
               </span>
               {apps.map((x, n) => (
                 <li key={x.id} className="relative flex items-center">
-                  <span className={cn("transition-all duration-500", n === active ? "scale-100 opacity-100" : "scale-[0.8] opacity-35 grayscale")}>
+                  <span className={cn("transition-all duration-500", n === active ? "scale-100 opacity-100" : "scale-[0.8] rounded-xl opacity-[var(--rail-dim)] ring-1 ring-[var(--rail-ring)] grayscale")}>
                     <ProductIcon id={x.id} color={x.color} size="sm" className="size-9 rounded-xl" />
                   </span>
                 </li>
@@ -142,7 +146,7 @@ export function Story({ apps }: { apps: StoryApp[] }) {
       <div className="mx-auto flex max-w-[720px] flex-col gap-24 px-4 pb-24 sm:px-6 lg:hidden">
         {apps.map((x, n) => (
           <Reveal key={x.id} className="relative">
-            <div aria-hidden className="absolute -inset-x-10 -top-10 -z-10 h-[70%]" style={{ background: `radial-gradient(closest-side, color-mix(in oklab, ${x.color || "#f6f4ef"} 18%, transparent), transparent)` }} />
+            <div aria-hidden className="absolute -inset-x-10 -top-10 -z-10 h-[70%]" style={{ background: `radial-gradient(closest-side, color-mix(in oklab, ${x.color || "var(--ink)"} 18%, transparent), transparent)` }} />
             <Copy a={x} n={n} total={apps.length} />
             <div className="mt-10 h-[380px] sm:h-[440px]">
               <AppMock id={x.id} name={x.name} color={x.color} on />

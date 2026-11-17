@@ -27,8 +27,9 @@ const DUR = 4500;
 const MINT = "#5fd3a8";
 
 const useIsoLayout = typeof window === "undefined" ? useEffect : useLayoutEffect;
-const ink = (c: string) => c || "#f6f4ef";
-const neutral = (c: string) => !c || /^#f[0-9a-f]f[0-9a-f]e[0-9a-f]$/i.test(c);
+/** An app without a colour (TickUp) takes the ink of the theme. */
+const ink = (c: string) => c || "var(--ink)";
+const neutral = (c: string) => !c || c === "var(--ink)" || /^#f[0-9a-f]f[0-9a-f]e[0-9a-f]$/i.test(c);
 const tint = (c: string, pct = 16) => `color-mix(in oklab, ${ink(c)} ${pct}%, transparent)`;
 
 /** What each app has to say on the home screen, and where it opens. */
@@ -133,12 +134,12 @@ const FEED = [
 function Avatar({ n, hue, size = 22 }: { n: string; hue: number; size?: number }) {
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ring-2 ring-[#0d0d0f]"
+      className="flex shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ring-2 ring-[var(--win-side)]"
       style={{
         width: size,
         height: size,
-        background: `oklch(0.42 0.11 ${hue})`,
-        color: `oklch(0.92 0.06 ${hue})`,
+        background: `light-dark(oklch(0.9 0.06 ${hue}), oklch(0.42 0.11 ${hue}))`,
+        color: `light-dark(oklch(0.42 0.11 ${hue}), oklch(0.92 0.06 ${hue}))`,
       }}
     >
       {n}
@@ -175,9 +176,9 @@ function HomePane({ apps, onPick }: { apps: App[]; onPick: (n: number) => void }
                 type="button"
                 tabIndex={-1}
                 onClick={() => onPick(n + 1)}
-                className="relative overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-left transition-colors hover:border-white/[0.14]"
+                className="relative overflow-hidden rounded-xl border border-wash/[0.07] bg-[var(--hub-card)] p-3 text-left transition-colors hover:border-wash/[0.14]"
                 style={{
-                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 40px -28px ${flat ? "rgba(255,255,255,0.12)" : c}`,
+                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 40px -28px ${flat ? "light-dark(rgba(20,18,14,0.16), rgba(255,255,255,0.12))" : c}`,
                 }}
               >
                 <span aria-hidden className="absolute -right-6 -top-6 size-20 rounded-full blur-2xl" style={{ background: tint(c, flat ? 6 : 30) }} />
@@ -191,11 +192,11 @@ function HomePane({ apps, onPick }: { apps: App[]; onPick: (n: number) => void }
 
         {/* Two live cards */}
         <div className="grid min-h-0 flex-1 grid-cols-[1.35fr_1fr] gap-3">
-          <div className="flex flex-col rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+          <div className="flex flex-col rounded-xl border border-wash/[0.07] bg-[var(--hub-card)] p-4">
             <div className="flex items-center gap-2">
               <ProductIcon id="metricove" color={color("metricove")} size="sm" className="size-5! rounded-md [&_svg]:size-3" />
               <span className="truncate text-[11.5px] text-ink-2">Portée des réseaux · 30 jours</span>
-              <span className="ml-auto shrink-0 rounded-full bg-[#28c840]/15 px-1.5 text-[10px] font-medium text-[#5ee07a]">+38 %</span>
+              <span className="ml-auto shrink-0 rounded-full bg-[#28c840]/15 px-1.5 text-[10px] font-medium text-[var(--ok-text)]">+38 %</span>
             </div>
             <p className="mt-2 font-display text-[30px] leading-none">
               184 920 <span className="font-sans text-[11px] text-ink-3">vues</span>
@@ -211,11 +212,11 @@ function HomePane({ apps, onPick }: { apps: App[]; onPick: (n: number) => void }
               <path className="hero-line" d="M0 68 C25 62 40 66 60 55 S95 50 115 44 S150 52 170 38 S205 30 225 24 S265 22 300 8" fill="none" stroke={color("metricove")} strokeWidth="2" vectorEffect="non-scaling-stroke" />
             </svg>
           </div>
-          <div className="flex flex-col rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+          <div className="flex flex-col rounded-xl border border-wash/[0.07] bg-[var(--hub-card)] p-4">
             <div className="flex items-center gap-2">
               <ProductIcon id="nino" color={color("nino")} size="sm" className="size-5! rounded-md [&_svg]:size-3" />
               <span className="truncate text-[11.5px] text-ink-2">Régie · Plateau A</span>
-              <span className="ml-auto flex shrink-0 items-center gap-1 text-[10px] font-semibold text-[#ff6b6b]">
+              <span className="ml-auto flex shrink-0 items-center gap-1 text-[10px] font-semibold text-[var(--rec-text)]">
                 <span className="rec size-1.5 rounded-full bg-[#ff4d4d]" /> REC
               </span>
             </div>
@@ -260,8 +261,8 @@ function AppPane({ app, on }: { app: App; on: boolean }) {
   const c = ink(app.color);
   const flat = neutral(app.color);
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.02]">
-      <div className="flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.06] px-4">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-wash/[0.07] bg-[var(--hub-pane)]">
+      <div className="flex h-14 shrink-0 items-center gap-3 border-b border-wash/[0.06] px-4">
         <ProductIcon id={app.id} color={c} size="sm" className="size-8! rounded-lg!" />
         <div className="min-w-0 leading-tight">
           <p className="flex items-center gap-2 text-[13.5px] font-semibold">
@@ -273,12 +274,12 @@ function AppPane({ app, on }: { app: App; on: boolean }) {
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2.5">
           {place.note && (
-            <span className="flex items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 py-1 text-[11px] text-ink-2 max-sm:hidden">
+            <span className="flex items-center gap-1.5 rounded-full bg-wash/[0.04] px-2.5 py-1 text-[11px] text-ink-2 max-sm:hidden">
               <span className="size-1.5 rounded-full bg-[#28c840]" />
               {place.note}
             </span>
           )}
-          <span className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium" style={{ background: c, color: flat ? "#0b0b0d" : "#fff" }}>
+          <span className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium" style={{ background: c, color: flat ? "light-dark(#fff, #0b0b0d)" : "#fff" }}>
             <Share2 className="size-3.5" /> Partager
           </span>
         </div>
@@ -306,15 +307,15 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
   const slug = open ? (LIVE[open.id]?.slug ?? open.id) : "accueil";
 
   return (
-    <div className="flex h-full flex-col bg-[#0b0b0d] text-[12px] text-ink">
+    <div className="flex h-full flex-col bg-[var(--win)] text-[12px] text-ink">
       {/* Title bar */}
-      <div className="relative flex h-11 shrink-0 items-center border-b border-white/[0.06] bg-[#101012] px-4">
+      <div className="relative flex h-11 shrink-0 items-center border-b border-wash/[0.06] bg-[var(--win-bar)] px-4">
         <span className="flex gap-2">
           <span className="size-3 rounded-full bg-[#ff5f57]" />
           <span className="size-3 rounded-full bg-[#febc2e]" />
           <span className="size-3 rounded-full bg-[#28c840]" />
         </span>
-        <span className="absolute left-1/2 flex h-7 w-[340px] -translate-x-1/2 items-center justify-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] text-[11.5px] text-ink-3 max-sm:w-[260px]">
+        <span className="absolute left-1/2 flex h-7 w-[340px] -translate-x-1/2 items-center justify-center gap-2 rounded-lg border border-wash/[0.06] bg-[var(--hub-url)] text-[11.5px] text-ink-3 max-sm:w-[260px]">
           <Lock className="size-3" />
           <span>
             postmelo.app/
@@ -332,7 +333,7 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
 
       <div className="flex min-h-0 flex-1">
         {/* Sidebar */}
-        <aside className="flex w-[232px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0d0d0f] p-3 max-lg:w-[212px] max-sm:w-14 max-sm:items-center max-sm:px-2">
+        <aside className="flex w-[232px] shrink-0 flex-col border-r border-wash/[0.06] bg-[var(--win-side)] p-3 max-lg:w-[212px] max-sm:w-14 max-sm:items-center max-sm:px-2">
           <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 max-sm:px-0">
             <Logo className="size-7" />
             <div className="min-w-0 leading-tight max-sm:hidden">
@@ -341,9 +342,9 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
             </div>
             <ChevronDown className="ml-auto size-3.5 text-ink-3 max-sm:hidden" />
           </div>
-          <div className="mt-3 flex h-8 items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.025] px-2.5 text-ink-3 max-lg:hidden">
+          <div className="mt-3 flex h-8 items-center gap-2 rounded-lg border border-wash/[0.06] bg-[var(--hub-card)] px-2.5 text-ink-3 max-lg:hidden">
             <Search className="size-3.5" /> Rechercher
-            <span className="ml-auto flex items-center gap-0.5 rounded border border-white/10 px-1 text-[10px]">
+            <span className="ml-auto flex items-center gap-0.5 rounded border border-wash/10 px-1 text-[10px]">
               <Command className="size-2.5" />K
             </span>
           </div>
@@ -359,7 +360,7 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
                 type="button"
                 tabIndex={-1}
                 onClick={home ? () => onPick(0) : undefined}
-                className={cn("relative flex h-8 items-center gap-2.5 rounded-lg px-2.5 text-left transition-colors duration-300 max-sm:w-9 max-sm:justify-center max-sm:px-0", home && shown === 0 && "bg-white/[0.07] text-ink")}
+                className={cn("relative flex h-8 items-center gap-2.5 rounded-lg px-2.5 text-left transition-colors duration-300 max-sm:w-9 max-sm:justify-center max-sm:px-0", home && shown === 0 && "bg-wash/[0.07] text-ink")}
               >
                 <I className="size-4 shrink-0" strokeWidth={1.8} /> <span className="max-sm:hidden">{t}</span>
                 {n && <span className="ml-auto rounded-full bg-accent px-1.5 text-[10px] font-semibold text-accent-ink max-sm:absolute max-sm:right-0 max-sm:top-0.5 max-sm:size-1.5 max-sm:p-0 max-sm:text-[0px]">{n}</span>}
@@ -367,7 +368,7 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
             ))}
           </nav>
           <p className="mb-1.5 mt-4 px-2.5 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-3 max-sm:hidden">Tes applications</p>
-          <span className="mb-2 mt-3 h-px w-6 bg-white/[0.08] sm:hidden" />
+          <span className="mb-2 mt-3 h-px w-6 bg-wash/[0.08] sm:hidden" />
           <div className="flex flex-col gap-0.5">
             {apps.map((a, n) => {
               const on = shown === n + 1;
@@ -394,7 +395,7 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
                       className="ml-auto rounded-full px-1.5 text-[9.5px] font-semibold max-sm:hidden"
                       style={{
                         background: tint(a.color, 28),
-                        color: `color-mix(in oklab, ${ink(a.color)} 70%, white)`,
+                        color: `color-mix(in oklab, ${ink(a.color)} 70%, var(--lift))`,
                       }}
                     >
                       {LIVE[a.id].badge}
@@ -404,7 +405,7 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
               );
             })}
           </div>
-          <div className="mt-auto flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] p-2.5 max-sm:hidden">
+          <div className="mt-auto flex items-center gap-2.5 rounded-xl border border-wash/[0.06] bg-[var(--hub-card)] p-2.5 max-sm:hidden">
             <Avatar n="C" hue={160} size={30} />
             <div className="min-w-0 leading-tight">
               <p className="truncate text-[12px] font-medium">Camille Roux</p>
@@ -428,7 +429,7 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
           </div>
 
           <div className="flex w-[268px] shrink-0 flex-col gap-3 max-lg:hidden">
-            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5">
+            <div className="rounded-xl border border-wash/[0.07] bg-[var(--hub-card)] p-3.5">
               <div className="flex items-center gap-2">
                 <ProductIcon id="alfred" color={color("alfred")} size="sm" className="size-5! rounded-md [&_svg]:size-3" />
                 <span className="text-[11.5px] text-ink-2">Aujourd&apos;hui</span>
@@ -453,7 +454,7 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
                 </div>
               ))}
             </div>
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-wash/[0.07] bg-[var(--hub-card)] p-3.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11.5px] text-ink-2">Activité de l&apos;équipe</span>
                 <span className="relative flex size-2">
@@ -463,7 +464,7 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
               </div>
               <div className="mt-1 flex min-h-0 flex-col overflow-hidden">
                 {FEED.map((f) => (
-                  <div key={f.what} className={cn("flex items-start gap-2.5 border-b border-white/[0.05] py-2 transition-opacity duration-500 last:border-0", open && open.id !== f.app && "opacity-50")}>
+                  <div key={f.what} className={cn("flex items-start gap-2.5 border-b border-wash/[0.05] py-2 transition-opacity duration-500 last:border-0", open && open.id !== f.app && "opacity-50")}>
                     <Avatar n={f.who[0]} hue={f.hue} size={24} />
                     <div className="min-w-0 flex-1 leading-snug">
                       <p className="text-[11px]">
@@ -477,16 +478,16 @@ function Hub({ apps, active, onPick }: { apps: App[]; active: number; onPick: (n
                   </div>
                 ))}
               </div>
-              <span className="mt-auto flex shrink-0 items-center justify-between border-t border-white/[0.05] pt-2.5 text-[11px] text-ink-2">
+              <span className="mt-auto flex shrink-0 items-center justify-between border-t border-wash/[0.05] pt-2.5 text-[11px] text-ink-2">
                 Tout voir <ArrowRight className="size-3.5 text-ink-3" />
               </span>
             </div>
-            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5">
+            <div className="rounded-xl border border-wash/[0.07] bg-[var(--hub-card)] p-3.5">
               <div className="flex items-center justify-between text-[11px]">
                 <span className="text-ink-2">Stockage de l&apos;équipe</span>
                 <span className="tabular text-ink-3">64 / 200 Go</span>
               </div>
-              <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-wash/[0.06]">
                 <span className="hero-bar h-full w-[18%]" style={{ background: color("nino") }} />
                 <span className="hero-bar h-full w-[9%]" style={{ background: color("cairn") }} />
                 <span className="hero-bar h-full w-[5%]" style={{ background: color("lamio") }} />
@@ -600,24 +601,24 @@ export function Hero({ apps, suite, signedIn }: { apps: App[]; suite: string; si
 
   return (
     <section className={cn("hero relative isolate overflow-x-clip pb-16 sm:pb-24", !visible && "hero-off")} style={{ "--hero-c": color, "--hero-dur": `${DUR}ms` } as React.CSSProperties}>
-      {/* Night sky: a faint grid and a glow at the top */}
+      {/* The sky: a faint grid and a glow at the top */}
       <div
         aria-hidden
         className="absolute inset-0 -z-10 opacity-[0.35] [mask-image:radial-gradient(70%_55%_at_50%_0%,#000,transparent)]"
         style={{
-          backgroundImage: "linear-gradient(rgba(255,252,245,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,252,245,0.05) 1px, transparent 1px)",
+          backgroundImage: "linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px)",
           backgroundSize: "64px 64px",
         }}
       />
       <div
         aria-hidden
-        className="absolute left-1/2 top-[-260px] -z-10 h-[620px] w-[1100px] max-w-[160vw] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(closest-side,rgba(95,211,168,0.16),rgba(111,66,230,0.08)_60%,transparent)] blur-2xl"
+        className="absolute left-1/2 top-[-260px] -z-10 h-[620px] w-[1100px] max-w-[160vw] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(closest-side,var(--glow-mint),var(--glow-violet)_60%,transparent)] blur-2xl"
       />
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center px-4 pt-[88px] text-center sm:pt-[80px]">
         <a
           href="#suite"
-          className="rise-blur group inline-flex max-w-full items-center gap-2 rounded-full border border-line-strong bg-white/[0.04] py-1 pl-1 pr-3.5 text-[12.5px] text-ink-2 backdrop-blur hover:border-accent/40"
+          className="rise-blur group inline-flex max-w-full items-center gap-2 rounded-full border border-line-strong bg-[var(--glass-04)] py-1 pl-1 pr-3.5 text-[12.5px] text-ink-2 backdrop-blur hover:border-accent/40"
           style={{ animationDelay: "100ms" }}
         >
           <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent">{soon ? "Bientôt" : "La suite"}</span>
@@ -634,7 +635,7 @@ export function Hero({ apps, suite, signedIn }: { apps: App[]; suite: string; si
             Un seul design.
           </span>
           <br />
-          <span className="rise-blur inline-block bg-[linear-gradient(100deg,#bff3dd,#5fd3a8_45%,#8f7bff)] bg-clip-text pb-[0.08em] pr-[0.06em] italic text-transparent" style={{ animationDelay: "520ms" }}>
+          <span className="rise-blur inline-block bg-[image:var(--title-gradient)] bg-clip-text pb-[0.08em] pr-[0.06em] italic text-transparent" style={{ animationDelay: "520ms" }}>
             Toutes tes applications.
           </span>
         </h1>
@@ -648,7 +649,7 @@ export function Hero({ apps, suite, signedIn }: { apps: App[]; suite: string; si
           <a href="#contact" className={cn("press sweep relative inline-flex h-12 items-center gap-2 overflow-hidden rounded-full px-6 text-[15px] font-medium", primaryClass)}>
             Demander un accès <ArrowRight className="size-4" />
           </a>
-          <a href={signedIn ? "/compte" : "#suite"} className="press inline-flex h-12 items-center gap-2 rounded-full border border-line-strong bg-white/[0.04] px-6 text-[15px] font-medium backdrop-blur hover:bg-white/[0.08]">
+          <a href={signedIn ? "/compte" : "#suite"} className="press inline-flex h-12 items-center gap-2 rounded-full border border-line-strong bg-[var(--glass-04)] px-6 text-[15px] font-medium backdrop-blur hover:bg-[var(--glass-08)]">
             {signedIn ? "Ouvrir mon compte" : "Découvrir la suite"}
           </a>
         </div>
@@ -660,7 +661,7 @@ export function Hero({ apps, suite, signedIn }: { apps: App[]; suite: string; si
           ref={list}
           role="tablist"
           aria-label="Parcourir la suite"
-          className={cn("hero-tabs flex max-w-full items-center gap-0.5 overflow-x-auto rounded-full border border-line bg-white/[0.03] p-1 backdrop-blur", paused && "hero-paused")}
+          className={cn("hero-tabs flex max-w-full items-center gap-0.5 overflow-x-auto rounded-full border border-line bg-[var(--glass-03)] p-1 backdrop-blur", paused && "hero-paused")}
           onPointerEnter={() => setHover(true)}
           onPointerLeave={() => setHover(false)}
           onFocus={() => setFocused(true)}
@@ -682,7 +683,7 @@ export function Hero({ apps, suite, signedIn }: { apps: App[]; suite: string; si
                 onClick={() => pick(n)}
                 className={cn(
                   "relative flex h-9 shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full text-[13px] font-medium transition-colors duration-300",
-                  on ? "bg-white/[0.08] pl-1 pr-3 text-ink sm:pl-1.5" : "w-7 text-ink-3 hover:bg-white/[0.04] hover:text-ink-2 sm:w-9",
+                  on ? "bg-[var(--glass-08)] pl-1 pr-3 text-ink shadow-[var(--tab-shadow)] sm:pl-1.5" : "w-7 text-ink-3 hover:bg-[var(--glass-04)] hover:text-ink-2 sm:w-9",
                 )}
               >
                 {on ? (
@@ -700,7 +701,7 @@ export function Hero({ apps, suite, signedIn }: { apps: App[]; suite: string; si
                 )}
                 <span className={cn("whitespace-nowrap", !on && "sr-only")}>{x.name}</span>
                 {on && (
-                  <span aria-hidden className="absolute inset-x-3 bottom-0 h-[2px] overflow-hidden rounded-full bg-white/[0.06]">
+                  <span aria-hidden className="absolute inset-x-3 bottom-0 h-[2px] overflow-hidden rounded-full bg-wash/[0.06]">
                     <span
                       key={`${active}-${manual}`}
                       className={cn("hero-progress block h-full rounded-full", manual && "hero-progress-done")}
@@ -742,7 +743,7 @@ export function Hero({ apps, suite, signedIn }: { apps: App[]; suite: string; si
               {/* Signed in once, for everything: floating just under the frame's corner */}
               <div ref={chip} aria-hidden className="hero-chip-wrap pointer-events-none absolute bottom-[-72px] left-3 z-10 max-sm:hidden xl:-left-4" style={{ translate: "0 14px" }}>
                 <div
-                  className="rise-blur flex items-center gap-3 rounded-2xl border border-[rgba(255,252,245,0.14)] bg-[#141417]/85 py-2 pl-2 pr-4 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl"
+                  className="rise-blur flex items-center gap-3 rounded-2xl border border-[color:var(--edge-14)] bg-chip/85 py-2 pl-2 pr-4 shadow-[0_30px_60px_-20px_var(--deep),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl"
                   style={{ animationDelay: "1400ms" }}
                 >
                   <span className="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
@@ -760,7 +761,7 @@ export function Hero({ apps, suite, signedIn }: { apps: App[]; suite: string; si
           </div>
         </div>
         {/* A soft reflection under the product */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-[12%] -bottom-10 -z-10 h-24 rounded-[50%] bg-[radial-gradient(closest-side,rgba(95,211,168,0.18),transparent)] blur-xl" />
+        <div aria-hidden className="pointer-events-none absolute inset-x-[12%] -bottom-10 -z-10 h-24 rounded-[50%] bg-[radial-gradient(closest-side,var(--glow-reflect),transparent)] blur-xl" />
       </div>
     </section>
   );

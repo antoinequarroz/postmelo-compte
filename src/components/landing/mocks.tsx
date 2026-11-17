@@ -13,12 +13,12 @@ function Window({ title, color, on, chrome = true, children, className }: { titl
   if (!chrome) return <div className={cn("relative h-full w-full text-[12px] text-ink", on && "mock-on", className)}>{children}</div>;
   return (
     <div
-      className={cn("relative flex h-full w-full flex-col overflow-hidden rounded-[20px] border border-[rgba(255,252,245,0.12)] bg-[#0e0e10]/90 text-[12px] text-ink backdrop-blur-xl", on && "mock-on", className)}
+      className={cn("relative flex h-full w-full flex-col overflow-hidden rounded-[20px] border border-[color:var(--edge-12)] bg-mock/90 text-[12px] text-ink backdrop-blur-xl", on && "mock-on", className)}
       style={{
-        boxShadow: `0 60px 120px -50px ${color}, 0 30px 60px -30px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06)`,
+        boxShadow: `0 60px 120px -50px light-dark(color-mix(in oklab, ${color} 55%, transparent), ${color}), 0 30px 60px -30px var(--deep-2), inset 0 1px 0 rgba(255,255,255,0.06)`,
       }}
     >
-      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-[rgba(255,252,245,0.07)] px-4">
+      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-[color:var(--edge-07)] px-4">
         <span className="flex gap-1.5">
           <span className="size-2.5 rounded-full bg-[#ff5f57]" />
           <span className="size-2.5 rounded-full bg-[#febc2e]" />
@@ -69,13 +69,13 @@ function Lamio({ color, on, chrome }: MockProps) {
   return (
     <Window title="Lamio · #studio" color={color} on={on} chrome={chrome}>
       <div className="flex h-full">
-        <aside className="hidden w-[150px] shrink-0 flex-col gap-1 border-r border-[rgba(255,252,245,0.07)] p-3 sm:flex">
+        <aside className="hidden w-[150px] shrink-0 flex-col gap-1 border-r border-[color:var(--edge-07)] p-3 sm:flex">
           <p className="mb-1 text-[10px] uppercase tracking-wider text-ink-3">Canaux</p>
           {["general", "studio", "design", "clients"].map((c) => (
             <span key={c} className={cn("flex items-center gap-1.5 rounded-md px-2 py-1", c === "studio" ? "text-ink" : "text-ink-3")} style={c === "studio" ? { background: soft(color, 22) } : undefined}>
               <Hash className="size-3" /> {c}
               {c === "design" && (
-                <span className="ml-auto rounded-full px-1.5 text-[9.5px] font-semibold text-black" style={{ background: color }}>
+                <span className="ml-auto rounded-full px-1.5 text-[9.5px] font-semibold text-[light-dark(#fff,#000)]" style={{ background: color }}>
                   3
                 </span>
               )}
@@ -104,7 +104,7 @@ function Lamio({ color, on, chrome }: MockProps) {
               </span>
             </div>
             <p className="mt-3 flex items-center gap-3 text-[10.5px] text-ink-3">
-              <span className="h-px flex-1 bg-white/[0.07]" /> Aujourd&apos;hui <span className="h-px flex-1 bg-white/[0.07]" />
+              <span className="h-px flex-1 bg-wash/[0.07]" /> Aujourd&apos;hui <span className="h-px flex-1 bg-wash/[0.07]" />
             </p>
           </div>
           {msgs.map((m, i) => (
@@ -113,7 +113,7 @@ function Lamio({ color, on, chrome }: MockProps) {
                 className="flex size-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-semibold"
                 style={{
                   background: `oklch(0.62 0.13 ${m.hue} / 0.25)`,
-                  color: `oklch(0.8 0.12 ${m.hue})`,
+                  color: `light-dark(oklch(0.45 0.13 ${m.hue}), oklch(0.8 0.12 ${m.hue}))`,
                 }}
               >
                 {m.who[0]}
@@ -134,7 +134,7 @@ function Lamio({ color, on, chrome }: MockProps) {
             </span>
             Léa écrit…
           </div>
-          <div className="mt-auto flex h-9 shrink-0 items-center rounded-lg border border-[rgba(255,252,245,0.1)] px-3 text-ink-3">Écrire dans #studio</div>
+          <div className="mt-auto flex h-9 shrink-0 items-center rounded-lg border border-[color:var(--edge-10)] px-3 text-ink-3">Écrire dans #studio</div>
         </div>
       </div>
     </Window>
@@ -145,8 +145,8 @@ function Cairn({ color, on, chrome }: MockProps) {
   return (
     <Window title="Cairn · Notes" color={color} on={on} chrome={chrome}>
       <div className="flex h-full">
-        <aside className="hidden w-[160px] shrink-0 flex-col gap-1 border-r border-[rgba(255,252,245,0.07)] p-3 text-ink-3 sm:flex">
-          <span className="mb-2 flex items-center gap-1.5 rounded-md border border-[rgba(255,252,245,0.1)] px-2 py-1">
+        <aside className="hidden w-[160px] shrink-0 flex-col gap-1 border-r border-[color:var(--edge-07)] p-3 text-ink-3 sm:flex">
+          <span className="mb-2 flex items-center gap-1.5 rounded-md border border-[color:var(--edge-10)] px-2 py-1">
             <Search className="size-3" /> Rechercher <span className="ml-auto text-[9.5px]">⌘K</span>
           </span>
           {["📁 Clients", "📁 Studio", "📄 Charte Postmelo", "📄 Idées vidéo", "🔒 Accès VPS"].map((n, i) => (
@@ -166,7 +166,7 @@ function Cairn({ color, on, chrome }: MockProps) {
           </p>
           <div className="mt-2 flex gap-1.5">
             {["#12805c", "#efede8", "#181715", color].map((c) => (
-              <span key={c} className="size-6 rounded-md ring-1 ring-white/10" style={{ background: c }} />
+              <span key={c} className="size-6 rounded-md ring-1 ring-wash/10" style={{ background: c }} />
             ))}
           </div>
           <p className="mt-3 text-ink-3">
@@ -195,13 +195,13 @@ function Cairn({ color, on, chrome }: MockProps) {
               <span style={{ color }}>## </span>Typographie
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-[rgba(255,252,245,0.08)] bg-white/[0.02] p-3">
+              <div className="rounded-xl border border-[color:var(--edge-08)] bg-[var(--hub-pane)] p-3">
                 <p className="font-display text-[30px] leading-none">
                   Aa <span className="italic text-ink-2">Aa</span>
                 </p>
                 <p className="mt-2 text-[10.5px] text-ink-3">Instrument Serif · titres</p>
               </div>
-              <div className="rounded-xl border border-[rgba(255,252,245,0.08)] bg-white/[0.02] p-3">
+              <div className="rounded-xl border border-[color:var(--edge-08)] bg-[var(--hub-pane)] p-3">
                 <p className="text-[26px] font-medium leading-none tracking-tight">Aa</p>
                 <p className="mt-2 text-[10.5px] text-ink-3">Geist · textes et interface</p>
               </div>
@@ -222,21 +222,21 @@ function TickUp({ color, on, chrome }: MockProps) {
     { name: "En cours", cards: ["Montage épisode 12", "Visuels LinkedIn"] },
     { name: "Terminé", cards: ["Logo final", "Charte", "Générique podcast"] },
   ];
-  const c = color || "#f6f4ef";
+  const c = color || "var(--ink)";
   return (
     <Window title="TickUp · Studio · Sprint 4" color={c} on={on} chrome={chrome}>
       <div className="grid h-full grid-cols-3 gap-2.5 p-4">
         {cols.map((col, ci) => (
-          <div key={col.name} className="flex flex-col gap-2 rounded-xl bg-white/[0.03] p-2">
+          <div key={col.name} className="flex flex-col gap-2 rounded-xl bg-wash/[0.03] p-2">
             <p className="flex items-center gap-1.5 px-1 text-[10.5px] font-medium text-ink-2">
               <span className="size-2 rounded-full border border-ink-3" style={ci === 2 ? { background: c } : undefined} /> {col.name}
             </p>
             {col.cards.map((t, i) => (
-              <div key={t} className={cn("relative rounded-lg border border-[rgba(255,252,245,0.1)] bg-[#17171a] p-2.5", ci === 0 && i === 0 && "card-move z-10")}>
+              <div key={t} className={cn("relative rounded-lg border border-[color:var(--edge-10)] bg-raised p-2.5", ci === 0 && i === 0 && "card-move z-10")}>
                 <p className="text-[10px] text-ink-3">STU-{12 + ci * 3 + i}</p>
                 <p className="mt-0.5 font-medium leading-snug">{t}</p>
                 <div className="mt-2 flex items-center gap-1">
-                  <span className="h-1 flex-1 rounded-full bg-white/10">
+                  <span className="h-1 flex-1 rounded-full bg-wash/10">
                     <span className="block h-full rounded-full" style={{ width: `${[30, 65, 100][ci]}%`, background: c }} />
                   </span>
                 </div>
@@ -276,7 +276,7 @@ function Alfred({ color, on, chrome }: MockProps) {
         </div>
         <div className="relative mt-2 grid flex-1 grid-cols-5 gap-1.5">
           {days.map((d, di) => (
-            <div key={d} className="relative rounded-lg bg-white/[0.025]">
+            <div key={d} className="relative rounded-lg bg-wash/[0.025]">
               {events
                 .filter((e) => e.d === di)
                 .map((e) => (
@@ -297,7 +297,7 @@ function Alfred({ color, on, chrome }: MockProps) {
             </div>
           ))}
         </div>
-        <div className="msg absolute bottom-4 right-4 flex items-center gap-2 rounded-xl border border-[rgba(255,252,245,0.12)] bg-[#17171a] px-3 py-2 shadow-2xl" style={{ animationDelay: "1500ms" }}>
+        <div className="msg absolute bottom-4 right-4 flex items-center gap-2 rounded-xl border border-[color:var(--edge-12)] bg-raised px-3 py-2 shadow-2xl" style={{ animationDelay: "1500ms" }}>
           <CheckCircle2 className="size-4" style={{ color }} />
           <span>
             <span className="block font-medium">Rendez-vous confirmé</span>
@@ -317,7 +317,7 @@ function Metricove({ color, on, chrome }: MockProps) {
         <div className="flex min-h-0 flex-col gap-3">
           <div className="grid grid-cols-7 content-start gap-1 text-center text-[9.5px] text-ink-3">
             {Array.from({ length: 28 }, (_, i) => (
-              <span key={i} className="relative flex aspect-square items-center justify-center rounded-md bg-white/[0.03]">
+              <span key={i} className="relative flex aspect-square items-center justify-center rounded-md bg-wash/[0.03]">
                 {i + 1}
                 {[2, 5, 9, 12, 16, 19, 23, 26].includes(i) && <span className="absolute bottom-1 size-1 rounded-full" style={{ background: color }} />}
               </span>
@@ -330,15 +330,15 @@ function Metricove({ color, on, chrome }: MockProps) {
               { d: "Ven 12:30", t: "Coulisses du tournage", n: "IG" },
               { d: "Sam 18:00", t: "Extrait « Les Coulisses »", n: "▶" },
             ].map((p, i) => (
-              <div key={p.d} className="msg mt-2 flex items-center gap-2.5 rounded-lg bg-white/[0.03] px-2.5 py-2" style={{ animationDelay: `${500 + i * 150}ms` }}>
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-[9.5px] font-bold">{p.n}</span>
+              <div key={p.d} className="msg mt-2 flex items-center gap-2.5 rounded-lg bg-wash/[0.03] px-2.5 py-2" style={{ animationDelay: `${500 + i * 150}ms` }}>
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-wash/[0.06] text-[9.5px] font-bold">{p.n}</span>
                 <span className="min-w-0 flex-1 truncate">{p.t}</span>
                 <span className="tabular shrink-0 text-[10px] text-ink-3">{p.d}</span>
               </div>
             ))}
           </div>
         </div>
-        <div className="msg flex flex-col rounded-xl border border-[rgba(255,252,245,0.1)] bg-[#17171a] p-3" style={{ animationDelay: "300ms" }}>
+        <div className="msg flex flex-col rounded-xl border border-[color:var(--edge-10)] bg-raised p-3" style={{ animationDelay: "300ms" }}>
           <div className="flex items-center gap-2">
             <span
               className="size-6 rounded-full"
@@ -347,7 +347,7 @@ function Metricove({ color, on, chrome }: MockProps) {
               }}
             />
             <span className="font-medium">Postmelo</span>
-            <span className="ml-auto rounded-full px-2 py-0.5 text-[9.5px] font-medium text-black" style={{ background: color }}>
+            <span className="ml-auto rounded-full px-2 py-0.5 text-[9.5px] font-medium text-[light-dark(#fff,#000)]" style={{ background: color }}>
               Jeu 9:00
             </span>
           </div>
@@ -362,7 +362,7 @@ function Metricove({ color, on, chrome }: MockProps) {
           <p className="mt-2 text-ink-2">Le nouvel épisode est là. On parle d&apos;outils, d&apos;équipe et de vidéo 🎬</p>
           <div className="mt-auto flex gap-1.5 pt-2">
             {nets.map((n, i) => (
-              <span key={n} className="msg flex size-6 items-center justify-center rounded-md bg-white/[0.06] text-[9.5px] font-bold" style={{ animationDelay: `${700 + i * 120}ms` }}>
+              <span key={n} className="msg flex size-6 items-center justify-center rounded-md bg-wash/[0.06] text-[9.5px] font-bold" style={{ animationDelay: `${700 + i * 120}ms` }}>
                 {n}
               </span>
             ))}
@@ -381,7 +381,7 @@ function Studio({ color, on, chrome }: MockProps) {
     <Window title="Postmelo Studio · Carrousel" color={color} on={on} chrome={chrome}>
       <div className="flex h-full flex-col gap-3 p-4">
         <div className="flex flex-1 gap-3">
-          <div className="relative flex flex-1 flex-col justify-between overflow-hidden rounded-xl p-4" style={{ background: "#efede8", color: "#181715" }}>
+          <div className="relative flex flex-1 flex-col justify-between overflow-hidden rounded-xl p-4" style={{ background: "light-dark(#ffffff, #efede8)", color: "#181715", boxShadow: "light-dark(0 0 0 1px rgba(23,22,20,0.08), 0 0 0 0 transparent), light-dark(0 8px 24px -12px rgba(40,32,20,0.18), 0 0 0 0 transparent)" }}>
             <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color }}>
               3 erreurs à éviter
             </span>
@@ -395,15 +395,15 @@ function Studio({ color, on, chrome }: MockProps) {
             <span className="text-[10px]">postmelo.ch · 1/6</span>
           </div>
           <div className="hidden w-[38%] flex-col gap-2 sm:flex">
-            <div className="rounded-lg bg-white/[0.04] p-2.5">
+            <div className="rounded-lg bg-wash/[0.04] p-2.5">
               <p className="text-[10px] text-ink-3">Ton de la marque</p>
               <p className="mt-1">Direct, chaleureux</p>
             </div>
-            <div className="rounded-lg bg-white/[0.04] p-2.5">
+            <div className="rounded-lg bg-wash/[0.04] p-2.5">
               <p className="text-[10px] text-ink-3">Format</p>
               <p className="mt-1">Carrousel LinkedIn</p>
             </div>
-            <button className="sweep relative mt-auto flex items-center justify-center gap-1.5 overflow-hidden rounded-lg py-2 font-medium text-black" style={{ background: color }}>
+            <button className="sweep relative mt-auto flex items-center justify-center gap-1.5 overflow-hidden rounded-lg py-2 font-medium text-[light-dark(#fff,#000)]" style={{ background: color }}>
               <Wand2 className="size-3.5" /> Générer avec l&apos;IA
             </button>
           </div>
@@ -412,9 +412,9 @@ function Studio({ color, on, chrome }: MockProps) {
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <span
               key={i}
-              className={cn("msg aspect-square flex-1 rounded-md", i === 0 ? "ring-2" : "")}
+              className={cn("msg aspect-square flex-1 rounded-md", i === 0 ? "ring-2" : i % 2 ? "" : "ring-1 ring-line")}
               style={{
-                background: i === 0 ? "#efede8" : i % 2 ? soft(color, 30) : "rgba(255,255,255,0.06)",
+                background: i === 0 ? "light-dark(#ffffff, #efede8)" : i % 2 ? soft(color, 30) : "light-dark(#ffffff, rgba(255,255,255,0.06))",
                 ["--tw-ring-color" as string]: color,
                 animationDelay: `${200 + i * 120}ms`,
               }}
@@ -432,7 +432,7 @@ function Nino({ color, on, chrome }: MockProps) {
       <div className="grid h-full grid-cols-[1.5fr_1fr] gap-3 p-4">
         <div className="flex flex-col gap-2">
           <Shot hue={210} className="flex-1 rounded-xl">
-            <span className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-[10px] font-semibold">
+            <span className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-[10px] font-semibold text-[#f6f4ef]">
               <span className="rec size-2 rounded-full bg-[#ff3b30]" /> REC 00:42:18
             </span>
             <span className="absolute right-2.5 top-2.5 rounded-md px-2 py-1 text-[10px] font-semibold text-white" style={{ background: color }}>
@@ -452,10 +452,10 @@ function Nino({ color, on, chrome }: MockProps) {
         </div>
         <div className="flex flex-col gap-2">
           <p className="text-[10px] uppercase tracking-wider text-ink-3">Micros</p>
-          <div className="flex flex-1 items-end justify-between gap-1.5 rounded-xl bg-white/[0.03] p-3">
+          <div className="flex flex-1 items-end justify-between gap-1.5 rounded-xl bg-wash/[0.03] p-3">
             {[0, 1, 2, 3].map((m) => (
               <div key={m} className="flex h-full flex-1 flex-col items-center gap-1.5">
-                <div className="relative w-full flex-1 overflow-hidden rounded bg-white/[0.05]">
+                <div className="relative w-full flex-1 overflow-hidden rounded bg-wash/[0.05]">
                   <span
                     className="vu absolute inset-x-0 bottom-0 h-full rounded"
                     style={{
@@ -513,14 +513,14 @@ function Maya({ color, on, chrome }: MockProps) {
           >
             <Shot hue={290} className="absolute left-[8%] top-[14%] h-[62%] w-[55%] rounded-lg border border-white/10" />
             <Shot hue={30} className="absolute bottom-[12%] right-[8%] h-[40%] w-[30%] rounded-lg border-2" style={{ borderColor: color }} />
-            <div className="absolute bottom-[10%] left-[8%] rounded-md bg-black/70 px-2 py-1 text-[10px]">
+            <div className="absolute bottom-[10%] left-[8%] rounded-md bg-black/70 px-2 py-1 text-[10px] text-[#f6f4ef]">
               <span className="font-semibold">Antoine Q.</span> · Postmelo
             </div>
             <span className="absolute right-2.5 top-2.5 flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold text-white" style={{ background: color }}>
               <span className="rec size-1.5 rounded-full bg-white" /> LIVE · SRT
             </span>
           </div>
-          <div className="flex items-center gap-3 rounded-lg bg-white/[0.03] px-3 py-2">
+          <div className="flex items-center gap-3 rounded-lg bg-wash/[0.03] px-3 py-2">
             <span className="text-[10px] text-ink-3">Débit</span>
             <svg viewBox="0 0 200 30" className="h-6 flex-1" aria-hidden>
               <polyline className="graph" fill="none" stroke={color} strokeWidth="2" points="0,22 20,18 40,20 60,12 80,15 100,8 120,11 140,6 160,9 180,5 200,7" />
@@ -557,6 +557,6 @@ const MOCKS: Record<string, (p: MockProps) => React.ReactElement> = {
 /** One app's interface. With `chrome` (the default) it has its own window and title bar; without, it is drawn bare. */
 export function AppMock({ id, name, color, on, chrome = true }: { id: string; name: string; color: string; on: boolean; chrome?: boolean }) {
   const Mock = MOCKS[id];
-  const c = color || "#f6f4ef";
+  const c = color || "var(--ink)";
   return Mock ? <Mock color={c} on={on} chrome={chrome} /> : <Generic color={c} on={on} chrome={chrome} name={name} />;
 }
