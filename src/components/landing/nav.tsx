@@ -9,7 +9,7 @@ import { setTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 /** A floating glass bar that tightens once the page moves. */
-export function Nav({ suite, signedIn, admin }: { suite: string; signedIn: boolean; admin: boolean }) {
+export function Nav({ suite, signedIn, admin, account }: { suite: string; signedIn: boolean; admin: boolean; account: string }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 40);
@@ -37,15 +37,15 @@ export function Nav({ suite, signedIn, admin }: { suite: string; signedIn: boole
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           {admin && (
-            <Link href="/admin" className="press inline-flex h-9 items-center rounded-full px-3 text-[13.5px] font-medium text-ink-2 hover:bg-[var(--glass-05)] hover:text-ink max-sm:hidden">
+            <a href={`${account}/admin`} className="press inline-flex h-9 items-center rounded-full px-3 text-[13.5px] font-medium text-ink-2 hover:bg-[var(--glass-05)] hover:text-ink max-sm:hidden">
               Admin
-            </Link>
+            </a>
           )}
           <ThemeToggle />
-          <Link href={signedIn ? "/compte" : "/connexion"} className={cn("press inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[13.5px] font-medium", primaryClass)}>
+          <a href={`${account}${signedIn ? "/compte" : "/connexion"}`} className={cn("press inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[13.5px] font-medium", primaryClass)}>
             {signedIn ? "Mon compte" : "Se connecter"}
             <ArrowRight className="size-4" />
-          </Link>
+          </a>
         </div>
       </nav>
     </header>
