@@ -12,10 +12,10 @@ const T = {
   de: { thanks: "Danke, ist notiert.", back: (email: string) => `Wir melden uns sehr bald unter ${email}.`, name: "Dein Name", email: "E-Mail", company: "Firma", product: "Welche App interessiert dich?", all: "Die ganze Suite", message: "Nachricht", placeholder: "Dein Team, deine Bedürfnisse, deine Fragen…", sending: "Wird gesendet…", send: "Anfrage senden" },
 };
 
-/** The request form of the public page. What is sent lands in the CRM as a prospect, with the language it was written in. */
-export function ContactForm({ products, locale = "fr" }: { products: { id: string; name: string }[]; locale?: Locale }) {
+/** The request form of the public pages (`product` preselects an app). What is sent lands in the CRM as a prospect, with the language it was written in. */
+export function ContactForm({ products, product = "", locale = "fr" }: { products: { id: string; name: string }[]; product?: string; locale?: Locale }) {
   const t = T[locale];
-  const [form, setForm] = useState({ name: "", email: "", company: "", product: "", message: "", website: "" });
+  const [form, setForm] = useState({ name: "", email: "", company: "", product, message: "", website: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);

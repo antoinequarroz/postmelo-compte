@@ -635,3 +635,27 @@ html:has(.landing) body {
 .site-prose.compact > * + * {
   margin-top: 0.7em;
 }
+
+/* Live demos (components/demos): the script's click, the hint, and what pops into place. */
+@keyframes demo-click { from { transform: scale(0.3); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+.demo-click { animation: demo-click 500ms var(--ease-out) forwards; }
+@keyframes demo-hint {
+  0% { opacity: 0; transform: translateY(10px); }
+  8%, 82% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(4px); }
+}
+.demo-hint { animation: demo-hint 5.5s var(--ease-out) forwards; }
+@keyframes demo-pop {
+  0% { opacity: 0; transform: translateY(8px) scale(0.96); }
+  100% { opacity: 1; transform: none; }
+}
+.demo-pop { animation: demo-pop 450ms var(--ease-out) both; }
+@keyframes demo-flash { from { opacity: 0.9; } to { opacity: 0; } }
+.demo-flash { animation: demo-flash 450ms ease-out forwards; }
+@keyframes demo-scan { 0%, 100% { transform: translateY(-40%); opacity: 0.2; } 50% { transform: translateY(40%); opacity: 1; } }
+.demo-scan { animation: demo-scan 0.9s var(--ease-in-out) infinite; }
+@keyframes demo-burst { 0% { transform: scale(0.4); opacity: 0.8; } 100% { transform: scale(2.2); opacity: 0; } }
+.demo-burst { animation: demo-burst 700ms var(--ease-out) forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .demo-click, .demo-hint, .demo-pop, .demo-flash, .demo-scan, .demo-burst { animation: none !important; }
+}

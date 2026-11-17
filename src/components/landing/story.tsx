@@ -3,7 +3,7 @@
 import { ArrowRight, Check } from "lucide-react";
 import { useRef, useState } from "react";
 import { ProductIcon } from "@/components/product-icon";
-import type { Locale } from "@/lib/i18n";
+import { localePath, type Locale } from "@/lib/i18n";
 import { countWordIn, FAMILY_LABEL, STATUS_LABEL } from "@/lib/site-text";
 import { cn } from "@/lib/utils";
 import { appColor, readable } from "./color";
@@ -14,9 +14,9 @@ import { useScrollProgress } from "./use-scroll";
 export type StoryApp = { id: string; name: string; color: string; category: string; family: string; tagline: string; points: string[]; status: string };
 
 const T = {
-  fr: { eyebrow: "La suite", title: (n: string) => `${n} applications.`, sub: "Une seule façon de travailler.", notify: "Être prévenu du lancement", try: (name: string) => `Essayer ${name}` },
-  en: { eyebrow: "The suite", title: (n: string) => `${n} apps.`, sub: "One way of working.", notify: "Get notified at launch", try: (name: string) => `Try ${name}` },
-  de: { eyebrow: "Die Suite", title: (n: string) => `${n} Apps.`, sub: "Eine Art zu arbeiten.", notify: "Zum Start benachrichtigen", try: (name: string) => `${name} testen` },
+  fr: { eyebrow: "La suite", title: (n: string) => `${n} applications.`, sub: "Une seule façon de travailler.", notify: "Être prévenu du lancement", try: (name: string) => `Essayer ${name}`, discover: (name: string) => `Découvrir ${name}` },
+  en: { eyebrow: "The suite", title: (n: string) => `${n} apps.`, sub: "One way of working.", notify: "Get notified at launch", try: (name: string) => `Try ${name}`, discover: (name: string) => `Discover ${name}` },
+  de: { eyebrow: "Die Suite", title: (n: string) => `${n} Apps.`, sub: "Eine Art zu arbeiten.", notify: "Zum Start benachrichtigen", try: (name: string) => `${name} testen`, discover: (name: string) => `${name} entdecken` },
 };
 
 function Copy({ a, n, total, locale }: { a: StoryApp; n: number; total: number; locale: Locale }) {
@@ -57,10 +57,15 @@ function Copy({ a, n, total, locale }: { a: StoryApp; n: number; total: number; 
           </li>
         ))}
       </ul>
-      <a href="#contact" data-product={a.id} className="group mt-8 inline-flex items-center gap-2 text-[14px] font-medium" style={{ color: readable(c) }}>
-        {a.status === "bientot" ? T[locale].notify : T[locale].try(a.name)}
-        <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
-      </a>
+      <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <a href={localePath(locale, `/${a.id}`)} className="group inline-flex items-center gap-2 text-[14px] font-medium" style={{ color: readable(c) }}>
+          {T[locale].discover(a.name)}
+          <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
+        </a>
+        <a href="#contact" data-product={a.id} className="text-[14px] text-ink-3 hover:text-ink">
+          {a.status === "bientot" ? T[locale].notify : T[locale].try(a.name)}
+        </a>
+      </div>
     </div>
   );
 }

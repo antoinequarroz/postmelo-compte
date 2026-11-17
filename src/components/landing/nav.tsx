@@ -10,9 +10,9 @@ import { setTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const T = {
-  fr: { who: "Pour qui", suite: "La suite", account: "Un seul compte", blog: "Blog", contact: "Contact", mine: "Mon compte", signIn: "Se connecter", theme: "Clair ou sombre", toDark: "Passer en mode sombre", toLight: "Passer en mode clair", language: "Langue" },
-  en: { who: "Who it's for", suite: "The suite", account: "One account", blog: "Blog", contact: "Contact", mine: "My account", signIn: "Sign in", theme: "Light or dark", toDark: "Switch to dark mode", toLight: "Switch to light mode", language: "Language" },
-  de: { who: "Für wen", suite: "Die Suite", account: "Ein Konto", blog: "Blog", contact: "Kontakt", mine: "Mein Konto", signIn: "Anmelden", theme: "Hell oder dunkel", toDark: "Zum dunklen Modus wechseln", toLight: "Zum hellen Modus wechseln", language: "Sprache" },
+  fr: { who: "Pour qui", suite: "La suite", demos: "Démos", account: "Un seul compte", blog: "Blog", contact: "Contact", mine: "Mon compte", signIn: "Se connecter", theme: "Clair ou sombre", toDark: "Passer en mode sombre", toLight: "Passer en mode clair", language: "Langue" },
+  en: { who: "Who it's for", suite: "The suite", demos: "Demos", account: "One account", blog: "Blog", contact: "Contact", mine: "My account", signIn: "Sign in", theme: "Light or dark", toDark: "Switch to dark mode", toLight: "Switch to light mode", language: "Language" },
+  de: { who: "Für wen", suite: "Die Suite", demos: "Demos", account: "Ein Konto", blog: "Blog", contact: "Kontakt", mine: "Mein Konto", signIn: "Anmelden", theme: "Hell oder dunkel", toDark: "Zum dunklen Modus wechseln", toLight: "Zum hellen Modus wechseln", language: "Sprache" },
 } satisfies Record<Locale, Record<string, string>>;
 
 /**
@@ -60,6 +60,7 @@ export function Nav({
         <div className="flex flex-1 items-center justify-center gap-6 whitespace-nowrap text-[13.5px] text-ink-2 max-md:hidden">
           <a href={`${home}#pour-qui`} className="hover:text-ink">{t.who}</a>
           <a href={`${home}#suite`} className="hover:text-ink">{t.suite}</a>
+          <a href={`${home}#demos`} className="hover:text-ink max-lg:hidden">{t.demos}</a>
           <a href={`${home}#compte`} className="hover:text-ink max-xl:hidden">{t.account}</a>
           <Link href={localePath(locale, "/blog")} className="hover:text-ink">{t.blog}</Link>
           <a href={`${home}#contact`} className="hover:text-ink">{t.contact}</a>

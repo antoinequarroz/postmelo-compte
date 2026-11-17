@@ -1,6 +1,7 @@
 import { Fingerprint, KeyRound, ShieldCheck, Users } from "lucide-react";
 import { ContactForm } from "@/components/landing-contact";
 import { BeforeAfter } from "@/components/landing/before-after";
+import { Demos } from "@/components/landing/demos";
 import { Faq } from "@/components/landing/faq";
 import { Hero } from "@/components/landing/hero";
 import { Hub } from "@/components/landing/hub";
@@ -136,6 +137,8 @@ export async function LandingPage({ locale }: { locale: Locale }) {
         <Profiles apps={apps} suite={SUITE_NAME} locale={locale} />
 
         <Story apps={story} locale={locale} />
+
+        <Demos apps={story} locale={locale} />
 
         <Statement text={t.statement.text} accent={t.statement.accent} />
 
