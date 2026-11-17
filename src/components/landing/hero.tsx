@@ -6,6 +6,7 @@ import { SuiteLogo } from "@/components/logo";
 import { ProductGlyph, ProductIcon } from "@/components/product-icon";
 import { primaryClass } from "@/lib/styles";
 import { cn } from "@/lib/utils";
+import { countWord } from "@/lib/count-word";
 import { AppMock } from "./mocks";
 import { prefersReduced } from "./use-scroll";
 import "./hero.css";
@@ -64,12 +65,6 @@ const LIVE: Record<string, { line: string; badge?: string; crumb: string; slug: 
     crumb: "Calendrier",
     slug: "metricove/calendrier",
     note: "5 posts prévus",
-  },
-  "postmelo-studio": {
-    line: "2 brouillons en cours",
-    crumb: "Carrousel",
-    slug: "studio/carrousel",
-    note: "Brouillon",
   },
   nino: {
     line: "Épisode 14 · 62 %",
@@ -243,7 +238,7 @@ function HomePane({ apps, onPick }: { apps: App[]; onPick: (n: number) => void }
                   style={{
                     height: "100%",
                     animationDelay: `${(i * 137) % 900}ms`,
-                    background: i % 7 === 6 ? "#febc2e" : color("postmelo-studio"),
+                    background: i % 7 === 6 ? "#febc2e" : "#28c840",
                   }}
                 />
               ))}
@@ -642,7 +637,7 @@ export function Hero({ apps, suite, signedIn }: { apps: App[]; suite: string; si
 
         <p className="rise-blur mt-5 max-w-[600px] text-[16px] leading-relaxed text-ink-2 sm:text-[17.5px]" style={{ animationDelay: "680ms" }}>
           Messagerie, notes, projets, agenda, réseaux sociaux, contenu, vidéo et direct.
-          <span className="max-sm:hidden"> Huit applications qui se parlent, ouvertes avec une seule connexion.</span>
+          <span className="max-sm:hidden"> {countWord(apps.length)} applications qui se parlent, ouvertes avec une seule connexion.</span>
         </p>
 
         <div className="rise-blur mt-5 flex flex-wrap justify-center gap-3" style={{ animationDelay: "820ms" }}>

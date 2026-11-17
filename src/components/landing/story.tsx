@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { AppMock } from "./mocks";
 import { Reveal } from "./reveal";
 import { useScrollProgress } from "./use-scroll";
+import { countWord } from "@/lib/count-word";
 
 export type StoryApp = { id: string; name: string; color: string; category: string; family: string; tagline: string; points: string[]; status: string };
 
@@ -84,7 +85,7 @@ export function Story({ apps }: { apps: StoryApp[] }) {
       <Reveal className="mx-auto max-w-[1160px] px-4 pb-10 pt-28 text-center sm:px-6">
         <p className="text-[12.5px] font-medium uppercase tracking-[0.2em] text-accent">La suite</p>
         <h2 className="mx-auto mt-4 max-w-[900px] font-display text-[clamp(44px,7vw,104px)] leading-[0.9] tracking-[-0.015em]">
-          Huit applications.
+          {countWord(apps.length)} applications.
           <br />
           <span className="italic text-ink-2">Une seule façon de travailler.</span>
         </h2>

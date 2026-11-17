@@ -31,6 +31,28 @@ export class CrmError extends Error {
 // The tables are checked once per connection (the tests open several data directories).
 const ready = new WeakSet<object>();
 
+/** One-time changes to a catalogue that already exists, each run once and remembered. */
+function migrate(conn: ReturnType<typeof db>) {
+  conn.exec("create table if not exists crm_migration (id text primary key, at text not null)");
+  const once = (id: string, run: () => void) => {
+    if (conn.prepare("select 1 from crm_migration where id = ?").get(id)) return;
+    conn.transaction(() => {
+      run();
+      conn.prepare("insert into crm_migration (id, at) values (?, ?)").run(id, now());
+    })();
+  };
+  // Postmelo Studio now lives inside Metricove: it leaves the catalogue (hidden if it has a history).
+  once("2026-11-studio-dans-metricove", () => {
+    const used = conn.prepare("select (select count(*) from crm_license where product_id = 'postmelo-studio') + (select count(*) from crm_deal where product_id = 'postmelo-studio') as n").get() as { n: number };
+    if (used.n) conn.prepare("update crm_product set status = 'masque' where id = 'postmelo-studio'").run();
+    else conn.prepare("delete from crm_product where id = 'postmelo-studio'").run();
+    // Metricove takes over its description, unless it was already edited in the admin.
+    conn
+      .prepare("update crm_product set category = ?, tagline = ?, description = ? where id = 'metricove' and tagline = ? and description = ?")
+      .run("Contenu et réseaux sociaux", "Créer, programmer et publier sur tous tes comptes.", "Posts et carrousels créés avec ta fiche de marque et l'IA\nInstagram, Facebook, X, LinkedIn et YouTube\nPosts programmés et publiés automatiquement, vidéos et Shorts\nUn seul calendrier éditorial pour tous les comptes", "Le calendrier éditorial et la publication sur tous tes comptes.", "Instagram, Facebook, X, LinkedIn et YouTube\nPosts programmés et publiés automatiquement\nVidéos, Shorts et relance en cas d'échec\nUn seul calendrier pour tous les comptes");
+  });
+}
+
 function crm() {
   const conn = db();
   if (ready.has(conn)) return conn;
@@ -116,6 +138,7 @@ function crm() {
     );
     CATALOG.forEach((p, i) => insert.run({ ...p, sort: i * 10, created_at: now() }));
   }
+  migrate(conn);
   ready.add(conn);
   return conn;
 }
@@ -143,14 +166,9 @@ const CATALOG = [
     description: "Vues jour, semaine et mois, événements récurrents\nSynchro iCloud dans les deux sens\nPage publique de prise de rendez-vous\nE-mails de confirmation et d'annulation",
   },
   {
-    id: "metricove", name: "Metricove", category: "Réseaux sociaux", family: "media", color: "#ff5a1f", status: "disponible",
-    tagline: "Le calendrier éditorial et la publication sur tous tes comptes.",
-    description: "Instagram, Facebook, X, LinkedIn et YouTube\nPosts programmés et publiés automatiquement\nVidéos, Shorts et relance en cas d'échec\nUn seul calendrier pour tous les comptes",
-  },
-  {
-    id: "postmelo-studio", name: "Postmelo Studio", category: "Création de contenu", family: "media", color: "#0a8f72", status: "beta",
-    tagline: "Le studio qui écrit, met en forme et prépare tes publications.",
-    description: "Posts et carrousels jusqu'à 20 diapositives\nFiche de marque : ton, couleurs, exemples\nGénération et retouche par IA\nVidéos animées et export PDF",
+    id: "metricove", name: "Metricove", category: "Contenu et réseaux sociaux", family: "media", color: "#ff5a1f", status: "disponible",
+    tagline: "Créer, programmer et publier sur tous tes comptes.",
+    description: "Posts et carrousels créés avec ta fiche de marque et l'IA\nInstagram, Facebook, X, LinkedIn et YouTube\nPosts programmés et publiés automatiquement, vidéos et Shorts\nUn seul calendrier éditorial pour tous les comptes",
   },
   {
     id: "nino", name: "Nino Studio", category: "Studio vidéo", family: "media", color: "#e5484d", status: "beta",

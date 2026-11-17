@@ -1,4 +1,4 @@
-import { Camera, CheckCircle2, Eye, FileText, Hash, Image as ImageIcon, Lock, Mic, MonitorPlay, Plus, Radio, Search, Sparkles, Wand2 } from "lucide-react";
+import { Camera, CheckCircle2, Eye, FileText, Hash, Image as ImageIcon, Lock, Mic, MonitorPlay, Plus, Radio, Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -376,56 +376,6 @@ function Metricove({ color, on, chrome }: MockProps) {
   );
 }
 
-function Studio({ color, on, chrome }: MockProps) {
-  return (
-    <Window title="Postmelo Studio · Carrousel" color={color} on={on} chrome={chrome}>
-      <div className="flex h-full flex-col gap-3 p-4">
-        <div className="flex flex-1 gap-3">
-          <div className="relative flex flex-1 flex-col justify-between overflow-hidden rounded-xl p-4" style={{ background: "light-dark(#ffffff, #efede8)", color: "#181715", boxShadow: "light-dark(0 0 0 1px rgba(23,22,20,0.08), 0 0 0 0 transparent), light-dark(0 8px 24px -12px rgba(40,32,20,0.18), 0 0 0 0 transparent)" }}>
-            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color }}>
-              3 erreurs à éviter
-            </span>
-            <p className="font-display text-[26px] leading-[0.95]">
-              Ton équipe perd
-              <br />
-              <span className="italic" style={{ color }}>
-                2 h par jour
-              </span>
-            </p>
-            <span className="text-[10px]">postmelo.ch · 1/6</span>
-          </div>
-          <div className="hidden w-[38%] flex-col gap-2 sm:flex">
-            <div className="rounded-lg bg-wash/[0.04] p-2.5">
-              <p className="text-[10px] text-ink-3">Ton de la marque</p>
-              <p className="mt-1">Direct, chaleureux</p>
-            </div>
-            <div className="rounded-lg bg-wash/[0.04] p-2.5">
-              <p className="text-[10px] text-ink-3">Format</p>
-              <p className="mt-1">Carrousel LinkedIn</p>
-            </div>
-            <button className="sweep relative mt-auto flex items-center justify-center gap-1.5 overflow-hidden rounded-lg py-2 font-medium text-[light-dark(#fff,#000)]" style={{ background: color }}>
-              <Wand2 className="size-3.5" /> Générer avec l&apos;IA
-            </button>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <span
-              key={i}
-              className={cn("msg aspect-square flex-1 rounded-md", i === 0 ? "ring-2" : i % 2 ? "" : "ring-1 ring-line")}
-              style={{
-                background: i === 0 ? "light-dark(#ffffff, #efede8)" : i % 2 ? soft(color, 30) : "light-dark(#ffffff, rgba(255,255,255,0.06))",
-                ["--tw-ring-color" as string]: color,
-                animationDelay: `${200 + i * 120}ms`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    </Window>
-  );
-}
-
 function Nino({ color, on, chrome }: MockProps) {
   return (
     <Window title="Nino Studio · Régie" color={color} on={on} chrome={chrome}>
@@ -549,7 +499,6 @@ const MOCKS: Record<string, (p: MockProps) => React.ReactElement> = {
   tickup: TickUp,
   alfred: Alfred,
   metricove: Metricove,
-  "postmelo-studio": Studio,
   nino: Nino,
   maya: Maya,
 };
