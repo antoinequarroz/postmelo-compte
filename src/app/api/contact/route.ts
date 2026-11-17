@@ -21,7 +21,7 @@ function tooMany(ip: string) {
 
 /** The contact form of the public page: the request lands in the CRM as a new prospect. */
 export async function POST(req: Request) {
-  if (!sameOrigin(req)) return fail("Demande refusée", 403);
+  if (!sameOrigin(req, true)) return fail("Demande refusée", 403);
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "local";
   if (process.env.RATE_LIMIT !== "off" && tooMany(ip)) return fail("Trop de demandes. Réessaie dans un moment.", 429);
