@@ -20,6 +20,7 @@ import {
 import { alpha, app, C, EASE, EASE_IN_OUT, MONO, SERIF } from "../theme";
 import { Avatar, Meter, mix, MOCK_H, MOCK_W, pop, prog, Shot, typed } from "../kit";
 import type { AppAd } from "../ad";
+import type { LongFeature } from "../long";
 
 /* ───────────────────────────── Alfred ───────────────────────────── */
 
@@ -561,7 +562,17 @@ const Call: React.FC<{ f: number }> = ({ f }) => {
 
 /* ─────────────── the mock ─────────────── */
 
+/** Long video only (mock frames >= 160): the week fills up on its own, before any booking. */
+const T_WEEK = 160;
+
 export const Mock: React.FC<{ f: number }> = ({ f }) => {
+  if (f >= T_WEEK) {
+    return (
+      <div style={{ position: "relative", width: MOCK_W, height: MOCK_H, overflow: "hidden" }}>
+        <Calendar f={f - T_WEEK} calW={MOCK_W} />
+      </div>
+    );
+  }
   // Booking page slides in, then out while the booked call flies into the week.
   const pin = prog(f, T_PANEL, 12, EASE);
   const pout = prog(f, T_FLY, 14, EASE_IN_OUT);
@@ -635,6 +646,10 @@ export const ad: AppAd = {
     { f: 116, x: SHARE_X, y: CTRL_Y },
     { f: T_SHARE, x: SHARE_X, y: CTRL_Y, click: true },
     { f: 140, x: 640, y: 520 },
+    // Long video only (beyond the ad's last frame): drift over the filled week, then to the view switcher.
+    { f: 150, x: 640, y: 520 },
+    { f: 176, x: 350, y: 205 },
+    { f: 198, x: 452, y: 34 },
   ],
   chips: [
     { f: T_SLOT, text: "Prise de rendez-vous en ligne", x: 500, y: 272, icon: CalendarCheck, until: T_FLY + 4 },
@@ -674,3 +689,38 @@ export const ad: AppAd = {
     { f: T_SPEAKER, kind: "pop" },
   ],
 };
+
+export const long: LongFeature[] = [
+  {
+    title: "Ta semaine, d'un coup d'œil.",
+    text: "Points d'équipe, tournages, cafés : tout ton temps s'affiche au même endroit, en vue jour, semaine ou mois.",
+    points: ["Jour, semaine et mois", "Couleurs par projet", "Visios repérées d'un coup d'œil"],
+    from: 160,
+    to: 200,
+    focus: { x: 420, y: 330, zoom: 1.12 },
+  },
+  {
+    title: "Tes clients réservent seuls.",
+    text: "Partage ta page publique : Nora choisit un créneau libre, tape son nom et confirme. Fini les allers-retours par e-mail.",
+    points: ["Page publique de rendez-vous", "Confirmation immédiate", "E-mail avec le lien d'appel"],
+    from: 24,
+    to: 58,
+    focus: { x: 820, y: 380, zoom: 1.06 },
+  },
+  {
+    title: "Tout se range tout seul.",
+    text: "Le rendez-vous file droit dans ton agenda et se synchronise avec iCloud, sans rien recopier à la main.",
+    points: ["Synchro iCloud", "Aucune double saisie", "Lien d'appel déjà prêt"],
+    from: 56,
+    to: 88,
+    focus: { x: 560, y: 360, zoom: 1.12 },
+  },
+  {
+    title: "Ta visio, en un clic.",
+    text: "Un clic sur Rejoindre et tu retrouves Nora, Marc et Julie en appel vidéo. Partage ton écran pour présenter ta proposition.",
+    points: ["Appels vidéo intégrés", "Partage d'écran", "Chiffré de bout en bout"],
+    from: 90,
+    to: 140,
+    focus: { x: 520, y: 330, zoom: 1.04 },
+  },
+];

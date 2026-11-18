@@ -3,6 +3,7 @@ import { ArrowUp, Check, Cloud, Copy, CreditCard, Eye, EyeOff, FileText, Hash, K
 import { alpha, app, C, EASE, MONO, SERIF } from "../theme";
 import { mix, pop, prog, typed } from "../kit";
 import type { AppAd } from "../ad";
+import type { LongFeature } from "../long";
 
 /* ───────────────────────────── Cairn ───────────────────────────── */
 /*
@@ -26,6 +27,9 @@ const T = {
   vault: 105,
   unlock: 120,
   reveal: 135,
+  // Long video only (never reached by the 6 s ad, which stops at mock frame 150).
+  copy: 168,
+  sync: 186,
 };
 
 const SIDE_W = 220;
@@ -427,6 +431,7 @@ const SECRETS = [
 ];
 const ROW_Y = (i: number) => 205 + i * 80; // centre of each secret row
 const EYE_X = 1040 - 40 - 18 - 46; // centre of the eye button
+const COPY_X = 1040 - 40 - 16 - 18; // centre of the copy button
 
 const Vault: React.FC<{ f: number; c: string }> = ({ f, c }) => {
   const enter = prog(f, T.vault, 10, EASE);
@@ -496,12 +501,52 @@ const Vault: React.FC<{ f: number; c: string }> = ({ f, c }) => {
             <span style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: reveal ? alpha(c, 0.25) : "rgba(255,255,255,0.05)", color: reveal ? c : C.ink2 }}>
               {reveal ? <Eye size={18} /> : <EyeOff size={18} />}
             </span>
-            <span style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.05)", color: C.ink2 }}>
-              <Copy size={17} />
+            <span
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: i === 1 && f >= T.copy ? alpha(c, 0.3) : "rgba(255,255,255,0.05)",
+                color: i === 1 && f >= T.copy ? c : C.ink2,
+                transform: i === 1 && f >= T.copy ? `scale(${mix(bounce(f, T.copy, 12), 0.7, 1)})` : undefined,
+              }}
+            >
+              {i === 1 && f >= T.copy ? <Check size={18} strokeWidth={3} /> : <Copy size={17} />}
             </span>
           </div>
         );
       })}
+      {/* Long video only: the Wi-Fi password is copied. */}
+      {f >= T.copy && (
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            bottom: 34,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "12px 18px",
+            borderRadius: 14,
+            fontSize: 16,
+            color: C.ink,
+            background: C.surface2,
+            border: `1px solid ${alpha(c, 0.5)}`,
+            boxShadow: `0 20px 50px -16px rgba(0,0,0,0.9), 0 0 40px -12px ${alpha(c, 0.6)}`,
+            whiteSpace: "nowrap",
+            opacity: prog(f, T.copy, 8),
+            transform: `translateX(-50%) translateY(${mix(bounce(f, T.copy, 14), 30, 0)}px)`,
+          }}
+        >
+          <span style={{ width: 26, height: 26, borderRadius: 8, background: c, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Check size={16} color="#fff" strokeWidth={3} />
+          </span>
+          Mot de passe du Wi-Fi copié
+        </div>
+      )}
       {/* Face ID overlay */}
       {overlayOut < 1 && (
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 1 - overlayOut, background: alpha(C.bg, 0.35 * (1 - ok)) }}>
@@ -545,6 +590,7 @@ export const Mock: React.FC<{ f: number }> = ({ f }) => {
   const cited = (i: number) => (f >= T.sources && f < T.vault && (i === 0 || i === 2) ? 1 : 0);
   const notes = ["Brief client", "Idées d'épisodes", "Réunion du 12 nov.", "Process montage"];
   const askPress = f >= T.ask - 1 && f < T.ask + 4;
+  const syncGlow = f >= T.sync ? 0.6 + 0.4 * (1 - prog(f, T.sync, 16)) : 0;
   return (
     <div style={{ position: "relative", height: "100%", overflow: "hidden" }}>
       {/* Sidebar */}
@@ -575,13 +621,30 @@ export const Mock: React.FC<{ f: number }> = ({ f }) => {
           <Row c={c} icon={inVault && f >= T.unlock ? <LockOpen size={16} color={c} /> : <Lock size={16} />} label="Studio" active={inVault} />
           <Row c={c} icon={<KeyRound size={16} />} label="Serveurs" />
         </div>
-        <div style={{ position: "absolute", left: 12, right: 12, bottom: 14, padding: "10px 12px", borderRadius: 12, border: `1px solid ${C.line}`, fontSize: 14, color: C.ink2, display: "flex", flexDirection: "column", gap: 6 }}>
+        <div
+        style={{
+          position: "absolute",
+          left: 12,
+          right: 12,
+          bottom: 14,
+          padding: "10px 12px",
+          borderRadius: 12,
+          border: `1px solid ${f >= T.sync ? alpha(c, 0.25 + 0.4 * syncGlow) : C.line}`,
+          background: f >= T.sync ? alpha(c, 0.1 * syncGlow) : undefined,
+          boxShadow: f >= T.sync ? `0 0 ${30 * syncGlow}px -6px ${alpha(c, 0.7)}` : undefined,
+          fontSize: 14,
+          color: C.ink2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+        }}
+      >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Cloud size={15} color={c} /> Synchronisé
             <span style={{ marginLeft: "auto", width: 7, height: 7, borderRadius: 4, background: "#5fd3a8", boxShadow: `0 0 ${6 + 4 * Math.sin(f / 5)}px #5fd3a8` }} />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.ink3 }}>
-            <Smartphone size={15} /> Mac et iPhone
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: f >= T.sync ? C.ink : C.ink3 }}>
+            <Smartphone size={15} color={f >= T.sync ? c : undefined} /> Mac et iPhone
           </div>
         </div>
       </div>
@@ -651,11 +714,17 @@ export const ad: AppAd = {
     { f: 132, x: EYE_X, y: ROW_Y(2) },
     { f: T.reveal, x: EYE_X, y: ROW_Y(2), click: true },
     { f: 150, x: EYE_X - 60, y: ROW_Y(2) + 70 },
+    // Long video only, past the ad's last mock frame (150).
+    { f: 162, x: COPY_X, y: ROW_Y(1) },
+    { f: T.copy, x: COPY_X, y: ROW_Y(1), click: true },
+    { f: 184, x: 120, y: 598 },
+    { f: 200, x: 150, y: 560 },
   ],
   chips: [
     { f: 15, text: "Notes en Markdown", x: 560, y: 70, icon: Hash, until: 58 },
     { f: T.sources, text: "L'IA lit tes notes", x: 830, y: 600, icon: Sparkles, until: 103 },
     { f: T.unlock, text: "Coffre chiffré", x: 820, y: 560, icon: ShieldCheck },
+    { f: T.sync, text: "Synchro Mac et iPhone", x: 400, y: 530, icon: Smartphone },
   ],
   focus: [
     { f: 0, x: 520, y: 220, zoom: 1.12 },
@@ -686,5 +755,45 @@ export const ad: AppAd = {
     { f: 120, kind: "lock" },
     { f: 122, kind: "ding" },
     { f: 135, kind: "click" },
+    { f: T.copy, kind: "click" },
+    { f: T.copy + 2, kind: "pop" },
+    { f: T.sync, kind: "ding" },
   ],
 };
+
+/* ─────────────── long video ─────────────── */
+
+export const long: LongFeature[] = [
+  {
+    title: "Écris vite, range bien.",
+    text: "Tu prends tes notes en Markdown : un titre, une checklist, un lien vers ton coffre. Tout s'enregistre au fil de la frappe.",
+    points: ["Notes en Markdown", "Checklists à cocher", "Enregistrement automatique"],
+    from: 0,
+    to: 54,
+    focus: { x: 440, y: 280, zoom: 1.22 },
+  },
+  {
+    title: "Tes notes te répondent.",
+    text: "Pose ta question à Cairn : l'IA lit tes notes et te répond en citant ses sources. Fini de fouiller dans tes dossiers.",
+    points: ["IA qui répond depuis tes notes", "Sources citées", "Questions en langage courant"],
+    from: 56,
+    to: 100,
+    focus: { x: 830, y: 300, zoom: 1.1 },
+  },
+  {
+    title: "Tes secrets, sous clé.",
+    text: "Mots de passe, clés SSH, carte pro : tout dort dans un coffre chiffré que tu ouvres d'un regard avec Face ID.",
+    points: ["Coffre chiffré de bout en bout", "Déverrouillage Face ID", "Mots de passe et clés SSH"],
+    from: 100,
+    to: 132,
+    focus: { x: 630, y: 330, zoom: 1.12 },
+  },
+  {
+    title: "Tout reste chez toi.",
+    text: "Tu révèles une clé, tu copies le Wi-Fi en un clic. Tes notes et ton coffre te suivent sur ton Mac et ton iPhone.",
+    points: ["Copie en un clic", "Synchro Mac et iPhone", "Tes données, chez toi"],
+    from: 130,
+    to: 205,
+    focus: { x: 560, y: 380, zoom: 1.06 },
+  },
+];

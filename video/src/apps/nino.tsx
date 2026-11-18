@@ -3,6 +3,7 @@ import { Check, Clapperboard, Eye, Film, Globe, LayoutGrid, Mic, MonitorUp, Musi
 import { alpha, app, C, MONO } from "../theme";
 import { mix, pop, prog, Shot } from "../kit";
 import type { AppAd } from "../ad";
+import type { LongFeature } from "../long";
 
 /* ───────────────────────────── Nino Studio ───────────────────────────── */
 
@@ -536,3 +537,38 @@ export const ad: AppAd = {
     { f: 135, kind: "cut" },
   ],
 };
+
+export const long: LongFeature[] = [
+  {
+    title: "Ta régie tourne seule.",
+    text: "Nino écoute qui parle et coupe sur la bonne caméra. Camille lance le sujet, Léa répond : le programme suit, sans que tu touches à rien.",
+    points: ["Coupes selon qui parle", "Bandeau nom à chaque plan", "Enregistrement en continu"],
+    from: 0,
+    to: 28,
+    focus: { x: 360, y: 250, zoom: 1.15 },
+  },
+  {
+    title: "Tes invités, de partout.",
+    text: "Nora rejoint le plateau depuis chez elle. Un clic sur Accepter, et elle devient une source prête à passer à l'antenne.",
+    points: ["Demande d'accès en direct", "Source ajoutée en un clic", "Micro suivi comme sur place"],
+    from: 26,
+    to: 74,
+    focus: { x: 520, y: 220, zoom: 1.12 },
+  },
+  {
+    title: "Reprends la main, d'une touche.",
+    text: "Une touche sur le Stream Deck ou l'iPad, et le plan large passe au programme. Nino pilote OBS pour toi.",
+    points: ["Pilote OBS depuis l'iPad", "Stream Deck intégré", "Scènes, jingle et replay"],
+    from: 74,
+    to: 104,
+    focus: { x: 820, y: 500, zoom: 1.1 },
+  },
+  {
+    title: "En direct, en un geste.",
+    text: "Tu appuies sur En direct et la diffusion part. Chaque caméra est aussi enregistrée à part, prête pour le montage.",
+    points: ["Diffusion vidéo, social et SRT", "Une prise ISO par caméra", "Prêtes pour DaVinci Resolve"],
+    from: 100,
+    to: 140,
+    focus: { x: 560, y: 330, zoom: 1.05 },
+  },
+];

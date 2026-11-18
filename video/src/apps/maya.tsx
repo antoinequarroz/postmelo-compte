@@ -3,6 +3,7 @@ import { Cable, Eye, Layers, MonitorPlay, Radio, RadioTower, Volume2 } from "luc
 import { alpha, app, C, EASE, EASE_IN_OUT, MONO } from "../theme";
 import { mix, prog, Shot } from "../kit";
 import type { AppAd } from "../ad";
+import type { LongFeature } from "../long";
 
 /* ───────────────────────────── Maya Studio ───────────────────────────── */
 
@@ -447,3 +448,40 @@ export const ad: AppAd = {
     { f: T.dest[3] + 1, kind: "ding" },
   ],
 };
+
+/* ───────────────────────────── The long video ───────────────────────────── */
+
+export const long: LongFeature[] = [
+  {
+    title: "Prépare chaque plan sereinement.",
+    text: "Tes scènes t'attendent en bas de l'écran. Un clic, et la suivante se cale dans l'Aperçu, sans toucher à ce qui passe à l'antenne.",
+    points: ["Scènes prêtes à l'emploi", "Aperçu séparé du programme", "Image en 1080p à 60 i/s"],
+    from: 0,
+    to: 40,
+    focus: { x: 380, y: 330, zoom: 1.15 },
+  },
+  {
+    title: "Change de plan en un clic.",
+    text: "Quand c'est le moment, appuie sur Transition : un volet propre fait passer l'Invitée à l'antenne, et ton mixeur audio reste à portée de main.",
+    points: ["Aperçu et programme", "Volet de 300 ms", "Mixeur audio intégré"],
+    from: 30,
+    to: 72,
+    focus: { x: 520, y: 230, zoom: 1.12 },
+  },
+  {
+    title: "Passe en direct, sans stress.",
+    text: "Un seul bouton lance l'émission. Le chrono démarre, l'enregistrement tourne et tu vois tes spectateurs arriver en temps réel.",
+    points: ["Passer en direct en un clic", "Enregistrement MP4", "Spectateurs en direct"],
+    from: 58,
+    to: 88,
+    focus: { x: 520, y: 330, zoom: 1.04 },
+  },
+  {
+    title: "Diffuse partout à\u00a0la fois.",
+    text: "RTMP, SRT et enregistrement partent ensemble, bandeau de titre à l'écran. Relie Nino Studio et pilote toute l'émission depuis ton iPad.",
+    points: ["Diffusion RTMP / SRT", "Plusieurs destinations", "Nino s'y branche"],
+    from: 88,
+    to: 140,
+    focus: { x: 520, y: 330, zoom: 1.0 },
+  },
+];

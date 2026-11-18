@@ -21,6 +21,7 @@ import { interpolate } from "remotion";
 import { alpha, app, C, EASE, EASE_IN_OUT, MONO, SERIF } from "../theme";
 import { mix, pop, prog, typed } from "../kit";
 import type { AppAd } from "../ad";
+import type { LongFeature } from "../long";
 
 /* ───────────────────────────── Metricove ───────────────────────────── */
 
@@ -724,3 +725,39 @@ export const ad: AppAd = {
     { f: T.stats, kind: "pop" },
   ],
 };
+
+/** The long video: four features, each a window of the mock above. */
+export const long: LongFeature[] = [
+  {
+    title: "Ton post, prêt en un clic.",
+    text: "Décris ton idée en une phrase : l'IA crée le visuel aux couleurs de ta marque et écrit la légende pour toi.",
+    points: ["Visuel avec ton kit de marque", "Légende et hashtags rédigés", "Le ton que tu choisis"],
+    from: 0,
+    to: 42,
+    focus: { x: 280, y: 250, zoom: 1.25 },
+  },
+  {
+    title: "Tous tes comptes d'un coup.",
+    text: "Instagram, LinkedIn, YouTube, X, Facebook : tu choisis tes réseaux et le format, post ou vidéo Short.",
+    points: ["5 réseaux en un clic", "Post ou vidéo Short", "Un seul contenu à gérer"],
+    from: 40,
+    to: 72,
+    focus: { x: 280, y: 420, zoom: 1.22 },
+  },
+  {
+    title: "Programme, puis oublie.",
+    text: "Un clic et ton post se range dans le calendrier éditorial. Jeudi à 9 h, il part tout seul sur tes 5 comptes.",
+    points: ["Un seul calendrier éditorial", "Publication automatique", "Vue de la semaine entière"],
+    from: 70,
+    to: 102,
+    focus: { x: 640, y: 260, zoom: 1.08 },
+  },
+  {
+    title: "Vois ce qui marche.",
+    text: "Dès la publication, les vues et les j'aime montent en direct. Tu sais tout de suite quel contenu plaît.",
+    points: ["Vues et j'aime en direct", "Comparé à ta moyenne", "Tous tes réseaux réunis"],
+    from: 100,
+    to: 140,
+    focus: { x: 800, y: 330, zoom: 1.1 },
+  },
+];

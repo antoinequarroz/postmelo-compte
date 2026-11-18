@@ -4,6 +4,7 @@ import { interpolate } from "remotion";
 import { alpha, C, EASE, EASE_IN_OUT, MONO } from "../theme";
 import { Avatar, mix, prog } from "../kit";
 import type { AppAd } from "../ad";
+import type { LongFeature } from "../long";
 
 /* ───────────────────────────── TickUp ───────────────────────────── */
 
@@ -34,6 +35,8 @@ const MERGED = 75;
 const AUTO = 90;
 const AUTO_END = 102;
 const GANTT = 105;
+// Long video only (never reached by the ad, whose mock time stops at 150).
+const RM = 175;
 
 // The cursor grabs the card at this point inside it.
 const GRIP = { x: 132, y: 22 };
@@ -268,6 +271,144 @@ const Gantt: React.FC<{ f: number; show: number }> = ({ f, show }) => {
   );
 };
 
+/* ─────────── Roadmap view (long video only, f > 150) ─────────── */
+
+const MONTHS = ["Nov.", "Déc.", "Janv.", "Févr.", "Mars", "Avr."];
+const MW = G_W / MONTHS.length;
+const R_ROW0 = 176;
+const R_ROW = 88;
+const R_TODAY = 0.6;
+type Epic = { t: string; s: number; l: number; p: number };
+const PROJECTS: { name: string; meta: string; c: string; epics: Epic[]; mile?: { t: string; at: number } }[] = [
+  { name: "Site Studio Lumen", meta: "24 tickets", c: "#5fd3a8", epics: [{ t: "Refonte v2", s: 0, l: 1.75, p: 0.71 }], mile: { t: "Lancement v2", at: 1.95 } },
+  { name: "App Atelier Nord", meta: "31 tickets", c: "#2fc7b5", epics: [{ t: "Compte", s: 0.2, l: 1.3, p: 0.45 }, { t: "Paiements", s: 1.65, l: 1.6, p: 0 }] },
+  { name: "Boutique Atelier Nord", meta: "18 tickets", c: "#e0803a", epics: [{ t: "Catalogue", s: 0, l: 0.95, p: 1 }, { t: "Livraison", s: 1.1, l: 1.5, p: 0.2 }] },
+  { name: "Identité Studio Lumen", meta: "9 tickets", c: "#8b63f5", epics: [{ t: "Charte", s: 2.0, l: 1.3, p: 0 }, { t: "Kit réseaux", s: 3.45, l: 1.4, p: 0 }] },
+  { name: "Support client", meta: "12 tickets", c: "#e85d9a", epics: [{ t: "Base d'aide", s: 0.9, l: 2.1, p: 0.3 }] },
+];
+const HOVER = { row: 1, epic: 1 };
+const HOVER_AT = 205;
+
+const Roadmap: React.FC<{ f: number; show: number }> = ({ f, show }) => {
+  const today = prog(f, RM + 8, 14, EASE);
+  const hover = prog(f, HOVER_AT, 10, springy);
+  const rowY = (i: number) => R_ROW0 + i * R_ROW;
+  const he = PROJECTS[HOVER.row].epics[HOVER.epic];
+  return (
+    <div style={{ position: "absolute", inset: 0, opacity: show, transform: `translateX(${mix(show, 40, 0)}px)` }}>
+      <div style={{ position: "absolute", left: 20, top: COL_Y + 6, width: G_X - 40, fontSize: 14, color: C.ink3, letterSpacing: "0.08em", textTransform: "uppercase" }}>Projet</div>
+      {MONTHS.map((m, i) => (
+        <div key={m} style={{ position: "absolute", left: G_X + i * MW, top: COL_Y, width: MW, height: 660 - COL_Y - 24, borderLeft: `1px solid ${C.line}`, background: i % 2 ? "rgba(255,255,255,0.012)" : "transparent" }}>
+          <div style={{ padding: "6px 10px", fontSize: 14, color: C.ink3 }}>{m}</div>
+        </div>
+      ))}
+      <div style={{ position: "absolute", left: 20, right: 20, top: COL_Y + 38, height: 1, background: C.line }} />
+      {/* today line (under the epics) */}
+      <div style={{ position: "absolute", left: G_X + R_TODAY * MW, top: COL_Y + 34, width: 2, height: (660 - COL_Y - 60) * today, background: INK, boxShadow: `0 0 14px ${alpha(INK, 0.6)}` }} />
+      <div style={{ position: "absolute", left: G_X + R_TODAY * MW, top: COL_Y + 4, transform: `translateX(-50%) scale(${today})`, fontSize: 14, fontWeight: 600, padding: "3px 10px", borderRadius: 99, background: INK, color: "#151513", whiteSpace: "nowrap" }}>
+        Aujourd'hui
+      </div>
+            {PROJECTS.map((pr, i) => {
+        const at = RM + 4 + i * 4;
+        const label = prog(f, at - 2, 10, EASE);
+        return (
+          <React.Fragment key={pr.name}>
+            <div style={{ position: "absolute", left: 20, top: rowY(i), width: G_X - 34, height: R_ROW, display: "flex", alignItems: "center", gap: 12, opacity: label, transform: `translateX(${mix(label, -14, 0)}px)` }}>
+              <span style={{ width: 12, height: 12, borderRadius: 4, background: pr.c, flexShrink: 0 }} />
+              <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+                <span style={{ fontSize: 16, color: C.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pr.name}</span>
+                <span style={{ fontSize: 13, color: C.ink3 }}>{pr.meta}</span>
+              </span>
+            </div>
+            <div style={{ position: "absolute", left: 20, right: 20, top: rowY(i) + R_ROW, height: 1, background: C.line, opacity: label }} />
+            {pr.epics.map((e, j) => {
+              const g = prog(f, at + j * 5, 14, EASE);
+              const done = e.p >= 1;
+              const hot = i === HOVER.row && j === HOVER.epic ? hover : 0;
+              const pct = Math.round(e.p * 100 * prog(f, at + j * 5 + 8, 12, EASE));
+              return (
+                <div
+                  key={e.t}
+                  style={{
+                    position: "absolute",
+                    left: G_X + e.s * MW + 3,
+                    top: rowY(i) + 24,
+                    width: Math.max(0, e.l * MW * g - 6),
+                    height: R_ROW - 48,
+                    opacity: g > 0.02 ? 1 : 0,
+                    borderRadius: 10,
+                    overflow: "hidden",
+                    boxSizing: "border-box",
+                    background: done ? INK : C.surface2,
+                    border: done ? "none" : `1px solid ${alpha(INK, 0.3 + 0.5 * hot)}`,
+                    boxShadow: hot > 0 ? `0 0 ${26 * hot}px -2px ${alpha(INK, 0.55 * hot)}` : "0 8px 18px -10px rgba(0,0,0,0.8)",
+                    display: "flex",
+                    alignItems: "center",
+                    transform: `scale(${1 + 0.03 * hot})`,
+                  }}
+                >
+                  {!done && e.p > 0 && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: alpha(INK, 0.3) }} />}
+                  <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: pr.c }} />
+                  <span style={{ position: "relative", padding: "0 10px 0 14px", fontSize: 14, fontWeight: 600, color: done ? "#151513" : C.ink, whiteSpace: "nowrap", opacity: prog(f, at + j * 5 + 6, 6) }}>
+                    {e.t}
+                  </span>
+                  <span style={{ position: "relative", marginLeft: "auto", marginRight: 10, fontSize: 13, fontFamily: MONO, color: done ? "#151513" : C.ink3, whiteSpace: "nowrap", opacity: prog(f, at + j * 5 + 8, 6) }}>
+                    {done ? <Check size={14} color="#151513" strokeWidth={3} /> : e.p > 0 ? `${pct} %` : ""}
+                  </span>
+                </div>
+              );
+            })}
+            {pr.mile && (
+              <div style={{ position: "absolute", left: G_X + pr.mile.at * MW, top: rowY(i) + R_ROW / 2, transform: `translate(-13px, -13px) scale(${Math.max(0, prog(f, at + 14, 12, springy))})`, transformOrigin: "13px 13px", display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 26, height: 26, transform: "rotate(45deg)", background: INK, borderRadius: 4, boxShadow: `0 0 22px ${alpha(INK, 0.6)}`, flexShrink: 0 }} />
+                <div style={{ fontSize: 15, fontWeight: 600, color: C.ink, whiteSpace: "nowrap", padding: "2px 8px", borderRadius: 8, background: C.bg2 }}>{pr.mile.t}</div>
+              </div>
+            )}
+          </React.Fragment>
+        );
+      })}
+{/* hover card on an epic */}
+      {f >= HOVER_AT && (
+        <div
+          style={{
+            position: "absolute",
+            left: G_X + (he.s + he.l) * MW + 14,
+            top: rowY(HOVER.row) + R_ROW / 2,
+            transform: `translate(0, -50%) scale(${Math.max(0, hover)})`,
+            transformOrigin: "0 50%",
+            zIndex: 6,
+            padding: "10px 14px",
+            borderRadius: 12,
+            background: C.surface,
+            border: `1px solid ${C.lineStrong}`,
+            boxShadow: "0 18px 38px -12px rgba(0,0,0,0.95)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span style={{ fontSize: 13, color: C.ink3, letterSpacing: "0.08em", textTransform: "uppercase" }}>Epic · App Atelier Nord</span>
+          <span style={{ fontSize: 17, fontWeight: 600, color: C.ink }}>Paiements</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: C.ink2 }}>
+            14 tickets · Févr. à mars
+            <span style={{ display: "flex" }}>
+              {[
+                ["L", "#2fc7b5"],
+                ["M", "#e0803a"],
+              ].map(([l, c], k) => (
+                <span key={l} style={{ marginLeft: k ? -6 : 0, borderRadius: 12, boxShadow: `0 0 0 2px ${C.surface}` }}>
+                  <Avatar l={l} c={c} s={22} />
+                </span>
+              ))}
+            </span>
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ─────────── the screen ─────────── */
 
 export const Mock: React.FC<{ f: number }> = ({ f }) => {
@@ -302,6 +443,10 @@ export const Mock: React.FC<{ f: number }> = ({ f }) => {
   const sw = prog(f, GANTT, 9, EASE);
   const tabPos = interpolate(f, [GANTT, GANTT + 9], [0, 2], { ...clamp, easing: EASE });
   const hoverGantt = f > 96 && f < GANTT ? 1 : 0;
+  // Long video only: Gantt -> Roadmap (all zero below 150).
+  const rm = f >= 150 ? prog(f, RM, 9, EASE) : 0;
+  const tabPosAll = tabPos + rm;
+  const hoverRoadmap = f > 165 && f < RM ? 1 : 0;
 
   const dark: CardData = { id: "ATN-12", t: "Mode sombre", tag: "Front", who: ["C", "#5fd3a8"], p: pDark, done: f >= AUTO_END - 4, pr: merged ? "merged" : undefined };
   const counts = [f >= GRAB ? 2 : 3, 2, f >= DROP && f < AUTO + 6 ? 2 : 1, f >= AUTO_END ? 3 : 2];
@@ -312,8 +457,14 @@ export const Mock: React.FC<{ f: number }> = ({ f }) => {
       {/* header */}
       <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 60, display: "flex", alignItems: "center", gap: 12, padding: "0 20px", borderBottom: `1px solid ${C.line}` }}>
         <span style={{ fontSize: 15, color: C.ink3 }}>Projets /</span>
-        <span style={{ fontSize: 18, fontWeight: 600 }}>Site Studio Lumen</span>
-        <span style={{ fontSize: 14, color: C.ink3, padding: "2px 9px", borderRadius: 6, border: `1px solid ${C.line}` }}>v2</span>
+        {rm < 0.5 ? (
+          <>
+            <span style={{ fontSize: 18, fontWeight: 600, opacity: 1 - 2 * rm }}>Site Studio Lumen</span>
+            <span style={{ fontSize: 14, color: C.ink3, padding: "2px 9px", borderRadius: 6, border: `1px solid ${C.line}`, opacity: 1 - 2 * rm }}>v2</span>
+          </>
+        ) : (
+          <span style={{ fontSize: 18, fontWeight: 600, opacity: 2 * rm - 1 }}>Tous les projets</span>
+        )}
         <span style={{ marginLeft: "auto", display: "flex" }}>
           {[
             ["C", "#5fd3a8"],
@@ -334,7 +485,7 @@ export const Mock: React.FC<{ f: number }> = ({ f }) => {
       </div>
       {/* tabs */}
       <div style={{ position: "absolute", left: 0, right: 0, top: 60, height: 48, borderBottom: `1px solid ${C.line}` }}>
-        <div style={{ position: "absolute", left: tabX(0) + tabPos * (TAB_W + 6), top: 7, width: TAB_W, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.1)", boxShadow: `inset 0 0 0 1px ${C.lineStrong}` }} />
+        <div style={{ position: "absolute", left: tabX(0) + tabPosAll * (TAB_W + 6), top: 7, width: TAB_W, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.1)", boxShadow: `inset 0 0 0 1px ${C.lineStrong}` }} />
         {[
           ["Kanban", SquareKanban],
           ["Liste", List],
@@ -342,7 +493,7 @@ export const Mock: React.FC<{ f: number }> = ({ f }) => {
           ["Roadmap", MapIcon],
         ].map(([label, Icon], i) => {
           const I = Icon as typeof List;
-          const active = (i === 0 && sw < 0.5) || (i === 2 && sw >= 0.5);
+          const active = (i === 0 && sw < 0.5) || (i === 2 && sw >= 0.5 && rm < 0.5) || (i === 3 && rm >= 0.5);
           return (
             <div
               key={label as string}
@@ -359,7 +510,7 @@ export const Mock: React.FC<{ f: number }> = ({ f }) => {
                 gap: 7,
                 fontSize: 15,
                 color: active ? C.ink : C.ink3,
-                background: i === 2 && hoverGantt ? "rgba(255,255,255,0.05)" : "transparent",
+                background: (i === 2 && hoverGantt) || (i === 3 && hoverRoadmap) ? "rgba(255,255,255,0.05)" : "transparent",
               }}
             >
               <I size={15} /> {label as string}
@@ -493,7 +644,12 @@ export const Mock: React.FC<{ f: number }> = ({ f }) => {
       )}
 
       {/* gantt */}
-      {sw > 0 && <Gantt f={f} show={prog(f, GANTT + 2, 10, EASE)} />}
+      {sw > 0 && rm < 1 && (
+        <div style={{ position: "absolute", inset: 0, ...(rm > 0 ? { opacity: 1 - rm, transform: `translateX(${-40 * rm}px)`, filter: `blur(${rm * 6}px)` } : {}) }}>
+          <Gantt f={f} show={prog(f, GANTT + 2, 10, EASE)} />
+        </div>
+      )}
+      {rm > 0 && <Roadmap f={f} show={prog(f, RM + 2, 10, EASE)} />}
     </div>
   );
 };
@@ -515,11 +671,18 @@ export const ad: AppAd = {
     { f: GANTT, x: tabX(2) + TAB_W / 2, y: 84, click: true },
     { f: 126, x: 560, y: 470 },
     { f: 140, x: 600, y: 490 },
+    // Long video only (beyond the ad's last mock frame, 150).
+    { f: 150, x: 600, y: 490 },
+    { f: 170, x: tabX(3) + TAB_W / 2, y: 84 },
+    { f: RM, x: tabX(3) + TAB_W / 2, y: 84, click: true },
+    { f: HOVER_AT - 4, x: G_X + 2.45 * MW, y: R_ROW0 + R_ROW + 44 },
+    { f: 230, x: G_X + 2.5 * MW, y: R_ROW0 + R_ROW + 48 },
   ],
   chips: [
     { f: DROP, text: "Glisser, déposer, livré", x: 640, y: 530, icon: Hand, until: 86 },
     { f: AUTO, text: "Relié à GitHub", x: 880, y: 570, icon: GitMerge, until: 114 },
     { f: 120, text: "Gantt et roadmap", x: 760, y: 610, icon: ChartGantt },
+    { f: 190, text: "Tous tes projets", x: 700, y: 620, icon: MapIcon },
   ],
   focus: [
     { f: 0, x: 520, y: 330, zoom: 1 },
@@ -546,5 +709,44 @@ export const ad: AppAd = {
     { f: 120, kind: "pop" },
     { f: 135, kind: "pop" },
     { f: 135, kind: "ding" },
+    { f: RM, kind: "click" },
+    { f: RM, kind: "cut" },
+    { f: 190, kind: "pop" },
+    { f: HOVER_AT, kind: "pop" },
   ],
 };
+
+export const long: LongFeature[] = [
+  {
+    title: "Glisse, c'est à jour.",
+    text: "Tu attrapes un ticket, tu le déposes dans la bonne colonne : toute l'équipe voit où en est le sprint, d'un coup d'œil.",
+    points: ["Kanban ou liste", "Sprints et avancement", "Importer de Linear"],
+    from: 0,
+    to: 64,
+    focus: { x: 380, y: 270, zoom: 1.2 },
+  },
+  {
+    title: "Ton code fait le suivi.",
+    text: "Relie GitHub à tes tickets : quand la PR de Camille est fusionnée, son ticket passe tout seul dans Terminé.",
+    points: ["Pull requests sur les tickets", "Statut mis à jour seul", "Plus de tickets oubliés"],
+    from: 58,
+    to: 104,
+    focus: { x: 640, y: 260, zoom: 1.12 },
+  },
+  {
+    title: "Vois venir la livraison.",
+    text: "Un clic et le sprint devient un Gantt : les dépendances, la ligne du jour et le jalon de lancement sous les yeux.",
+    points: ["Gantt en un clic", "Dépendances visibles", "Jalons et échéances"],
+    from: 102,
+    to: 142,
+    focus: { x: 560, y: 380, zoom: 1.06 },
+  },
+  {
+    title: "Tous tes projets, une vue.",
+    text: "La roadmap réunit Studio Lumen, Atelier Nord et le reste : chaque epic, son avancement et ce qui arrive ensuite.",
+    points: ["Roadmap multi-projets", "Epics et avancement", "Projets, epics et tickets"],
+    from: 150,
+    to: 225,
+    focus: { x: 540, y: 360, zoom: 1.05 },
+  },
+];
