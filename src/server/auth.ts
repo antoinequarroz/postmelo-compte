@@ -11,6 +11,8 @@ import { APP_NAME } from "@/lib/brand";
 import { MAX_PASSWORD, MIN_PASSWORD } from "@/lib/utils";
 import { db, dataDir, forgetPerson, isTrustedAdmin, mayOpenTool } from "./db";
 import { password } from "./password";
+import { audit } from "./audit";
+import { authSecret } from "./secret";
 import { tool, tools } from "./tools";
 
 /** The public address of this service: the "issuer" every tool trusts. */
@@ -19,19 +21,94 @@ export const baseUrl = () => (process.env.COMPTE_URL ?? "http://localhost:3000")
 /** Where the OpenID Connect endpoints live, and the value of "iss" in every token. */
 export const issuer = () => `${baseUrl()}/api/auth`;
 
-function secret() {
-  const value = process.env.AUTH_SECRET ?? "";
-  if (value.length >= 32) return value;
-  if (process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET manque ou fait moins de 32 caractères (openssl rand -base64 32).");
-  return "dev-only-secret-dev-only-secret-dev-only";
-}
-
 const sha256 = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
 const isLocal = (url: URL) => url.hostname === "localhost" || url.hostname === "127.0.0.1";
 
 export const ADMIN_NEEDS_2FA = "Active la double authentification pour utiliser l'admin.";
 
 const refusal = (toolId: string) => `${baseUrl()}/refus?outil=${toolId}`;
+
+/** What each route of Better Auth means in the audit log (routes not listed are not logged). */
+const AUTH_EVENTS: Record<string, string> = {
+  "/sign-in/email": "connexion",
+  "/passkey/verify-authentication": "connexion",
+  "/two-factor/verify-totp": "connexion",
+  "/two-factor/verify-backup-code": "connexion",
+  "/sign-out": "deconnexion",
+  "/two-factor/enable": "2fa.demarree",
+  "/two-factor/disable": "2fa.desactivee",
+  "/two-factor/generate-backup-codes": "2fa.codes_renouveles",
+  "/passkey/verify-registration": "passkey.ajoutee",
+  "/passkey/delete-passkey": "passkey.supprimee",
+  "/change-password": "mot_de_passe.change",
+  "/update-user": "profil.modifie",
+  "/revoke-session": "session.revoquee",
+  "/revoke-sessions": "session.toutes_revoquees",
+  "/revoke-other-sessions": "session.autres_revoquees",
+  "/admin/create-user": "admin.compte_cree",
+  "/admin/update-user": "admin.compte_modifie",
+  "/admin/set-role": "admin.role_change",
+  "/admin/remove-user": "admin.compte_supprime",
+  "/admin/ban-user": "admin.compte_bloque",
+  "/admin/unban-user": "admin.compte_debloque",
+  "/admin/revoke-user-session": "admin.session_revoquee",
+  "/admin/revoke-user-sessions": "admin.sessions_revoquees",
+  "/admin/set-user-password": "admin.mot_de_passe_defini",
+  "/admin/impersonate-user": "admin.usurpation",
+  "/admin/stop-impersonating": "admin.usurpation_fin",
+  "/oauth2/consent": "oauth.consentement",
+};
+
+const SIGN_IN_METHOD: Record<string, string> = {
+  "/sign-in/email": "mot de passe",
+  "/passkey/verify-authentication": "passkey",
+  "/two-factor/verify-totp": "code 2FA",
+  "/two-factor/verify-backup-code": "code de secours",
+};
+
+type HookCtx = Parameters<Parameters<typeof createAuthMiddleware>[0]>[0];
+
+/** One line in the audit log for each sign-in, security change or admin action, refused or done. */
+function auditAuthEvent(ctx: HookCtx) {
+  const event = AUTH_EVENTS[ctx.path];
+  if (!event) return;
+  const returned = ctx.context.returned;
+  const failed = returned instanceof APIError;
+  const body = (ctx.body ?? {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" ? v : null);
+  const before = ctx.context.session?.user;
+  const actor = ctx.context.newSession?.user ?? before;
+  const error = failed ? { erreur: (returned as APIError).body?.code ?? (returned as APIError).message } : {};
+  let action = event;
+  let detail: Record<string, unknown> = { ...error };
+  let target: string | null = str(body.userId);
+
+  if (event === "connexion") {
+    // Confirming the first code while signed in switches the second factor on: that is not a sign-in.
+    // (it also renews the session, so "newSession" is set either way: what tells them apart is an existing session).
+    if (ctx.path === "/two-factor/verify-totp" && before) action = failed ? "2fa.activation_echouee" : "2fa.activee";
+    else if (failed) action = "connexion.echouee";
+    else if (returned && typeof returned === "object" && "twoFactorRedirect" in returned) action = "connexion.2fa_demandee";
+    else action = "connexion.reussie";
+    detail = { ...detail, methode: SIGN_IN_METHOD[ctx.path] };
+  }
+  if (ctx.path === "/admin/set-role") detail = { ...detail, role: body.role };
+  if (ctx.path === "/admin/create-user") {
+    target = str(body.email);
+    detail = { ...detail, role: body.role };
+  }
+  if (ctx.path === "/oauth2/consent") detail = { ...detail, accepte: body.accept };
+
+  audit({
+    action,
+    ok: !failed,
+    actorId: actor?.id ?? null,
+    actorEmail: actor?.email ?? (event === "connexion" ? str(body.email) : null),
+    target,
+    detail: Object.keys(detail).length ? detail : null,
+    headers: ctx.headers ?? ctx.request?.headers ?? null,
+  });
+}
 
 /** The role the tools know: "admin" or "member", as in Lamio. */
 const suiteRole = (user: Record<string, unknown>) => (user.role === "admin" ? "admin" : "member");
@@ -41,7 +118,7 @@ function build() {
   return betterAuth({
     appName: APP_NAME,
     baseURL: baseUrl(),
-    secret: secret(),
+    secret: authSecret(),
     database: db(),
     // The JWT plugin's own /token route hands session JWTs to the browser: tools get theirs from /oauth2/token.
     disabledPaths: ["/token"],
@@ -72,7 +149,10 @@ function build() {
         // The admin plugin's routes (people, roles, sessions of others) need an admin protected by a second factor.
         if (ctx.path.startsWith("/admin/")) {
           const session = await getSessionFromCtx(ctx);
-          if (!session || !isTrustedAdmin(session.user)) throw new APIError("FORBIDDEN", { message: ADMIN_NEEDS_2FA });
+          if (!session || !isTrustedAdmin(session.user)) {
+            if (session) audit({ action: "admin.refus", ok: false, actorId: session.user.id, actorEmail: session.user.email, target: ctx.path, headers: ctx.headers });
+            throw new APIError("FORBIDDEN", { message: ADMIN_NEEDS_2FA });
+          }
           return;
         }
         if (ctx.path !== "/oauth2/authorize") return;
@@ -123,6 +203,11 @@ function build() {
         },
         customUserInfoClaims: ({ user }) => ({ role: suiteRole(user), two_factor: user.twoFactorEnabled === true }),
       }),
+      // After the other plugins: it sees each answer as they left it (a password sign-in turned into "code 2FA demandé").
+      {
+        id: "audit-log",
+        hooks: { after: [{ matcher: (ctx) => !!ctx.path && ctx.path in AUTH_EVENTS, handler: createAuthMiddleware(async (ctx) => auditAuthEvent(ctx)) }] },
+      },
       // Last, so that server actions and pages can set cookies.
       nextCookies(),
     ],

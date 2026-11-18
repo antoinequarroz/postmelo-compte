@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AdminNav } from "@/components/crm/nav";
 import { SUITE_NAME } from "@/lib/brand";
+import { headers } from "next/headers";
+import { audit } from "@/server/audit";
 import { isTrustedAdmin } from "@/server/db";
 import { currentSession } from "@/server/http";
 
@@ -13,9 +15,12 @@ export const metadata: Metadata = { title: `Admin — ${SUITE_NAME}` };
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await currentSession();
   if (!session) redirect("/connexion");
-  if (session.user.role !== "admin") redirect("/compte");
-  // An admin without a second factor first protects the account, then comes back.
-  if (!isTrustedAdmin(session.user)) redirect("/compte?securite=admin");
+  if (!isTrustedAdmin(session.user)) {
+    const h = await headers();
+    audit({ action: "admin.refus", ok: false, actorId: session.user.id, actorEmail: session.user.email, target: h.get("x-pathname"), detail: { role: session.user.role ?? "user", twoFactor: session.user.twoFactorEnabled === true }, headers: h });
+    // A member goes back to the account; an admin without a second factor first protects it, then comes back.
+    redirect(session.user.role === "admin" ? "/compte?securite=admin" : "/compte");
+  }
   return (
     <div className="flex min-h-dvh max-md:flex-col">
       <AdminNav name={session.user.name} id={session.user.id} />

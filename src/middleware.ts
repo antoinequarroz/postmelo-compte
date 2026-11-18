@@ -13,6 +13,8 @@ export function middleware(req: NextRequest) {
   // Next.js reads the nonce from the request's policy and puts it on its own scripts.
   const request = new Headers(req.headers);
   request.set("x-nonce", nonce);
+  // The path, for the audit log of refused admin requests (set here, so a client cannot fake it).
+  request.set("x-pathname", req.nextUrl.pathname);
   request.set("Content-Security-Policy", csp);
   const res = NextResponse.next({ request: { headers: request } });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, ExternalLink, Handshake, History, KeySquare, LayoutDashboard, MessageSquareQuote, Newspaper, Package, UserRound, Users } from "lucide-react";
+import { Building2, ExternalLink, Handshake, History, KeySquare, LayoutDashboard, MessageSquareQuote, Newspaper, Package, ShieldCheck, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SuiteLogo } from "@/components/logo";
@@ -17,6 +17,7 @@ const LINKS = [
   { href: "/admin/preuves", label: "Preuves sociales", icon: MessageSquareQuote },
   { href: "/admin/blog", label: "Blog", icon: Newspaper },
   { href: "/admin/changelog", label: "Journal des versions", icon: History },
+  { href: "/admin/journal", label: "Journal de sécurité", icon: ShieldCheck },
 ];
 
 const OTHER = [

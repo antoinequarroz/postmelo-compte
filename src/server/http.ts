@@ -2,6 +2,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { baseUrl, getAuth } from "./auth";
+import { audit } from "./audit";
 import { isTrustedAdmin } from "./db";
 
 export const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
@@ -36,7 +37,20 @@ export function siteUrl() {
 /** The signed-in admin, or null: the CRM and its API are for admins protected by a second factor only. */
 export async function adminSession() {
   const session = await currentSession();
-  return session && isTrustedAdmin(session.user) ? session : null;
+  if (!session) return null;
+  if (isTrustedAdmin(session.user)) return session;
+  // A signed-in person knocking at the admin: worth a line in the journal.
+  const h = await headers();
+  audit({ action: "admin.refus", ok: false, actorId: session.user.id, actorEmail: session.user.email, target: h.get("x-pathname"), detail: { role: session.user.role ?? "user", twoFactor: session.user.twoFactorEnabled === true }, headers: h });
+  return null;
+}
+
+type Actor = { user: { id: string; email: string } };
+
+/** Writes what an admin just did in the audit log, then hands back the answer unchanged. */
+export function logged(res: Response, req: Request, session: Actor, action: string, target?: string | null, detail?: Record<string, unknown>) {
+  audit({ action, ok: res.ok, actorId: session.user.id, actorEmail: session.user.email, target: target ?? null, detail: detail ?? null, headers: req.headers });
+  return res;
 }
 
 const hits = new Map<string, number[]>();
