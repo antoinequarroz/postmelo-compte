@@ -43,3 +43,8 @@ next-env.d.ts
 
 # local database and uploaded media
 /data
+
+# video (Remotion)
+/video/node_modules
+/video/out
+/video/out-render.log
