@@ -42,7 +42,8 @@ describe("the audit log records security events", () => {
     const browser = new Browser(auth.handler);
     const res = await browser.fetch("/api/auth/sign-in/email", {
       method: "POST",
-      headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.7, 10.0.0.1", "user-agent": "Mozilla/5.0 (Macintosh; Mac OS X) Safari/605" },
+      // "198.51.100.1" is what a client could write; Caddy's address comes last and is the one kept.
+      headers: { "content-type": "application/json", "x-forwarded-for": "198.51.100.1, 203.0.113.7", "user-agent": "Mozilla/5.0 (Macintosh; Mac OS X) Safari/605" },
       body: JSON.stringify({ email: "bob@exemple.ch", password: PASSWORD }),
     });
     expect(res.status).toBe(200);

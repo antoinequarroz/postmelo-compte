@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { baseUrl, getAuth } from "./auth";
 import { audit } from "./audit";
 import { isTrustedAdmin } from "./db";
+import { clientIp, limitKey } from "./ip";
+import { hit } from "./limits";
 import { adminSessionFresh, REAUTH_MESSAGE, REAUTH_REQUIRED, recentlyConfirmed } from "./stepup";
 
 export const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
@@ -62,17 +64,7 @@ export function logged(res: Response, req: Request, session: Actor, action: stri
   return res;
 }
 
-const hits = new Map<string, number[]>();
-
-/** A small limit per address, for the public forms: true when this request is one too many. */
+/** A small limit per address, for the public forms: true when this request is one too many. Kept in the database. */
 export async function tooMany(scope: string, max: number, windowMs: number) {
-  if (process.env.RATE_LIMIT === "off") return false;
-  const h = await headers();
-  const key = `${scope}|${h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "local"}`;
-  const t = Date.now();
-  const recent = (hits.get(key) ?? []).filter((at) => t - at < windowMs);
-  recent.push(t);
-  hits.set(key, recent);
-  if (hits.size > 5000) for (const [k, v] of hits) if (v.every((at) => t - at >= windowMs)) hits.delete(k);
-  return recent.length > max;
+  return hit(`${scope}|${limitKey(clientIp(await headers()))}`, max, windowMs);
 }

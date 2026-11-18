@@ -3,6 +3,7 @@ export const AUDIT_LABEL: Record<string, string> = {
   "connexion.reussie": "Connexion",
   "connexion.echouee": "Connexion refusée",
   "connexion.2fa_demandee": "Mot de passe juste, code 2FA demandé",
+  "compte.verrouille": "Connexion par mot de passe verrouillée 15 min (trop d'essais)",
   deconnexion: "Déconnexion",
   "2fa.demarree": "Activation de la 2FA commencée",
   "2fa.activee": "Double authentification activée",
@@ -49,6 +50,7 @@ export const AUDIT_LABEL: Record<string, string> = {
 /** The families offered as a filter, by the start of their action name. */
 export const AUDIT_FAMILIES: { value: string; label: string }[] = [
   { value: "connexion", label: "Connexions" },
+  { value: "compte", label: "Comptes verrouillés" },
   { value: "2fa", label: "Double authentification" },
   { value: "admin", label: "Comptes et refus admin" },
   { value: "outil", label: "Accès aux outils" },
@@ -58,4 +60,4 @@ export const AUDIT_FAMILIES: { value: string; label: string }[] = [
 ];
 
 /** Actions that deserve a second look when they show up. */
-export const AUDIT_SENSITIVE = new Set(["2fa.desactivee", "admin.role_change", "admin.compte_supprime", "admin.usurpation", "admin.mot_de_passe_defini", "crm.export", "admin.refus"]);
+export const AUDIT_SENSITIVE = new Set(["2fa.desactivee", "admin.role_change", "admin.compte_supprime", "admin.usurpation", "admin.mot_de_passe_defini", "crm.export", "admin.refus", "compte.verrouille"]);

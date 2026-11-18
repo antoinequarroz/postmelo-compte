@@ -12,6 +12,7 @@ import { MAX_PASSWORD, MIN_PASSWORD } from "@/lib/utils";
 import { db, dataDir, forgetPerson, isTrustedAdmin, mayOpenTool } from "./db";
 import { password } from "./password";
 import { audit } from "./audit";
+import { clearLoginFailures, lockedUntil, LOCKED_MESSAGE, recordLoginFailure } from "./limits";
 import { authSecret } from "./secret";
 import { adminSessionFresh, REAUTH_MESSAGE, REAUTH_REQUIRED, recentlyConfirmed } from "./stepup";
 import { tool, tools } from "./tools";
@@ -115,6 +116,16 @@ function auditAuthEvent(ctx: HookCtx) {
   });
 }
 
+/** Counts a wrong password against the address typed, or starts the count again after a right one. */
+function countPasswordTry(ctx: HookCtx) {
+  const email = (ctx.body as { email?: unknown } | undefined)?.email;
+  if (typeof email !== "string") return;
+  const returned = ctx.context.returned;
+  if (!(returned instanceof APIError)) return clearLoginFailures(email);
+  // Only a wrong email or password counts (not a refusal of the lock itself, nor a malformed request).
+  if (returned.statusCode === 401) recordLoginFailure(email, ctx.headers ?? ctx.request?.headers ?? null);
+}
+
 /** The role the tools know: "admin" or "member", as in Lamio. */
 const suiteRole = (user: Record<string, unknown>) => (user.role === "admin" ? "admin" : "member");
 
@@ -137,20 +148,37 @@ function build() {
     },
     session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
     rateLimit: {
-      enabled: process.env.NODE_ENV === "production" && process.env.RATE_LIMIT !== "off",
+      enabled: (process.env.NODE_ENV === "production" || process.env.RATE_LIMIT === "on") && process.env.RATE_LIMIT !== "off",
+      // In the database, not in memory: a restart does not hand an attacker fresh tries.
+      storage: "database",
       window: 60,
       max: 100,
       customRules: {
         "/sign-in/email": { window: 60, max: 5 },
+        "/passkey/verify-authentication": { window: 60, max: 10 },
         "/two-factor/verify-totp": { window: 60, max: 5 },
         "/two-factor/verify-backup-code": { window: 60, max: 5 },
       },
     },
-    advanced: { cookiePrefix: "compte", useSecureCookies: secure },
+    advanced: {
+      cookiePrefix: "compte",
+      useSecureCookies: secure,
+      // Caddy replaces X-Forwarded-For with the address it saw: that single value is the person (see ip.ts).
+      ipAddress: { ipAddressHeaders: ["x-forwarded-for"] },
+    },
     hooks: {
       // A member who may not open a tool is told so here, before any code is issued.
       // The same rule is enforced again when tokens are made (customIdTokenClaims below).
       before: createAuthMiddleware(async (ctx) => {
+        // Too many wrong passwords for this address, from anywhere: password sign-in waits (a passkey still works).
+        if (ctx.path === "/sign-in/email") {
+          const email = (ctx.body as { email?: unknown } | undefined)?.email;
+          if (typeof email === "string" && lockedUntil(email)) {
+            audit({ action: "connexion.echouee", ok: false, actorEmail: email, detail: { methode: "mot de passe", erreur: "ACCOUNT_LOCKED" }, headers: ctx.headers });
+            throw new APIError("TOO_MANY_REQUESTS", { message: LOCKED_MESSAGE, code: "ACCOUNT_LOCKED" });
+          }
+          return;
+        }
         // The admin plugin's routes (people, roles, sessions of others) need an admin protected by a second factor.
         if (ctx.path.startsWith("/admin/")) {
           const session = await getSessionFromCtx(ctx);
@@ -216,7 +244,12 @@ function build() {
       // After the other plugins: it sees each answer as they left it (a password sign-in turned into "code 2FA demandé").
       {
         id: "audit-log",
-        hooks: { after: [{ matcher: (ctx) => !!ctx.path && ctx.path in AUTH_EVENTS, handler: createAuthMiddleware(async (ctx) => auditAuthEvent(ctx)) }] },
+        hooks: {
+          after: [
+            { matcher: (ctx) => ctx.path === "/sign-in/email", handler: createAuthMiddleware(async (ctx) => countPasswordTry(ctx)) },
+            { matcher: (ctx) => !!ctx.path && ctx.path in AUTH_EVENTS, handler: createAuthMiddleware(async (ctx) => auditAuthEvent(ctx)) },
+          ],
+        },
       },
       // Last, so that server actions and pages can set cookies.
       nextCookies(),

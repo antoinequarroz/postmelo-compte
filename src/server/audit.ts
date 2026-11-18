@@ -1,6 +1,7 @@
 import "server-only";
 import crypto from "node:crypto";
 import { db } from "./db";
+import { clientIp } from "./ip";
 import { derivedKey } from "./secret";
 
 /**
@@ -92,12 +93,6 @@ const sign = (prev: string, r: Omit<Stored, "seq" | "prev" | "hash">) =>
     .createHmac("sha256", derivedKey("audit-log"))
     .update(JSON.stringify([prev, r.at, r.action, r.ok, r.actor_id, r.actor_email, r.target, r.detail, r.ip, r.user_agent]))
     .digest("hex");
-
-/** The address of the person, as set by the reverse proxy (Caddy) in front of the service. */
-export function clientIp(h: Headers | null | undefined) {
-  if (!h) return null;
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip")?.trim() || null;
-}
 
 const cut = (v: string | null | undefined, max: number) => (v ? v.slice(0, max) : null);
 

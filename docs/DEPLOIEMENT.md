@@ -46,9 +46,17 @@ compte.postmelo.ch {
 		X-Content-Type-Options "nosniff"
 		-Server
 	}
-	reverse_proxy compte:3000
+	reverse_proxy compte:3000 {
+		# L'adresse vue par Caddy, et elle seule : ce qu'un client écrit dans cet en-tête est remplacé.
+		header_up X-Forwarded-For {remote_host}
+	}
 }
 ```
+
+Le service lit l'adresse des personnes dans `X-Forwarded-For` pour les limites d'essais et le journal
+de sécurité. La ligne `header_up` garantit que cette adresse est celle que Caddy a vue. N'ajoute pas
+`trusted_proxies` dans les options globales de Caddy, sauf si un autre proxy (Cloudflare…) passe un jour
+devant : il faudrait alors revoir ce réglage.
 
 Puis recharge Caddy : `docker exec antoinequarroz-caddy caddy reload --config /etc/caddy/Caddyfile`.
 
@@ -67,7 +75,9 @@ postmelo.ch, www.postmelo.ch {
 	}
 	@site path / /_compte/* /_next/* /api/contact /favicon.ico /icon* /apple-icon* /robots.txt
 	handle @site {
-		reverse_proxy compte:3000
+		reverse_proxy compte:3000 {
+			header_up X-Forwarded-For {remote_host}
+		}
 	}
 	# Connexion, compte et admin vivent sur compte.postmelo.ch (cookies et clés d'accès y sont liés).
 	handle {
