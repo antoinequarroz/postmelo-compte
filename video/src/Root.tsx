@@ -1,7 +1,8 @@
 import React from "react";
 import { AbsoluteFill, Audio, Composition, interpolate, Sequence, staticFile, useVideoConfig } from "remotion";
 import { AppAdScene, APP_LEN, BAR } from "./ad";
-import { ADS } from "./apps";
+import { ADS, LONG } from "./apps";
+import { LongVideo, longLength } from "./long";
 import { Cta, Flow, Hub, SectionTitle } from "./finale";
 import { Hook } from "./hook";
 import { Reveal } from "./opening";
@@ -99,6 +100,22 @@ const comps = [...finals, ...appTests];
 
 export const Root: React.FC = () => (
   <>
+    {ALL.map((id) => (
+      <Composition
+        key={`Long-${id}`}
+        id={`Long-${id}`}
+        component={() => (
+          <AbsoluteFill>
+            <LongVideo ad={ADS[id]} features={LONG[id]} />
+            <MusicBed src="music/long.wav" />
+          </AbsoluteFill>
+        )}
+        durationInFrames={Math.max(60, longLength(LONG[id]))}
+        fps={FPS}
+        width={1920}
+        height={1080}
+      />
+    ))}
     {comps.map((c) => (
       <Composition key={c.id} id={c.id} component={() => <Timeline parts={c.parts} music={c.music} />} durationInFrames={total(c.parts)} fps={FPS} width={c.w} height={c.h} />
     ))}

@@ -4,6 +4,7 @@ import { interpolate } from "remotion";
 import { alpha, app, C, EASE_IN_OUT, MONO, SERIF } from "../theme";
 import { Avatar, Label, Meter, mix, MOCK_H, MOCK_W, pop, prog, Shot, Side, SideItem, typed } from "../kit";
 import type { AppAd } from "../ad";
+import type { LongFeature } from "../long";
 import { MessagesSquare, Send, Smartphone, Zap } from "lucide-react";
 
 /* ───────────────────────────── Lamio ───────────────────────────── */
@@ -138,3 +139,39 @@ export const ad: AppAd = {
     { f: 105, kind: "swish" },
   ],
 };
+
+/** The long video: four features, each a window of the mock above. */
+export const long: LongFeature[] = [
+  {
+    title: "Tout arrive en direct.",
+    text: "Les messages, les fichiers et les réactions de ton équipe apparaissent à l'instant, sans rien rafraîchir.",
+    points: ["Canaux publics et privés", "Messages directs", "Non-lus et notifications"],
+    from: 0,
+    to: 52,
+    focus: { x: 640, y: 420, zoom: 1.15 },
+  },
+  {
+    title: "Réagis sans couper le fil.",
+    text: "Une réaction, une réponse dans le fil, une mention : la discussion avance sans réunion de plus.",
+    points: ["Réactions en un clic", "Fils de réponses", "Mentions avec @"],
+    from: 46,
+    to: 72,
+    focus: { x: 420, y: 330, zoom: 1.3 },
+  },
+  {
+    title: "Écris, envoie, c'est parti.",
+    text: "Tu tapes, tu mentionnes Nora, tu envoies. Toute l'équipe le voit aussitôt, sur tous ses appareils.",
+    points: ["Fichiers et images", "Brouillons gardés", "Envoi instantané"],
+    from: 70,
+    to: 112,
+    focus: { x: 640, y: 560, zoom: 1.12 },
+  },
+  {
+    title: "Ton équipe, partout avec toi.",
+    text: "Lamio est la base de la suite : sur ton Mac, ton iPhone et le web, avec la recherche ⌘K pour tout retrouver.",
+    points: ["App Mac et iPhone", "Recherche ⌘K", "Un seul compte Postmelo"],
+    from: 104,
+    to: 140,
+    focus: { x: 520, y: 330, zoom: 1.02 },
+  },
+];
