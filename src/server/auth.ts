@@ -9,7 +9,7 @@ import { nextCookies } from "better-auth/next-js";
 import { admin, jwt, twoFactor } from "better-auth/plugins";
 import { APP_NAME } from "@/lib/brand";
 import { MAX_PASSWORD, MIN_PASSWORD } from "@/lib/utils";
-import { db, dataDir, forgetPerson, mayOpenTool } from "./db";
+import { db, dataDir, forgetPerson, isTrustedAdmin, mayOpenTool } from "./db";
 import { password } from "./password";
 import { tool, tools } from "./tools";
 
@@ -28,6 +28,8 @@ function secret() {
 
 const sha256 = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
 const isLocal = (url: URL) => url.hostname === "localhost" || url.hostname === "127.0.0.1";
+
+export const ADMIN_NEEDS_2FA = "Active la double authentification pour utiliser l'admin.";
 
 const refusal = (toolId: string) => `${baseUrl()}/refus?outil=${toolId}`;
 
@@ -67,6 +69,12 @@ function build() {
       // A member who may not open a tool is told so here, before any code is issued.
       // The same rule is enforced again when tokens are made (customIdTokenClaims below).
       before: createAuthMiddleware(async (ctx) => {
+        // The admin plugin's routes (people, roles, sessions of others) need an admin protected by a second factor.
+        if (ctx.path.startsWith("/admin/")) {
+          const session = await getSessionFromCtx(ctx);
+          if (!session || !isTrustedAdmin(session.user)) throw new APIError("FORBIDDEN", { message: ADMIN_NEEDS_2FA });
+          return;
+        }
         if (ctx.path !== "/oauth2/authorize") return;
         const asked = tool(ctx.query?.client_id as string | undefined);
         if (!asked) return;

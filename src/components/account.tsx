@@ -12,7 +12,7 @@ import { APP_NAME } from "@/lib/brand";
 import { setTheme, type Theme, useTheme } from "@/lib/theme";
 import { cn, dateTime, MIN_PASSWORD } from "@/lib/utils";
 
-export type Me = { id: string; name: string; email: string; admin: boolean; twoFactor: boolean };
+export type Me = { id: string; name: string; email: string; admin: boolean; adminNeedsTwoFactor?: boolean; twoFactor: boolean };
 export type ToolInfo = { id: string; name: string; description: string; url: string; allowed: boolean };
 
 export function Title({ children, hint }: { children: React.ReactNode; hint?: string }) {
@@ -42,6 +42,7 @@ export function Account({ me, sessionToken, tools, subscription }: { me: Me; ses
           <span className="max-sm:hidden">Se déconnecter</span>
         </Button>
       </header>
+      {me.adminNeedsTwoFactor && <AdminLocked />}
       {subscription}
       <Tools tools={tools} />
       <Profile me={me} />
@@ -52,6 +53,26 @@ export function Account({ me, sessionToken, tools, subscription }: { me: Me; ses
       <Appearance />
       {me.admin && <Admin me={me} />}
     </div>
+  );
+}
+
+/** An admin whose account has no second factor yet: the admin stays closed until it is switched on. */
+function AdminLocked() {
+  return (
+    <Card role="status" className="flex flex-col gap-3 border-warn/60">
+      <div className="flex items-start gap-3">
+        <ShieldCheck className="mt-0.5 size-5 shrink-0 text-warn" />
+        <Title hint="Ton compte a le rôle admin : il ouvre le CRM, les comptes et l'accès aux outils de toute la suite. Un mot de passe seul ne suffit plus. Active la double authentification ci-dessous, puis ouvre l'admin.">
+          L&apos;admin est verrouillé
+        </Title>
+      </div>
+      <div>
+        <Button variant="secondary" onClick={() => (window.location.href = "/admin")}>
+          J&apos;ai activé la double authentification, ouvrir l&apos;admin
+          <ArrowUpRight className="size-4" />
+        </Button>
+      </div>
+    </Card>
   );
 }
 

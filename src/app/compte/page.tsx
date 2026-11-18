@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Account } from "@/components/account";
 import { Subscription } from "@/components/subscription";
 import { subscriptionOf } from "@/server/billing";
-import { isAdmin, mayOpenTool } from "@/server/db";
+import { adminNeedsTwoFactor, isTrustedAdmin, mayOpenTool } from "@/server/db";
 import { currentSession } from "@/server/http";
 import { tools } from "@/server/tools";
 
@@ -18,7 +18,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const sub = subscriptionOf(user.id);
   return (
     <Account
-      me={{ id: user.id, name: user.name, email: user.email, admin: isAdmin(user), twoFactor: user.twoFactorEnabled === true }}
+      me={{ id: user.id, name: user.name, email: user.email, admin: isTrustedAdmin(user), adminNeedsTwoFactor: adminNeedsTwoFactor(user), twoFactor: user.twoFactorEnabled === true }}
       sessionToken={session.session.token}
       subscription={sub && <Subscription {...sub} welcome={params.abonnement ? "abonnement" : params.essai ? "essai" : null} />}
       tools={tools().map((t) => ({ id: t.id, name: t.name, description: t.description, url: t.url, allowed: mayOpenTool(t.id, user) }))}

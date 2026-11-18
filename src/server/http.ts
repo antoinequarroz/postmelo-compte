@@ -2,6 +2,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { baseUrl, getAuth } from "./auth";
+import { isTrustedAdmin } from "./db";
 
 export const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
 
@@ -32,10 +33,10 @@ export function siteUrl() {
   return raw && /^https?:\/\//.test(raw) ? raw : null;
 }
 
-/** The signed-in admin, or null: the CRM and its API are for admins only. */
+/** The signed-in admin, or null: the CRM and its API are for admins protected by a second factor only. */
 export async function adminSession() {
   const session = await currentSession();
-  return session && session.user.role === "admin" ? session : null;
+  return session && isTrustedAdmin(session.user) ? session : null;
 }
 
 const hits = new Map<string, number[]>();
