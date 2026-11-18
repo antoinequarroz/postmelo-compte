@@ -12,7 +12,8 @@ import { MAX_PASSWORD, MIN_PASSWORD } from "@/lib/utils";
 import { db, dataDir, forgetPerson, isTrustedAdmin, mayOpenTool } from "./db";
 import { password } from "./password";
 import { audit } from "./audit";
-import { clearLoginFailures, lockedUntil, LOCKED_MESSAGE, recordLoginFailure } from "./limits";
+import { clientIp, limitKey } from "./ip";
+import { clearLoginFailures, LOCKED_MESSAGE, reserveTry, settleTry } from "./limits";
 import { authSecret } from "./secret";
 import { adminSessionFresh, REAUTH_MESSAGE, REAUTH_REQUIRED, recentlyConfirmed } from "./stepup";
 import { tool, tools } from "./tools";
@@ -116,15 +117,35 @@ function auditAuthEvent(ctx: HookCtx) {
   });
 }
 
-/** Counts a wrong password against the address typed, or starts the count again after a right one. */
-function countPasswordTry(ctx: HookCtx) {
+/** The tries reserved before the password check, settled once its answer is known. */
+const pendingTries = new WeakMap<Request, number>();
+
+/** Settles the try reserved for this sign-in: a wrong password stays counted, a right one clears the count. */
+function settlePasswordTry(ctx: HookCtx) {
   const email = (ctx.body as { email?: unknown } | undefined)?.email;
+  const id = ctx.request ? pendingTries.get(ctx.request) : undefined;
   if (typeof email !== "string") return;
+  if (ctx.request) pendingTries.delete(ctx.request);
   const returned = ctx.context.returned;
-  if (!(returned instanceof APIError)) return clearLoginFailures(email);
-  // Only a wrong email or password counts (not a refusal of the lock itself, nor a malformed request).
-  if (returned.statusCode === 401) recordLoginFailure(email, ctx.headers ?? ctx.request?.headers ?? null);
+  if (!(returned instanceof APIError)) return id ? settleTry(email, id, "right") : clearLoginFailures(email);
+  if (id) settleTry(email, id, returned.statusCode === 401 ? "wrong" : "other");
 }
+
+/** A passkey sign-in, or an admin who sets a password or unblocks an account, lifts the locks on that address. */
+async function liftLocks(ctx: HookCtx) {
+  if (ctx.context.returned instanceof APIError) return;
+  if (ctx.path === "/passkey/verify-authentication") {
+    const email = ctx.context.newSession?.user.email;
+    if (email) clearLoginFailures(email);
+    return;
+  }
+  const userId = (ctx.body as { userId?: unknown } | undefined)?.userId;
+  if (typeof userId !== "string") return;
+  const row = db().prepare('select email from "user" where id = ?').get(userId) as { email: string } | undefined;
+  if (row) clearLoginFailures(row.email);
+}
+
+const LIFTS_LOCKS = new Set(["/passkey/verify-authentication", "/admin/set-user-password", "/admin/unban-user"]);
 
 /** The role the tools know: "admin" or "member", as in Lamio. */
 const suiteRole = (user: Record<string, unknown>) => (user.role === "admin" ? "admin" : "member");
@@ -170,13 +191,17 @@ function build() {
       // A member who may not open a tool is told so here, before any code is issued.
       // The same rule is enforced again when tokens are made (customIdTokenClaims below).
       before: createAuthMiddleware(async (ctx) => {
-        // Too many wrong passwords for this address, from anywhere: password sign-in waits (a passkey still works).
+        // Too many wrong passwords for this address: password sign-in waits (a passkey still works).
+        // The try is counted here, before the password is checked, so parallel requests cannot all get through.
         if (ctx.path === "/sign-in/email") {
           const email = (ctx.body as { email?: unknown } | undefined)?.email;
-          if (typeof email === "string" && lockedUntil(email)) {
+          if (typeof email !== "string") return;
+          const reserved = reserveTry(email, limitKey(clientIp(ctx.headers)), ctx.headers);
+          if (!reserved.ok) {
             audit({ action: "connexion.echouee", ok: false, actorEmail: email, detail: { methode: "mot de passe", erreur: "ACCOUNT_LOCKED" }, headers: ctx.headers });
             throw new APIError("TOO_MANY_REQUESTS", { message: LOCKED_MESSAGE, code: "ACCOUNT_LOCKED" });
           }
+          if (ctx.request) pendingTries.set(ctx.request, reserved.id);
           return;
         }
         // The admin plugin's routes (people, roles, sessions of others) need an admin protected by a second factor.
@@ -246,7 +271,8 @@ function build() {
         id: "audit-log",
         hooks: {
           after: [
-            { matcher: (ctx) => ctx.path === "/sign-in/email", handler: createAuthMiddleware(async (ctx) => countPasswordTry(ctx)) },
+            { matcher: (ctx) => ctx.path === "/sign-in/email", handler: createAuthMiddleware(async (ctx) => settlePasswordTry(ctx)) },
+            { matcher: (ctx) => !!ctx.path && LIFTS_LOCKS.has(ctx.path), handler: createAuthMiddleware(async (ctx) => liftLocks(ctx)) },
             { matcher: (ctx) => !!ctx.path && ctx.path in AUTH_EVENTS, handler: createAuthMiddleware(async (ctx) => auditAuthEvent(ctx)) },
           ],
         },
