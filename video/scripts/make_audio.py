@@ -273,5 +273,5 @@ if __name__ == "__main__":
     bed(14, lambda b: 1 if b < 2 else (2 if b < 12 else 1), "teaser")
     bed(16, lambda b: 1 if b < 1 else (2 if b < 14 else 1), "cut")
     # Long app videos: 22 bars (intro, 4 features, suite, call to action).
-    bed(22, lambda b: 1 if b < 2 else (2 if b < 20 else 1), "long")
+    bed(16, lambda b: 1 if b < 1 else (2 if b < 13 else 1), "long")
     print("music ok")
