@@ -3,7 +3,8 @@ import { AbsoluteFill, Audio, Composition, interpolate, Sequence, staticFile, us
 import { AppAdScene, APP_LEN, BAR } from "./ad";
 import { ADS } from "./apps";
 import { Cta, Flow, Hub, SectionTitle } from "./finale";
-import { Hook, Reveal } from "./opening";
+import { Hook } from "./hook";
+import { Reveal } from "./opening";
 import { AppId, APPS, C } from "./theme";
 import "./theme";
 
