@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuth } from "@/server/auth";
 import { accessByTool, setToolAccess } from "@/server/db";
-import { adminSession, body, fail, logged, sameOrigin } from "@/server/http";
+import { adminSession, body, confirmationNeeded, fail, logged, sameOrigin } from "@/server/http";
 import { tool, tools } from "@/server/tools";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +17,8 @@ export async function POST(req: Request) {
   if (!sameOrigin(req)) return fail("Demande refusée", 403);
   const session = await adminSession();
   if (!session) return fail("Non autorisé", 403);
+  const confirm = confirmationNeeded(session);
+  if (confirm) return confirm;
   const data = await body(req);
   const asked = tool(typeof data.tool === "string" ? data.tool : null);
   const userId = typeof data.userId === "string" ? data.userId : "";

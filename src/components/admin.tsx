@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { type Me, Title } from "@/components/account";
 import { Avatar, Button, Card, Field, inputClass, Modal } from "@/components/ui";
 import { authClient, message } from "@/lib/auth-client";
+import { askForCode, REAUTH_REQUIRED } from "@/lib/reauth";
 import { api, cn, MIN_PASSWORD } from "@/lib/utils";
 
 type Person = { id: string; name: string; email: string; role?: string | null; twoFactorEnabled?: boolean | null };
@@ -132,7 +133,12 @@ function AddPerson({ onClose, onDone }: { onClose: () => void; onDone: () => voi
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { error } = await authClient.admin.createUser({ name: name.trim(), email: email.trim().toLowerCase(), password, role: admin ? "admin" : "user", data: { emailVerified: true } });
+    const create = () => authClient.admin.createUser({ name: name.trim(), email: email.trim().toLowerCase(), password, role: admin ? "admin" : "user", data: { emailVerified: true } });
+    let { error } = await create();
+    if (error && (error as { code?: string }).code === REAUTH_REQUIRED) {
+      if (!(await askForCode())) return setBusy(false);
+      ({ error } = await create());
+    }
     setBusy(false);
     if (error) return setError(message(error));
     toast(`Compte créé pour ${name.trim()}`);
@@ -171,7 +177,14 @@ function ManagePerson({ person, onClose, onDone }: { person: Person; onClose: ()
 
   const act = async (action: () => Promise<{ error: Parameters<typeof message>[0] }>, done: string, close = true) => {
     setBusy(true);
-    const { error } = await action();
+    let { error } = await action();
+    // A change of role, password or account: the code is asked again, then the action is retried once.
+    if (error && (error as { code?: string }).code === REAUTH_REQUIRED) {
+      setBusy(false);
+      if (!(await askForCode())) return;
+      setBusy(true);
+      ({ error } = await action());
+    }
     setBusy(false);
     if (error) return void toast.error(message(error));
     toast(done);

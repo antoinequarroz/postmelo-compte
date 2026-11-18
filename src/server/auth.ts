@@ -13,6 +13,7 @@ import { db, dataDir, forgetPerson, isTrustedAdmin, mayOpenTool } from "./db";
 import { password } from "./password";
 import { audit } from "./audit";
 import { authSecret } from "./secret";
+import { adminSessionFresh, REAUTH_MESSAGE, REAUTH_REQUIRED, recentlyConfirmed } from "./stepup";
 import { tool, tools } from "./tools";
 
 /** The public address of this service: the "issuer" every tool trusts. */
@@ -25,6 +26,10 @@ const sha256 = (value: string) => crypto.createHash("sha256").update(value).dige
 const isLocal = (url: URL) => url.hostname === "localhost" || url.hostname === "127.0.0.1";
 
 export const ADMIN_NEEDS_2FA = "Active la double authentification pour utiliser l'admin.";
+export const ADMIN_SESSION_EXPIRED = "Ta session admin a plus de 12 heures : reconnecte-toi pour continuer.";
+
+/** Admin routes that change who can do what: they also need the code typed in the last minutes. */
+const SENSITIVE_ADMIN_PATHS = new Set(["/admin/create-user", "/admin/update-user", "/admin/set-role", "/admin/remove-user", "/admin/set-user-password", "/admin/impersonate-user", "/admin/ban-user"]);
 
 const refusal = (toolId: string) => `${baseUrl()}/refus?outil=${toolId}`;
 
@@ -153,6 +158,11 @@ function build() {
             if (session) audit({ action: "admin.refus", ok: false, actorId: session.user.id, actorEmail: session.user.email, target: ctx.path, headers: ctx.headers });
             throw new APIError("FORBIDDEN", { message: ADMIN_NEEDS_2FA });
           }
+          if (!adminSessionFresh(session)) {
+            audit({ action: "admin.refus", ok: false, actorId: session.user.id, actorEmail: session.user.email, target: ctx.path, detail: { session: "plus de 12 h" }, headers: ctx.headers });
+            throw new APIError("FORBIDDEN", { message: ADMIN_SESSION_EXPIRED, code: "ADMIN_SESSION_EXPIRED" });
+          }
+          if (SENSITIVE_ADMIN_PATHS.has(ctx.path) && !recentlyConfirmed(session)) throw new APIError("FORBIDDEN", { message: REAUTH_MESSAGE, code: REAUTH_REQUIRED });
           return;
         }
         if (ctx.path !== "/oauth2/authorize") return;

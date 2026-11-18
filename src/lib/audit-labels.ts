@@ -17,6 +17,8 @@ export const AUDIT_LABEL: Record<string, string> = {
   "session.toutes_revoquees": "Tous les appareils déconnectés",
   "session.autres_revoquees": "Autres appareils déconnectés",
   "admin.refus": "Accès admin refusé",
+  "admin.confirmation": "Identité confirmée par code",
+  "admin.confirmation_echouee": "Code de confirmation refusé",
   "admin.compte_cree": "Compte créé",
   "admin.compte_modifie": "Compte modifié",
   "admin.role_change": "Rôle changé",

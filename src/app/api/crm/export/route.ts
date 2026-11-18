@@ -1,5 +1,5 @@
 import { exportCsv } from "@/server/crm";
-import { adminSession, fail, logged } from "@/server/http";
+import { adminSession, confirmationNeeded, fail, logged } from "@/server/http";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +7,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const session = await adminSession();
   if (!session) return fail("Non autorisé", 403);
+  const confirm = confirmationNeeded(session);
+  if (confirm) return confirm;
   const what = new URL(req.url).searchParams.get("type") === "licences" ? "licences" : "clients";
   const res = new Response(exportCsv(what), {
     headers: {

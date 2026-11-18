@@ -18,12 +18,13 @@ function device(ua: string | null) {
   return [browser, os].filter(Boolean).join(" · ") || ua.slice(0, 40);
 }
 
-const KEY: Record<string, string> = { role: "rôle", twoFactor: "2FA", methode: "méthode", erreur: "raison", champs: "champs", langue: "langue", accepte: "accepté" };
+const KEY: Record<string, string> = { session: "session", role: "rôle", twoFactor: "2FA", methode: "méthode", erreur: "raison", champs: "champs", langue: "langue", accepte: "accepté" };
 const ERROR: Record<string, string> = {
   INVALID_EMAIL_OR_PASSWORD: "e-mail ou mot de passe faux",
   INVALID_CODE: "code faux",
   INVALID_TWO_FACTOR_COOKIE: "étape 2FA expirée",
   TOO_MANY_ATTEMPTS: "trop d'essais",
+  CODE_ALREADY_USED: "code déjà utilisé",
   FORBIDDEN: "interdit",
 };
 const value = (k: string, v: unknown) => (typeof v === "boolean" ? (v ? "oui" : "non") : Array.isArray(v) ? v.join(", ") : k === "erreur" ? (ERROR[String(v)] ?? String(v)) : String(v));

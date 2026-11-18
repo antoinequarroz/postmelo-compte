@@ -1,6 +1,6 @@
 import { remove, update } from "@/server/crm";
 import { answer, asKind } from "@/server/crm-http";
-import { adminSession, body, fail, logged, sameOrigin } from "@/server/http";
+import { adminSession, body, confirmationNeeded, fail, logged, sameOrigin } from "@/server/http";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +23,8 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!sameOrigin(req)) return fail("Demande refusée", 403);
   const session = await adminSession();
   if (!session) return fail("Non autorisé", 403);
+  const confirm = confirmationNeeded(session);
+  if (confirm) return confirm;
   const { kind: k, id } = await params;
   const kind = asKind(k);
   if (!kind) return fail("Introuvable", 404);

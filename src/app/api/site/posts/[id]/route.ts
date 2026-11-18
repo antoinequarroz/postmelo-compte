@@ -1,6 +1,6 @@
 import { answer } from "@/server/crm-http";
 import { removePost, updatePost } from "@/server/content";
-import { adminSession, body, fail, logged, sameOrigin } from "@/server/http";
+import { adminSession, body, confirmationNeeded, fail, logged, sameOrigin } from "@/server/http";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +21,8 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!sameOrigin(req)) return fail("Demande refusée", 403);
   const session = await adminSession();
   if (!session) return fail("Non autorisé", 403);
+  const confirm = confirmationNeeded(session);
+  if (confirm) return confirm;
   const { id } = await params;
   return logged(answer(() => removePost(id)), req, session, "site.article_supprime", id);
 }

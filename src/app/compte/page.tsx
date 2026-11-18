@@ -4,6 +4,7 @@ import { Subscription } from "@/components/subscription";
 import { subscriptionOf } from "@/server/billing";
 import { adminNeedsTwoFactor, isTrustedAdmin, mayOpenTool } from "@/server/db";
 import { currentSession } from "@/server/http";
+import { adminSessionFresh } from "@/server/stepup";
 import { tools } from "@/server/tools";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const sub = subscriptionOf(user.id);
   return (
     <Account
-      me={{ id: user.id, name: user.name, email: user.email, admin: isTrustedAdmin(user), adminNeedsTwoFactor: adminNeedsTwoFactor(user), twoFactor: user.twoFactorEnabled === true }}
+      me={{ id: user.id, name: user.name, email: user.email, admin: isTrustedAdmin(user) && adminSessionFresh(session), adminNeedsTwoFactor: adminNeedsTwoFactor(user), adminSessionExpired: isTrustedAdmin(user) && !adminSessionFresh(session), twoFactor: user.twoFactorEnabled === true }}
       sessionToken={session.session.token}
       subscription={sub && <Subscription {...sub} welcome={params.abonnement ? "abonnement" : params.essai ? "essai" : null} />}
       tools={tools().map((t) => ({ id: t.id, name: t.name, description: t.description, url: t.url, allowed: mayOpenTool(t.id, user) }))}

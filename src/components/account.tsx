@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Admin } from "@/components/admin";
+import { ReauthDialog } from "@/components/reauth-dialog";
 import { Logo } from "@/components/logo";
 import { Avatar, Button, Card, Field, inputClass, Modal } from "@/components/ui";
 import { authClient, message } from "@/lib/auth-client";
@@ -12,7 +13,7 @@ import { APP_NAME } from "@/lib/brand";
 import { setTheme, type Theme, useTheme } from "@/lib/theme";
 import { cn, dateTime, MIN_PASSWORD } from "@/lib/utils";
 
-export type Me = { id: string; name: string; email: string; admin: boolean; adminNeedsTwoFactor?: boolean; twoFactor: boolean };
+export type Me = { id: string; name: string; email: string; admin: boolean; adminNeedsTwoFactor?: boolean; adminSessionExpired?: boolean; twoFactor: boolean };
 export type ToolInfo = { id: string; name: string; description: string; url: string; allowed: boolean };
 
 export function Title({ children, hint }: { children: React.ReactNode; hint?: string }) {
@@ -43,6 +44,7 @@ export function Account({ me, sessionToken, tools, subscription }: { me: Me; ses
         </Button>
       </header>
       {me.adminNeedsTwoFactor && <AdminLocked />}
+      {me.adminSessionExpired && <AdminExpired />}
       {subscription}
       <Tools tools={tools} />
       <Profile me={me} />
@@ -52,6 +54,7 @@ export function Account({ me, sessionToken, tools, subscription }: { me: Me; ses
       <Devices current={sessionToken} />
       <Appearance />
       {me.admin && <Admin me={me} />}
+      {me.admin && <ReauthDialog />}
     </div>
   );
 }
@@ -70,6 +73,30 @@ function AdminLocked() {
         <Button variant="secondary" onClick={() => (window.location.href = "/admin")}>
           J&apos;ai activé la double authentification, ouvrir l&apos;admin
           <ArrowUpRight className="size-4" />
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+/** The admin needs a sign-in from the last 12 hours: one click signs out and back to the sign-in page. */
+function AdminExpired() {
+  const again = async () => {
+    await authClient.signOut();
+    window.location.href = "/connexion";
+  };
+  return (
+    <Card role="status" className="flex flex-col gap-3 border-warn/60">
+      <div className="flex items-start gap-3">
+        <ShieldCheck className="mt-0.5 size-5 shrink-0 text-warn" />
+        <Title hint="Pour protéger le CRM et les comptes, l'admin demande une connexion de moins de 12 heures. Tes outils restent ouverts ; seul l'admin attend que tu te reconnectes.">
+          Reconnecte-toi pour ouvrir l&apos;admin
+        </Title>
+      </div>
+      <div>
+        <Button variant="secondary" onClick={again}>
+          <LogOut className="size-4" />
+          Me reconnecter
         </Button>
       </div>
     </Card>

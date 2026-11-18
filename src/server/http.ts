@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { baseUrl, getAuth } from "./auth";
 import { audit } from "./audit";
 import { isTrustedAdmin } from "./db";
+import { adminSessionFresh, REAUTH_MESSAGE, REAUTH_REQUIRED, recentlyConfirmed } from "./stepup";
 
 export const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
 
@@ -38,11 +39,19 @@ export function siteUrl() {
 export async function adminSession() {
   const session = await currentSession();
   if (!session) return null;
-  if (isTrustedAdmin(session.user)) return session;
+  if (isTrustedAdmin(session.user) && adminSessionFresh(session)) return session;
   // A signed-in person knocking at the admin: worth a line in the journal.
   const h = await headers();
-  audit({ action: "admin.refus", ok: false, actorId: session.user.id, actorEmail: session.user.email, target: h.get("x-pathname"), detail: { role: session.user.role ?? "user", twoFactor: session.user.twoFactorEnabled === true }, headers: h });
+  audit({ action: "admin.refus", ok: false, actorId: session.user.id, actorEmail: session.user.email, target: h.get("x-pathname"), detail: { role: session.user.role ?? "user", twoFactor: session.user.twoFactorEnabled === true, ...(isTrustedAdmin(session.user) ? { session: "plus de 12 h" } : {}) }, headers: h });
   return null;
+}
+
+/**
+ * For the sensitive actions (export, deletion, tool access): null when this session proved its
+ * presence in the last minutes, else the answer that makes the page ask for the code again.
+ */
+export function confirmationNeeded(session: Parameters<typeof recentlyConfirmed>[0]) {
+  return recentlyConfirmed(session) ? null : NextResponse.json({ error: REAUTH_MESSAGE, code: REAUTH_REQUIRED }, { status: 403 });
 }
 
 type Actor = { user: { id: string; email: string } };
