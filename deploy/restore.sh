@@ -89,22 +89,42 @@ image="${IMAGE:-$(docker inspect --format '{{.Config.Image}}' "$container" 2>/de
 [ -n "$image" ] || fail "le conteneur $container est introuvable."
 read -r -p "Remplacer la base de $container par cette sauvegarde ? Tape RESTAURER pour continuer : " answer
 [ "$answer" = "RESTAURER" ] || fail "annulé."
-stamp="$(date +%Y-%m-%d_%H%M)"
+stamp="$(date +%Y-%m-%d_%H%M%S)-$$"
 docker stop "$container" >/dev/null
 # Quoi qu'il arrive ensuite, le service redémarre (avec l'ancienne base si la copie a échoué).
 trap 'docker start "$container" >/dev/null 2>&1 || true; rm -rf "$work"' EXIT
 # La base passe par l'entrée standard : le dossier temporaire reste lisible par toi seul.
 docker run --rm -i --network none --cap-drop ALL --user 1001:1001 --volumes-from "$container" --entrypoint sh "$image" -c "
   set -e
-  for f in compte.db compte.db-wal compte.db-shm; do [ -f /data/\$f ] && cp /data/\$f /data/\$f.avant-restauration-$stamp || true; done
+  for f in compte.db compte.db-wal compte.db-shm; do
+    if [ -f /data/\$f ]; then
+      [ ! -e /data/\$f.avant-restauration-$stamp ] || exit 1
+      cp /data/\$f /data/\$f.avant-restauration-$stamp
+    fi
+  done
+  [ ! -f /data/compte.db ] || [ -s /data/compte.db.avant-restauration-$stamp ]
   cat > /data/compte.db.new
   [ -s /data/compte.db.new ]
   rm -f /data/compte.db-wal /data/compte.db-shm
   mv /data/compte.db.new /data/compte.db" < "$work/db"
 docker start "$container" >/dev/null
-for _ in $(seq 1 30); do
-  [ "$(docker inspect --format '{{.State.Health.Status}}' "$container" 2>/dev/null)" = "healthy" ] && break
+trap 'rm -rf "$work"' EXIT
+# Le service doit redevenir sain : sinon, on le dit, avec le chemin du retour en arrière.
+status=""
+for _ in $(seq 1 60); do
+  status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}sans-healthcheck{{end}}' "$container" 2>/dev/null || true)"
+  [ "$status" = "healthy" ] || [ "$status" = "unhealthy" ] && break
+  if [ "$status" = "sans-healthcheck" ]; then
+    [ "$(docker inspect --format '{{.State.Running}}' "$container" 2>/dev/null)" = "true" ] && status="healthy"
+    break
+  fi
   sleep 2
 done
+if [ "$status" != "healthy" ]; then
+  docker logs --tail 30 "$container" >&2 || true
+  echo "Le service ne redevient pas sain après la restauration (état : ${status:-inconnu})." >&2
+  echo "Retour en arrière : docker stop $container, puis dans le volume remplace compte.db par compte.db.avant-restauration-$stamp (et ses -wal/-shm), puis docker start $container." >&2
+  exit 1
+fi
 echo "Base restaurée depuis $archive. L'ancienne est dans le volume : compte.db.avant-restauration-$stamp"
 echo "Si le .env a changé depuis, reprends-le de la sauvegarde avant de continuer (AUTH_SECRET)."

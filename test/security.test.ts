@@ -92,6 +92,28 @@ async function cookieOf(email: string) {
 
 let member = "";
 let admin = "";
+let unconfirmed = "";
+let noSecondFactor = "";
+let stale = "";
+
+/** The token of a session cookie, as the session table stores it. */
+const tokenOf = (cookie: string) => decodeURIComponent(cookie.match(/compte\.session_token=([^;]+)/)![1]).split(".")[0];
+
+/** Moves the sign-in of this session back in time. */
+async function signedInAgo(cookie: string, minutes: number) {
+  const { db } = await import("@/server/db");
+  const at = new Date(Date.now() - minutes * 60_000);
+  const col = db().prepare('select "createdAt" as c from "session" where token = ?').get(tokenOf(cookie)) as { c: unknown };
+  db().prepare('update "session" set "createdAt" = ? where token = ?').run(typeof col.c === "number" ? at.getTime() : at.toISOString(), tokenOf(cookie));
+}
+
+/** Routes and methods that also need the code typed in the last 10 minutes. */
+const SENSITIVE: [string, string][] = [
+  ["crm/export", "GET"],
+  ["crm/[kind]/[id]", "DELETE"],
+  ["site/posts/[id]", "DELETE"],
+  ["admin/acces", "POST"],
+];
 
 beforeAll(async () => {
   const server = await import("@/server/auth");
@@ -99,17 +121,31 @@ beforeAll(async () => {
   const { hashPassword } = await import("better-auth/crypto");
   const auth = await server.getAuth();
   const hash = await hashPassword(PASSWORD);
-  await server.addPerson(auth, { name: "Ada Admin", email: "ada@exemple.ch", role: "admin", passwordHash: hash });
-  await server.addPerson(auth, { name: "Bob Membre", email: "bob@exemple.ch", role: "user", passwordHash: hash });
+  const people: [string, string, "admin" | "user"][] = [
+    ["Ada Admin", "ada@exemple.ch", "admin"],
+    ["Bob Membre", "bob@exemple.ch", "user"],
+    ["Cléo Admin", "cleo@exemple.ch", "admin"],
+    ["Dan Admin", "dan@exemple.ch", "admin"],
+    ["Eve Admin", "eve@exemple.ch", "admin"],
+  ];
+  for (const [name, email, role] of people) await server.addPerson(auth, { name, email, role, passwordHash: hash });
   member = await cookieOf("bob@exemple.ch");
   admin = await cookieOf("ada@exemple.ch");
-  // Second factor on, and the code typed a moment ago: a fully trusted admin, so only the origin can refuse.
-  db().prepare('update "user" set "twoFactorEnabled" = 1 where email = ?').run("ada@exemple.ch");
-  const token = decodeURIComponent(admin.match(/compte\.session_token=([^;]+)/)![1]).split(".")[0];
+  unconfirmed = await cookieOf("cleo@exemple.ch");
+  noSecondFactor = await cookieOf("dan@exemple.ch");
+  stale = await cookieOf("eve@exemple.ch");
+  // Signed in before switching the second factor on (no code is asked then); Dan never switches it on.
+  for (const email of ["ada@exemple.ch", "cleo@exemple.ch", "eve@exemple.ch"]) db().prepare('update "user" set "twoFactorEnabled" = 1 where email = ?').run(email);
+  // Ada and Cléo signed in half an hour ago: past the 10 minutes, so a sensitive action needs the code.
+  await signedInAgo(admin, 30);
+  await signedInAgo(unconfirmed, 30);
+  // Eve signed in 13 hours ago: past the 12 hours of an admin session.
+  await signedInAgo(stale, 13 * 60);
+  // Ada typed the code a moment ago: a fully trusted admin, so only the origin can refuse her.
   const { recentlyConfirmed } = await import("@/server/stepup");
   // (this first call creates the table of confirmations)
-  recentlyConfirmed({ session: { token, createdAt: new Date(0) }, user: { id: "", email: "" } });
-  db().prepare("insert or replace into admin_stepup (token_hash, at) values (?, ?)").run(crypto.createHash("sha256").update(token).digest("hex"), Date.now());
+  recentlyConfirmed({ session: { token: tokenOf(admin), createdAt: new Date(0) }, user: { id: "", email: "" } });
+  db().prepare("insert or replace into admin_stepup (token_hash, at) values (?, ?)").run(crypto.createHash("sha256").update(tokenOf(admin)).digest("hex"), Date.now());
 });
 
 describe("every API route is accounted for", () => {
@@ -129,6 +165,24 @@ describe.each(ADMIN_ROUTES)("admin route /api/%s", (route) => {
 
   test("refuses a signed-in member", async () => {
     for (const m of await methodsOf(route)) expect([401, 403], `${m} /api/${route}`).toContain((await call(route, m, { cookie: member })).status);
+  });
+
+  test("refuses an admin without a second factor", async () => {
+    for (const m of await methodsOf(route)) expect((await call(route, m, { cookie: noSecondFactor })).status, `${m} /api/${route}`).toBe(403);
+  });
+
+  test("refuses an admin whose sign-in is more than 12 hours old", async () => {
+    for (const m of await methodsOf(route)) expect((await call(route, m, { cookie: stale })).status, `${m} /api/${route}`).toBe(403);
+  });
+
+  test("asks an admin for the code before a sensitive action, and only then", async () => {
+    for (const m of await methodsOf(route)) {
+      const res = await call(route, m, { cookie: unconfirmed });
+      if (SENSITIVE.some(([r, sm]) => r === route && sm === m)) {
+        expect(res.status, `${m} /api/${route}`).toBe(403);
+        expect(((await res.json()) as { code?: string }).code, `${m} /api/${route}`).toBe("REAUTH_REQUIRED");
+      } else expect(res.status, `${m} /api/${route}`).not.toBe(403);
+    }
   });
 
   test("refuses a trusted admin's browser when the request comes from another site", async () => {

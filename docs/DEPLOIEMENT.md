@@ -121,9 +121,13 @@ mkdir -p /tmp/lamio-import
 for f in app.db app.db-wal app.db-shm; do
   docker cp lamio:/data/$f /tmp/lamio-import/$f 2>/dev/null || true
 done
-docker cp /tmp/lamio-import compte:/tmp/lamio-import
-docker exec compte node scripts/import-lamio.mjs /tmp/lamio-import/app.db /data
-docker exec -u root compte rm -rf /tmp/lamio-import && rm -rf /tmp/lamio-import
+# Le conteneur est en lecture seule : les fichiers entrent par l'entrée standard, dans le volume /data.
+docker exec compte mkdir -p /data/lamio-import
+for f in app.db app.db-wal app.db-shm; do
+  [ -f /tmp/lamio-import/$f ] && docker exec -i compte sh -c "cat > /data/lamio-import/$f" < /tmp/lamio-import/$f
+done
+docker exec compte node scripts/import-lamio.mjs /data/lamio-import/app.db /data
+docker exec compte rm -rf /data/lamio-import && rm -rf /tmp/lamio-import
 ```
 
 Ouvre ensuite https://compte.postmelo.ch et connecte-toi avec ton e-mail et ton mot de passe de Lamio.

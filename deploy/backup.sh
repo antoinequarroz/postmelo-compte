@@ -69,12 +69,13 @@ if [ -n "${BACKUP_REMOTE:-}" ]; then
     [ "$there" = "$(wc -c < "$f" | tr -d ' ')" ] || fail "la copie de $(basename "$f") hors du VPS n'a pas la bonne taille."
   done
   # Là-bas aussi, seules les KEEP dernières restent.
-  rclone lsf "$BACKUP_REMOTE" --include 'compte-*.age' | sort -r | tail -n +"$((keep * 2 + 1))" | while read -r old; do rclone deletefile "$BACKUP_REMOTE/$old"; done
+  { rclone lsf "$BACKUP_REMOTE" --include 'compte-*.age' || true; } | sort -r | tail -n +"$((keep * 2 + 1))" | while read -r old; do rclone deletefile "$BACKUP_REMOTE/$old"; done
 fi
 
 # Ici, garde les KEEP dernières.
-ls -1t "$dest"/compte-*.db.gz.age 2>/dev/null | tail -n +"$((keep + 1))" | xargs -r rm --
-ls -1t "$dest"/compte-*.env.age 2>/dev/null | tail -n +"$((keep + 1))" | xargs -r rm --
+# (ls échoue quand rien ne correspond : ce n'est pas une erreur ici.)
+{ ls -1t "$dest"/compte-*.db.gz.age 2>/dev/null || true; } | tail -n +"$((keep + 1))" | xargs -r rm --
+{ ls -1t "$dest"/compte-*.env.age 2>/dev/null || true; } | tail -n +"$((keep + 1))" | xargs -r rm --
 # Les anciennes sauvegardes en clair (avant le chiffrement) : à effacer à la main une fois la première restauration testée.
 if ls "$dest"/compte-*.db.gz >/dev/null 2>&1; then
   echo "Attention : des sauvegardes en clair restent dans $dest (compte-*.db.gz). Efface-les après un ./restore.sh --check réussi." >&2
