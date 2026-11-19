@@ -1,0 +1,31 @@
+# Mises à jour proposées chaque semaine, regroupées pour ne pas noyer les PR.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    groups:
+      # Better Auth et ses plugins montent ensemble : leurs versions doivent rester alignées.
+      better-auth:
+        patterns: ["better-auth", "@better-auth/*"]
+      next-react:
+        patterns: ["next", "eslint-config-next", "react", "react-dom", "@types/react", "@types/react-dom"]
+      outils:
+        dependency-type: development
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Europe/Zurich
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Europe/Zurich

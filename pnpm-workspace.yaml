@@ -1,2 +1,6 @@
 allowBuilds:
   better-sqlite3: true
+
+# Next 15.5 pins an old postcss with known flaws (GHSA-fxqj-rqcc-2cmp and others): use a fixed one.
+overrides:
+  postcss: ">=8.5.23 <9"
