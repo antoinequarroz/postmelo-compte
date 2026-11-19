@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { ExportButton } from "@/components/crm/export-button";
 import Link from "next/link";
 import { CompanyFilters, NewCompany } from "@/components/crm/companies";
 import { Badge, Empty } from "@/components/crm/kit";
@@ -14,9 +14,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageHeader title="Clients" subtitle={`${companies.length} entreprise${companies.length > 1 ? "s" : ""}${q || statut ? " trouvée(s)" : ""}`}>
-        <a download href="/api/crm/export?type=clients" className="press inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[13.5px] text-ink-2 hover:bg-ink/5 hover:text-ink max-sm:hidden">
-          <Download className="size-4" /> CSV
-        </a>
+        <ExportButton type="clients" />
         <NewCompany />
       </PageHeader>
       <div className="flex flex-col gap-4 p-7 max-md:p-4">

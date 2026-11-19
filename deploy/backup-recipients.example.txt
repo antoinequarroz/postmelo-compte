@@ -1,0 +1,4 @@
+# Clés publiques age qui peuvent relire les sauvegardes (une par ligne, « age1… »).
+# Seulement des clés PUBLIQUES : la clé privée reste sur le Mac d'Antoine et dans le coffre Cairn.
+# Copie ce fichier en backup-recipients.txt (hors du dépôt) et ajoute ta clé. Voir docs/DEPLOIEMENT.md, section 6.
+# Tant qu'aucune clé n'est dans backup-recipients.txt, backup.sh refuse de tourner.

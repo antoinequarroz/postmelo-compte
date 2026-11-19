@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { headers } from "next/headers";
 import { Toaster } from "sonner";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { themeScript } from "@/lib/theme-script";
@@ -22,12 +23,14 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // The nonce of this request (src/middleware.ts): the only inline script allowed to run carries it.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     // The theme script sets data-theme before React starts: the attribute is allowed to differ.
     <html lang="fr" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} ${display.variable} font-sans antialiased`}>
         {children}

@@ -1,6 +1,6 @@
 import { answer } from "@/server/crm-http";
 import { translatePost } from "@/server/content";
-import { adminSession, body, fail, sameOrigin } from "@/server/http";
+import { adminSession, body, fail, logged, sameOrigin } from "@/server/http";
 
 export const dynamic = "force-dynamic";
 
@@ -11,5 +11,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!session) return fail("Non autorisé", 403);
   const { id } = await params;
   const { locale } = await body(req);
-  return answer(() => translatePost(id, locale, session.user.name));
+  return logged(answer(() => translatePost(id, locale, session.user.name)), req, session, "site.article_traduit", id, { langue: locale });
 }

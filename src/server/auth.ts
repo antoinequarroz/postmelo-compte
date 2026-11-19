@@ -9,8 +9,13 @@ import { nextCookies } from "better-auth/next-js";
 import { admin, jwt, twoFactor } from "better-auth/plugins";
 import { APP_NAME } from "@/lib/brand";
 import { MAX_PASSWORD, MIN_PASSWORD } from "@/lib/utils";
-import { db, dataDir, forgetPerson, mayOpenTool } from "./db";
+import { db, dataDir, forgetPerson, isTrustedAdmin, mayOpenTool } from "./db";
 import { password } from "./password";
+import { audit } from "./audit";
+import { clientIp, limitKey } from "./ip";
+import { clearLoginFailures, LOCKED_MESSAGE, reserveTry, settleTry } from "./limits";
+import { authSecret } from "./secret";
+import { adminSessionFresh, REAUTH_MESSAGE, REAUTH_REQUIRED, recentlyConfirmed } from "./stepup";
 import { tool, tools } from "./tools";
 
 /** The public address of this service: the "issuer" every tool trusts. */
@@ -19,17 +24,128 @@ export const baseUrl = () => (process.env.COMPTE_URL ?? "http://localhost:3000")
 /** Where the OpenID Connect endpoints live, and the value of "iss" in every token. */
 export const issuer = () => `${baseUrl()}/api/auth`;
 
-function secret() {
-  const value = process.env.AUTH_SECRET ?? "";
-  if (value.length >= 32) return value;
-  if (process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET manque ou fait moins de 32 caractères (openssl rand -base64 32).");
-  return "dev-only-secret-dev-only-secret-dev-only";
-}
-
 const sha256 = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
 const isLocal = (url: URL) => url.hostname === "localhost" || url.hostname === "127.0.0.1";
 
+export const ADMIN_NEEDS_2FA = "Active la double authentification pour utiliser l'admin.";
+export const ADMIN_SESSION_EXPIRED = "Ta session admin a plus de 12 heures : reconnecte-toi pour continuer.";
+
+/** Admin routes that change who can do what: they also need the code typed in the last minutes. */
+const SENSITIVE_ADMIN_PATHS = new Set(["/admin/create-user", "/admin/update-user", "/admin/set-role", "/admin/remove-user", "/admin/set-user-password", "/admin/impersonate-user", "/admin/ban-user"]);
+
 const refusal = (toolId: string) => `${baseUrl()}/refus?outil=${toolId}`;
+
+/** What each route of Better Auth means in the audit log (routes not listed are not logged). */
+const AUTH_EVENTS: Record<string, string> = {
+  "/sign-in/email": "connexion",
+  "/passkey/verify-authentication": "connexion",
+  "/two-factor/verify-totp": "connexion",
+  "/two-factor/verify-backup-code": "connexion",
+  "/sign-out": "deconnexion",
+  "/two-factor/enable": "2fa.demarree",
+  "/two-factor/disable": "2fa.desactivee",
+  "/two-factor/generate-backup-codes": "2fa.codes_renouveles",
+  "/passkey/verify-registration": "passkey.ajoutee",
+  "/passkey/delete-passkey": "passkey.supprimee",
+  "/change-password": "mot_de_passe.change",
+  "/update-user": "profil.modifie",
+  "/revoke-session": "session.revoquee",
+  "/revoke-sessions": "session.toutes_revoquees",
+  "/revoke-other-sessions": "session.autres_revoquees",
+  "/admin/create-user": "admin.compte_cree",
+  "/admin/update-user": "admin.compte_modifie",
+  "/admin/set-role": "admin.role_change",
+  "/admin/remove-user": "admin.compte_supprime",
+  "/admin/ban-user": "admin.compte_bloque",
+  "/admin/unban-user": "admin.compte_debloque",
+  "/admin/revoke-user-session": "admin.session_revoquee",
+  "/admin/revoke-user-sessions": "admin.sessions_revoquees",
+  "/admin/set-user-password": "admin.mot_de_passe_defini",
+  "/admin/impersonate-user": "admin.usurpation",
+  "/admin/stop-impersonating": "admin.usurpation_fin",
+  "/oauth2/consent": "oauth.consentement",
+};
+
+const SIGN_IN_METHOD: Record<string, string> = {
+  "/sign-in/email": "mot de passe",
+  "/passkey/verify-authentication": "passkey",
+  "/two-factor/verify-totp": "code 2FA",
+  "/two-factor/verify-backup-code": "code de secours",
+};
+
+type HookCtx = Parameters<Parameters<typeof createAuthMiddleware>[0]>[0];
+
+/** One line in the audit log for each sign-in, security change or admin action, refused or done. */
+function auditAuthEvent(ctx: HookCtx) {
+  const event = AUTH_EVENTS[ctx.path];
+  if (!event) return;
+  const returned = ctx.context.returned;
+  const failed = returned instanceof APIError;
+  const body = (ctx.body ?? {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" ? v : null);
+  const before = ctx.context.session?.user;
+  const actor = ctx.context.newSession?.user ?? before;
+  const error = failed ? { erreur: (returned as APIError).body?.code ?? (returned as APIError).message } : {};
+  let action = event;
+  let detail: Record<string, unknown> = { ...error };
+  let target: string | null = str(body.userId);
+
+  if (event === "connexion") {
+    // Confirming the first code while signed in switches the second factor on: that is not a sign-in.
+    // (it also renews the session, so "newSession" is set either way: what tells them apart is an existing session).
+    if (ctx.path === "/two-factor/verify-totp" && before) action = failed ? "2fa.activation_echouee" : "2fa.activee";
+    else if (failed) action = "connexion.echouee";
+    else if (returned && typeof returned === "object" && "twoFactorRedirect" in returned) action = "connexion.2fa_demandee";
+    else action = "connexion.reussie";
+    detail = { ...detail, methode: SIGN_IN_METHOD[ctx.path] };
+  }
+  if (ctx.path === "/admin/set-role") detail = { ...detail, role: body.role };
+  if (ctx.path === "/admin/create-user") {
+    target = str(body.email);
+    detail = { ...detail, role: body.role };
+  }
+  if (ctx.path === "/oauth2/consent") detail = { ...detail, accepte: body.accept };
+
+  audit({
+    action,
+    ok: !failed,
+    actorId: actor?.id ?? null,
+    actorEmail: actor?.email ?? (event === "connexion" ? str(body.email) : null),
+    target,
+    detail: Object.keys(detail).length ? detail : null,
+    headers: ctx.headers ?? ctx.request?.headers ?? null,
+  });
+}
+
+/** The tries reserved before the password check, settled once its answer is known. */
+const pendingTries = new WeakMap<Request, number>();
+
+/** Settles the try reserved for this sign-in: a wrong password stays counted, a right one clears the count. */
+function settlePasswordTry(ctx: HookCtx) {
+  const email = (ctx.body as { email?: unknown } | undefined)?.email;
+  const id = ctx.request ? pendingTries.get(ctx.request) : undefined;
+  if (typeof email !== "string") return;
+  if (ctx.request) pendingTries.delete(ctx.request);
+  const returned = ctx.context.returned;
+  if (!(returned instanceof APIError)) return id ? settleTry(email, id, "right") : clearLoginFailures(email);
+  if (id) settleTry(email, id, returned.statusCode === 401 ? "wrong" : "other");
+}
+
+/** A passkey sign-in, or an admin who sets a password or unblocks an account, lifts the locks on that address. */
+async function liftLocks(ctx: HookCtx) {
+  if (ctx.context.returned instanceof APIError) return;
+  if (ctx.path === "/passkey/verify-authentication") {
+    const email = ctx.context.newSession?.user.email;
+    if (email) clearLoginFailures(email);
+    return;
+  }
+  const userId = (ctx.body as { userId?: unknown } | undefined)?.userId;
+  if (typeof userId !== "string") return;
+  const row = db().prepare('select email from "user" where id = ?').get(userId) as { email: string } | undefined;
+  if (row) clearLoginFailures(row.email);
+}
+
+const LIFTS_LOCKS = new Set(["/passkey/verify-authentication", "/admin/set-user-password", "/admin/unban-user"]);
 
 /** The role the tools know: "admin" or "member", as in Lamio. */
 const suiteRole = (user: Record<string, unknown>) => (user.role === "admin" ? "admin" : "member");
@@ -39,7 +155,7 @@ function build() {
   return betterAuth({
     appName: APP_NAME,
     baseURL: baseUrl(),
-    secret: secret(),
+    secret: authSecret(),
     database: db(),
     // The JWT plugin's own /token route hands session JWTs to the browser: tools get theirs from /oauth2/token.
     disabledPaths: ["/token"],
@@ -53,20 +169,55 @@ function build() {
     },
     session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
     rateLimit: {
-      enabled: process.env.NODE_ENV === "production" && process.env.RATE_LIMIT !== "off",
+      enabled: (process.env.NODE_ENV === "production" || process.env.RATE_LIMIT === "on") && process.env.RATE_LIMIT !== "off",
+      // In the database, not in memory: a restart does not hand an attacker fresh tries.
+      storage: "database",
       window: 60,
       max: 100,
       customRules: {
         "/sign-in/email": { window: 60, max: 5 },
+        "/passkey/verify-authentication": { window: 60, max: 10 },
         "/two-factor/verify-totp": { window: 60, max: 5 },
         "/two-factor/verify-backup-code": { window: 60, max: 5 },
       },
     },
-    advanced: { cookiePrefix: "compte", useSecureCookies: secure },
+    advanced: {
+      cookiePrefix: "compte",
+      useSecureCookies: secure,
+      // Caddy replaces X-Forwarded-For with the address it saw: that single value is the person (see ip.ts).
+      ipAddress: { ipAddressHeaders: ["x-forwarded-for"] },
+    },
     hooks: {
       // A member who may not open a tool is told so here, before any code is issued.
       // The same rule is enforced again when tokens are made (customIdTokenClaims below).
       before: createAuthMiddleware(async (ctx) => {
+        // Too many wrong passwords for this address: password sign-in waits (a passkey still works).
+        // The try is counted here, before the password is checked, so parallel requests cannot all get through.
+        if (ctx.path === "/sign-in/email") {
+          const email = (ctx.body as { email?: unknown } | undefined)?.email;
+          if (typeof email !== "string") return;
+          const reserved = reserveTry(email, limitKey(clientIp(ctx.headers)), ctx.headers);
+          if (!reserved.ok) {
+            audit({ action: "connexion.echouee", ok: false, actorEmail: email, detail: { methode: "mot de passe", erreur: "ACCOUNT_LOCKED" }, headers: ctx.headers });
+            throw new APIError("TOO_MANY_REQUESTS", { message: LOCKED_MESSAGE, code: "ACCOUNT_LOCKED" });
+          }
+          if (ctx.request) pendingTries.set(ctx.request, reserved.id);
+          return;
+        }
+        // The admin plugin's routes (people, roles, sessions of others) need an admin protected by a second factor.
+        if (ctx.path.startsWith("/admin/")) {
+          const session = await getSessionFromCtx(ctx);
+          if (!session || !isTrustedAdmin(session.user)) {
+            if (session) audit({ action: "admin.refus", ok: false, actorId: session.user.id, actorEmail: session.user.email, target: ctx.path, headers: ctx.headers });
+            throw new APIError("FORBIDDEN", { message: ADMIN_NEEDS_2FA });
+          }
+          if (!adminSessionFresh(session)) {
+            audit({ action: "admin.refus", ok: false, actorId: session.user.id, actorEmail: session.user.email, target: ctx.path, detail: { session: "plus de 12 h" }, headers: ctx.headers });
+            throw new APIError("FORBIDDEN", { message: ADMIN_SESSION_EXPIRED, code: "ADMIN_SESSION_EXPIRED" });
+          }
+          if (SENSITIVE_ADMIN_PATHS.has(ctx.path) && !recentlyConfirmed(session)) throw new APIError("FORBIDDEN", { message: REAUTH_MESSAGE, code: REAUTH_REQUIRED });
+          return;
+        }
         if (ctx.path !== "/oauth2/authorize") return;
         const asked = tool(ctx.query?.client_id as string | undefined);
         if (!asked) return;
@@ -115,6 +266,17 @@ function build() {
         },
         customUserInfoClaims: ({ user }) => ({ role: suiteRole(user), two_factor: user.twoFactorEnabled === true }),
       }),
+      // After the other plugins: it sees each answer as they left it (a password sign-in turned into "code 2FA demandé").
+      {
+        id: "audit-log",
+        hooks: {
+          after: [
+            { matcher: (ctx) => ctx.path === "/sign-in/email", handler: createAuthMiddleware(async (ctx) => settlePasswordTry(ctx)) },
+            { matcher: (ctx) => !!ctx.path && LIFTS_LOCKS.has(ctx.path), handler: createAuthMiddleware(async (ctx) => liftLocks(ctx)) },
+            { matcher: (ctx) => !!ctx.path && ctx.path in AUTH_EVENTS, handler: createAuthMiddleware(async (ctx) => auditAuthEvent(ctx)) },
+          ],
+        },
+      },
       // Last, so that server actions and pages can set cookies.
       nextCookies(),
     ],

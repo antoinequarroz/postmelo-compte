@@ -1,23 +1,24 @@
 import { NextResponse } from "next/server";
 import { getAuth } from "@/server/auth";
-import { accessByTool, isAdmin, setToolAccess } from "@/server/db";
-import { body, currentSession, fail, sameOrigin } from "@/server/http";
+import { accessByTool, setToolAccess } from "@/server/db";
+import { adminSession, body, confirmationNeeded, fail, logged, sameOrigin } from "@/server/http";
 import { tool, tools } from "@/server/tools";
 
 export const dynamic = "force-dynamic";
 
 /** The tools switched on, and the members each one is open to. Admins only. */
 export async function GET() {
-  const session = await currentSession();
-  if (!session || !isAdmin(session.user)) return fail("Non autorisé", 403);
+  if (!(await adminSession())) return fail("Non autorisé", 403);
   return NextResponse.json({ tools: tools().map(({ id, name, description, url }) => ({ id, name, description, url })), access: accessByTool() }, { headers: { "Cache-Control": "no-store" } });
 }
 
 /** Opens or closes a tool for a member. Admins only. */
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return fail("Demande refusée", 403);
-  const session = await currentSession();
-  if (!session || !isAdmin(session.user)) return fail("Non autorisé", 403);
+  const session = await adminSession();
+  if (!session) return fail("Non autorisé", 403);
+  const confirm = confirmationNeeded(session);
+  if (confirm) return confirm;
   const data = await body(req);
   const asked = tool(typeof data.tool === "string" ? data.tool : null);
   const userId = typeof data.userId === "string" ? data.userId : "";
@@ -25,5 +26,5 @@ export async function POST(req: Request) {
   const { internalAdapter } = await (await getAuth()).$context;
   if (!(await internalAdapter.findUserById(userId))) return fail("Cette personne n'existe pas", 404);
   setToolAccess(asked.id, userId, data.allowed);
-  return NextResponse.json({ ok: true });
+  return logged(NextResponse.json({ ok: true }), req, session, data.allowed ? "outil.acces_ouvert" : "outil.acces_ferme", `${asked.id}/${userId}`);
 }

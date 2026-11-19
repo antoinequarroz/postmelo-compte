@@ -2,6 +2,11 @@ import "server-only";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { baseUrl, getAuth } from "./auth";
+import { audit } from "./audit";
+import { isTrustedAdmin } from "./db";
+import { clientIp, limitKey } from "./ip";
+import { hit } from "./limits";
+import { adminSessionFresh, REAUTH_MESSAGE, REAUTH_REQUIRED, recentlyConfirmed } from "./stepup";
 
 export const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
 
@@ -32,23 +37,34 @@ export function siteUrl() {
   return raw && /^https?:\/\//.test(raw) ? raw : null;
 }
 
-/** The signed-in admin, or null: the CRM and its API are for admins only. */
+/** The signed-in admin, or null: the CRM and its API are for admins protected by a second factor only. */
 export async function adminSession() {
   const session = await currentSession();
-  return session && session.user.role === "admin" ? session : null;
+  if (!session) return null;
+  if (isTrustedAdmin(session.user) && adminSessionFresh(session)) return session;
+  // A signed-in person knocking at the admin: worth a line in the journal.
+  const h = await headers();
+  audit({ action: "admin.refus", ok: false, actorId: session.user.id, actorEmail: session.user.email, target: h.get("x-pathname"), detail: { role: session.user.role ?? "user", twoFactor: session.user.twoFactorEnabled === true, ...(isTrustedAdmin(session.user) ? { session: "plus de 12 h" } : {}) }, headers: h });
+  return null;
 }
 
-const hits = new Map<string, number[]>();
+/**
+ * For the sensitive actions (export, deletion, tool access): null when this session proved its
+ * presence in the last minutes, else the answer that makes the page ask for the code again.
+ */
+export function confirmationNeeded(session: Parameters<typeof recentlyConfirmed>[0]) {
+  return recentlyConfirmed(session) ? null : NextResponse.json({ error: REAUTH_MESSAGE, code: REAUTH_REQUIRED }, { status: 403 });
+}
 
-/** A small limit per address, for the public forms: true when this request is one too many. */
+type Actor = { user: { id: string; email: string } };
+
+/** Writes what an admin just did in the audit log, then hands back the answer unchanged. */
+export function logged(res: Response, req: Request, session: Actor, action: string, target?: string | null, detail?: Record<string, unknown>) {
+  audit({ action, ok: res.ok, actorId: session.user.id, actorEmail: session.user.email, target: target ?? null, detail: detail ?? null, headers: req.headers });
+  return res;
+}
+
+/** A small limit per address, for the public forms: true when this request is one too many. Kept in the database. */
 export async function tooMany(scope: string, max: number, windowMs: number) {
-  if (process.env.RATE_LIMIT === "off") return false;
-  const h = await headers();
-  const key = `${scope}|${h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "local"}`;
-  const t = Date.now();
-  const recent = (hits.get(key) ?? []).filter((at) => t - at < windowMs);
-  recent.push(t);
-  hits.set(key, recent);
-  if (hits.size > 5000) for (const [k, v] of hits) if (v.every((at) => t - at >= windowMs)) hits.delete(k);
-  return recent.length > max;
+  return hit(`${scope}|${limitKey(clientIp(await headers()))}`, max, windowMs);
 }

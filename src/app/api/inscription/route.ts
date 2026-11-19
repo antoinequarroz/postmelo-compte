@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { signUp } from "@/server/billing";
 import { CrmError } from "@/server/crm";
+import { audit } from "@/server/audit";
 import { body, fail, sameOrigin, tooMany } from "@/server/http";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export async function POST(req: Request) {
   if (typeof data.website === "string" && data.website.trim()) return NextResponse.json({ ok: true });
   try {
     await signUp(data);
+    audit({ action: "inscription", actorEmail: typeof data.email === "string" ? data.email : null, headers: req.headers });
     return NextResponse.json({ ok: true });
   } catch (e) {
     if (e instanceof CrmError) return fail(e.message, e.status);

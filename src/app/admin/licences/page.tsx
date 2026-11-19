@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { ExportButton } from "@/components/crm/export-button";
 import { LicenseFilters, LicenseTable, NewLicense } from "@/components/crm/licenses";
 import { Stat } from "@/components/crm/stat";
 import { PageHeader } from "@/components/ui";
@@ -16,9 +16,7 @@ export default async function LicensesPage({ searchParams }: { searchParams: Pro
   return (
     <>
       <PageHeader title="Licences" subtitle="Qui utilise quoi, combien et jusqu'à quand.">
-        <a download href="/api/crm/export?type=licences" className="press inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[13.5px] text-ink-2 hover:bg-ink/5 hover:text-ink max-sm:hidden">
-          <Download className="size-4" /> CSV
-        </a>
+        <ExportButton type="licences" />
         <NewLicense products={products} companies={companies} />
       </PageHeader>
       <div className="flex flex-col gap-4 p-7 max-md:p-4">

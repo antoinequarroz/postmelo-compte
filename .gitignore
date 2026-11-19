@@ -43,3 +43,7 @@ next-env.d.ts
 
 # local database and uploaded media
 /data
+
+# backups: local settings (remote name, retention)
+/deploy/backup.conf
+/deploy/backup-recipients.txt

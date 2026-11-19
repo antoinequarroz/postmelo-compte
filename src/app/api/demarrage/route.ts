@@ -2,6 +2,7 @@ import { hashPassword } from "better-auth/crypto";
 import { NextResponse } from "next/server";
 import { MAX_PASSWORD, MIN_PASSWORD } from "@/lib/utils";
 import { addPerson, countPeople, getAuth } from "@/server/auth";
+import { audit } from "@/server/audit";
 import { body, fail, sameOrigin } from "@/server/http";
 
 export const dynamic = "force-dynamic";
@@ -33,5 +34,7 @@ export async function POST(req: Request) {
     return true;
   });
   creating = run.catch(() => {});
-  return (await run) ? NextResponse.json({ ok: true }) : fail("Un compte existe déjà : connecte-toi.", 409);
+  const made = await run;
+  audit({ action: "installation.premier_admin", ok: made, actorEmail: email, headers: req.headers });
+  return made ? NextResponse.json({ ok: true }) : fail("Un compte existe déjà : connecte-toi.", 409);
 }

@@ -1,6 +1,6 @@
 import { create } from "@/server/crm";
 import { answer, asKind } from "@/server/crm-http";
-import { adminSession, body, fail, sameOrigin } from "@/server/http";
+import { adminSession, body, fail, logged, sameOrigin } from "@/server/http";
 
 export const dynamic = "force-dynamic";
 
@@ -12,5 +12,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ kind: s
   const kind = asKind((await params).kind);
   if (!kind) return fail("Introuvable", 404);
   const data = await body(req);
-  return answer(() => create(kind, data, session.user.name));
+  return logged(answer(() => create(kind, data, session.user.name)), req, session, "crm.cree", kind, { champs: Object.keys(data) });
 }

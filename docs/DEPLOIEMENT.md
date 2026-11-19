@@ -34,6 +34,10 @@ docker compose up -d --build
 docker ps --filter name=compte     # doit devenir « healthy »
 ```
 
+Le conteneur tourne sans root, avec un système de fichiers en lecture seule, sans aucun privilège Linux et
+avec des limites de mémoire et de CPU (`deploy/docker-compose.yml`). Sur une installation existante, vérifie
+que `.env` n'est lisible que par toi : `chmod 600 ~/compte/.env` (`ls -l ~/compte/.env` doit montrer `-rw-------`).
+
 ## 3. Brancher Caddy
 
 Garde une copie du Caddyfile (`~/.config/antoinequarroz-vitrine/runtime/Caddyfile`), puis ajoute :
@@ -46,9 +50,17 @@ compte.postmelo.ch {
 		X-Content-Type-Options "nosniff"
 		-Server
 	}
-	reverse_proxy compte:3000
+	reverse_proxy compte:3000 {
+		# L'adresse vue par Caddy, et elle seule : ce qu'un client écrit dans cet en-tête est remplacé.
+		header_up X-Forwarded-For {remote_host}
+	}
 }
 ```
+
+Le service lit l'adresse des personnes dans `X-Forwarded-For` pour les limites d'essais et le journal
+de sécurité. La ligne `header_up` garantit que cette adresse est celle que Caddy a vue. N'ajoute pas
+`trusted_proxies` dans les options globales de Caddy, sauf si un autre proxy (Cloudflare…) passe un jour
+devant : il faudrait alors revoir ce réglage.
 
 Puis recharge Caddy : `docker exec antoinequarroz-caddy caddy reload --config /etc/caddy/Caddyfile`.
 
@@ -65,9 +77,11 @@ postmelo.ch, www.postmelo.ch {
 		X-Content-Type-Options "nosniff"
 		-Server
 	}
-	@site path / /_compte/* /_next/* /api/contact /favicon.ico /icon* /apple-icon* /robots.txt
+	@site path / /_compte/* /_next/* /api/contact /favicon.ico /icon* /apple-icon* /robots.txt /.well-known/security.txt
 	handle @site {
-		reverse_proxy compte:3000
+		reverse_proxy compte:3000 {
+			header_up X-Forwarded-For {remote_host}
+		}
 	}
 	# Connexion, compte et admin vivent sur compte.postmelo.ch (cookies et clés d'accès y sont liés).
 	handle {
@@ -107,9 +121,13 @@ mkdir -p /tmp/lamio-import
 for f in app.db app.db-wal app.db-shm; do
   docker cp lamio:/data/$f /tmp/lamio-import/$f 2>/dev/null || true
 done
-docker cp /tmp/lamio-import compte:/tmp/lamio-import
-docker exec compte node scripts/import-lamio.mjs /tmp/lamio-import/app.db /data
-docker exec -u root compte rm -rf /tmp/lamio-import && rm -rf /tmp/lamio-import
+# Le conteneur est en lecture seule : les fichiers entrent par l'entrée standard, dans le volume /data.
+docker exec compte mkdir -p /data/lamio-import
+for f in app.db app.db-wal app.db-shm; do
+  [ -f /tmp/lamio-import/$f ] && docker exec -i compte sh -c "cat > /data/lamio-import/$f" < /tmp/lamio-import/$f
+done
+docker exec compte node scripts/import-lamio.mjs /data/lamio-import/app.db /data
+docker exec compte rm -rf /data/lamio-import && rm -rf /tmp/lamio-import
 ```
 
 Ouvre ensuite https://compte.postmelo.ch et connecte-toi avec ton e-mail et ton mot de passe de Lamio.
@@ -122,13 +140,41 @@ Si Lamio n'a encore aucun compte, saute cette étape : la page de connexion prop
 Voir [BRANCHER-UN-OUTIL.md](BRANCHER-UN-OUTIL.md). L'ordre conseillé : Lamio, puis Cairn, Metricove, TickUp, Alfred.
 Après chaque ajout dans `.env` : `cd ~/compte/deploy && docker compose up -d`.
 
-## 6. Sauvegarde
+## 6. Sauvegarde chiffrée, hors du VPS
 
-Tout tient dans le volume `compte_app-data` (fichier `compte.db`). À ajouter à la sauvegarde nocturne, comme Lamio :
+Tout tient dans le volume `compte_app-data` (fichier `compte.db`), plus le fichier `.env` (`AUTH_SECRET`).
+`backup.sh` copie les deux chaque nuit, **chiffrés avec age** : rien n'est écrit en clair sur le VPS, et seule
+ta clé privée peut les relire. Une copie part ensuite hors du VPS.
+
+### Une fois : la clé
+
+Sur ton Mac (jamais sur le VPS) :
 
 ```bash
-~/compte/deploy/backup.sh        # écrit dans ~/compte-backups, garde les 14 dernières
+brew install age
+age-keygen -o ~/postmelo-backup-key.txt     # affiche « Public key: age1… »
 ```
+
+Range `~/postmelo-backup-key.txt` dans le coffre Cairn (et une copie sur papier ou clé USB : sans elle, les
+sauvegardes sont illisibles, pour toi aussi). Sur le VPS, colle seulement la clé **publique** :
+
+```bash
+sudo apt install age rclone
+echo "age1…" > ~/compte/deploy/backup-recipients.txt
+```
+
+### Une fois : la copie hors du VPS
+
+Avec Infomaniak Swiss Backup (ou tout stockage que rclone connaît) : `rclone config`, crée un remote nommé
+`swissbackup`, puis :
+
+```bash
+echo 'BACKUP_REMOTE=swissbackup:compte' > ~/compte/deploy/backup.conf
+~/compte/deploy/backup.sh        # écrit dans ~/compte-backups, copie hors du VPS, garde les 14 dernières
+```
+
+Le stockage distant ne voit que des fichiers chiffrés. Sans `BACKUP_REMOTE`, la sauvegarde reste sur le VPS
+(chiffrée) et le script ne la copie nulle part.
 
 Chaque nuit à 3h20, avec `crontab -e` :
 
@@ -136,8 +182,34 @@ Chaque nuit à 3h20, avec `crontab -e` :
 20 3 * * * $HOME/compte/deploy/backup.sh >> $HOME/compte-backups.log 2>&1
 ```
 
-Pour restaurer : arrête le service, décompresse la sauvegarde à la place de `compte.db` dans le volume, relance.
-Le fichier `.env` n'est pas dans la sauvegarde : garde une copie de `AUTH_SECRET` à part.
+Le script s'arrête avec un message clair (et rien n'est écrit) s'il manque la clé publique, si la copie de la
+base n'est pas intègre ou si la copie distante n'a pas la bonne taille.
+
+### Chaque mois : relire une sauvegarde
+
+Sur ton Mac, là où est la clé privée (le 1er du mois, par exemple) :
+
+```bash
+rclone copy swissbackup:compte ~/compte-restore-test --max-age 2d
+./deploy/restore.sh --check ~/compte-restore-test/compte-<date>.db.gz.age ~/postmelo-backup-key.txt
+```
+
+Le script déchiffre dans un dossier temporaire, vérifie l'intégrité de la base, compte les personnes et les
+admins, vérifie que le `.env` de la même nuit contient `AUTH_SECRET`, puis efface tout. Il ne touche à rien.
+Efface ensuite `~/compte-restore-test`.
+
+### Restaurer pour de vrai
+
+Sur le VPS, en apportant la clé privée le temps de l'opération :
+
+```bash
+~/compte/deploy/restore.sh --apply ~/compte-backups/compte-<date>.db.gz.age /chemin/vers/la-cle.txt
+```
+
+Même vérification, puis le service est arrêté, sa base actuelle mise de côté dans le volume
+(`compte.db.avant-restauration-<date>`), la sauvegarde mise à sa place, et le service relancé. Si `AUTH_SECRET`
+a changé depuis, reprends le `.env` de la sauvegarde (`age -d -i la-cle.txt compte-<date>.env.age`). Efface la
+clé privée du VPS ensuite.
 
 ## Mettre à jour
 

@@ -4,18 +4,30 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Chaque lundi matin : une faille publiée pendant la semaine se voit même sans nouvelle PR.
+  schedule:
+    - cron: "0 6 * * 1"
+
+# Le jeton de la CI ne peut que lire le dépôt.
+permissions:
+  contents: read
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Aucune faille haute ou critique dans les dépendances, outils de développement compris.
+      - run: pnpm audit --audit-level high
       - run: pnpm lint
+      - run: pnpm exec tsc --noEmit
       - run: pnpm test
       - run: pnpm build

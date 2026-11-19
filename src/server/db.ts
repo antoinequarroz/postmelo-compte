@@ -32,9 +32,18 @@ export function db() {
 
 // ---- Who may open which tool
 
-type Person = { id: string; role?: string | null };
+type Person = { id: string; role?: string | null; twoFactorEnabled?: boolean | null };
 
 export const isAdmin = (person: Person) => person.role === "admin";
+
+/**
+ * May this person use the admin (CRM, people, tool access)? An admin role is not enough:
+ * the account must also be protected by a second factor, so a leaked password alone opens nothing.
+ */
+export const isTrustedAdmin = (person: Person) => isAdmin(person) && person.twoFactorEnabled === true;
+
+/** The admin's account still needs its second factor before the admin opens. */
+export const adminNeedsTwoFactor = (person: Person) => isAdmin(person) && !isTrustedAdmin(person);
 
 export function mayOpenTool(tool: string, person: Person) {
   if (isAdmin(person)) return true;

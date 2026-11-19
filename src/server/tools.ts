@@ -1,4 +1,5 @@
 import "server-only";
+import { SUITE } from "@/lib/suite-tools";
 
 /**
  * The tools of the suite that sign people in with this account.
@@ -8,14 +9,7 @@ import "server-only";
  * Its OpenID Connect client id is its id below, and its return address is fixed:
  * <its URL>/api/auth/compte/callback.
  */
-export const SUITE = [
-  { id: "lamio", name: "Lamio", description: "Messagerie d'équipe" },
-  { id: "cairn", name: "Cairn", description: "Notes et coffre de clés" },
-  { id: "metricove", name: "Metricove", description: "Publication et statistiques" },
-  { id: "tickup", name: "TickUp", description: "Gestion de projet" },
-  { id: "alfred", name: "Alfred", description: "Assistant" },
-  { id: "nino", name: "Nino", description: "Régie vidéo" },
-] as const;
+export { SUITE };
 
 export const CALLBACK_PATH = "/api/auth/compte/callback";
 export const MIN_SECRET = 32;
