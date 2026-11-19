@@ -69,8 +69,10 @@ describe("signing up", () => {
     expect(await res.json()).toMatchObject({ email: "nina@exemple.ch" });
     expect(await userByEmail("autre@exemple.ch")).toBeUndefined();
     expect((await userByEmail("nina@exemple.ch"))?.verified).toBe(1);
-    // The same link a second time: refused.
-    expect((await signUp({ invitation: token })).status).toBe(403);
+    // The same link a second time: no second account, and the person is told to sign in.
+    const again = await signUp({ invitation: token });
+    expect(again.status).toBe(409);
+    expect(((await again.json()) as { error: string }).error).toContain("connecte-toi");
   });
 
   test("the same link sent twice at once makes one account only", async () => {
@@ -78,6 +80,7 @@ describe("signing up", () => {
     const { token } = createInvite({ email: "duo@exemple.ch", createdBy: "test" });
     const statuses = (await Promise.all([signUp({ invitation: token }), signUp({ invitation: token }), signUp({ invitation: token })])).map((r) => r.status);
     expect(statuses.filter((s) => s === 200)).toHaveLength(1);
+    expect(statuses.filter((s) => s !== 200).every((s) => s === 403 || s === 409)).toBe(true);
     const { db } = await import("@/server/db");
     expect(db().prepare('select count(*) as n from "user" where email = ?').get("duo@exemple.ch")).toEqual({ n: 1 });
   });

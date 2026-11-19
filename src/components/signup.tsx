@@ -30,6 +30,8 @@ export function Signup({ choice, me, invitation }: { choice: Choice | null; me: 
   const [seats, setSeats] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [created, setCreated] = useState<string | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [key]: e.target.value }));
   const q = choice ? quote(choice.plan, choice.app, seats, choice.period) : null;
   const trialDays = choice?.trial ? choice.plan.trial_days : 0;
@@ -40,10 +42,13 @@ export function Signup({ choice, me, invitation }: { choice: Choice | null; me: 
     setBusy(true);
     setError("");
     try {
-      if (creating) {
-        const { email } = await api<{ email: string }>("/api/inscription", { method: "POST", json: { ...form, invitation: invitation.token } });
+      if (creating && !signedIn) {
+        // On a retry (sign-in or payment failed), the account already exists: it is not made twice.
+        const email = created ?? (await api<{ email: string }>("/api/inscription", { method: "POST", json: { ...form, invitation: invitation.token } })).email;
+        setCreated(email);
         const { error } = await authClient.signIn.email({ email, password: form.password });
         if (error) throw new Error(message(error));
+        setSignedIn(true);
       }
       if (!choice) {
         window.location.href = "/compte?bienvenue=1";

@@ -77,6 +77,12 @@ export function findInvite(token: unknown, now = Date.now()): Invite | null {
   return row && row.used_at == null && row.revoked_at == null && row.expires_at > now ? row : null;
 }
 
+/** Whether this token belongs to an invitation that already made an account (to say "sign in", not "ask again"). */
+export function inviteAlreadyUsed(token: unknown) {
+  if (typeof token !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(token)) return false;
+  return !!conn().prepare("select 1 from invitation where token_hash = ? and used_by is not null").get(hash(token));
+}
+
 /**
  * Takes the invitation for one sign-up: true for exactly one caller, even when the same link is
  * sent twice at once. Give it back with releaseInvite when the account could not be made after all.

@@ -8,7 +8,7 @@ import { asPeriod, quote, sellable } from "@/lib/pricing";
 import { linkOfUser, stripeMode } from "@/server/billing";
 import { crmDb, getPlan, listProducts } from "@/server/crm";
 import { currentSession } from "@/server/http";
-import { findInvite } from "@/server/invites";
+import { findInvite, inviteAlreadyUsed } from "@/server/invites";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +28,10 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
   const link = session ? linkOfUser(session.user.id) : undefined;
   const hadLicences = !!link && !!crmDb().prepare("select 1 from crm_license where company_id = ?").get(link.company_id);
   const invite = session ? null : findInvite(params.invitation);
+  // A link that already made its account: the person signs in, they do not ask again.
+  const used = !session && !invite && inviteAlreadyUsed(params.invitation);
+  // Someone is signed in on this browser: the invitation is for a new account, so they sign out first.
+  const otherSession = !!session && !!params.invitation && !ok;
   const choice = ok
     ? {
         plan: { id: plan.id, name: plan.name, scope: plan.scope, monthly_cents: plan.monthly_cents, yearly_discount: plan.yearly_discount, trial_days: plan.trial_days },
@@ -50,7 +54,21 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         <Link href="/tarifs" className="ml-auto text-[13.5px] text-ink-2 hover:text-ink">← Les tarifs</Link>
       </header>
       <main className="mx-auto flex w-full max-w-[1000px] flex-1 items-start px-4 py-12 sm:px-6">
-        {!session && !invite ? (
+        {used ? (
+          <div className="mx-auto max-w-[460px] rounded-3xl border border-line bg-surface p-8 text-center shadow-card">
+            <h1 className="font-display text-[34px] leading-none">Ton compte existe déjà.</h1>
+            <p className="mt-3 text-[14px] text-ink-2">Ce lien a déjà servi à créer ton compte. Connecte-toi avec ton adresse et ton mot de passe.</p>
+            <Link href="/connexion" className="mt-6 inline-flex font-medium text-accent hover:underline">Me connecter</Link>
+          </div>
+        ) : otherSession ? (
+          <div className="mx-auto max-w-[460px] rounded-3xl border border-line bg-surface p-8 text-center shadow-card">
+            <h1 className="font-display text-[34px] leading-none">Tu es déjà connecté.</h1>
+            <p className="mt-3 text-[14px] text-ink-2">
+              Ce navigateur est connecté au compte {session.user.email}. Une invitation sert à créer un nouveau compte : déconnecte-toi depuis ton compte, puis rouvre le lien.
+            </p>
+            <Link href="/compte" className="mt-6 inline-flex font-medium text-accent hover:underline">Aller sur mon compte</Link>
+          </div>
+        ) : !session && !invite ? (
           <RequestAccess wanted={wanted} product={app?.id ?? null} expired={!!params.invitation} />
         ) : choice || invite ? (
           <Signup

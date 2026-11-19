@@ -7,7 +7,7 @@ import { MAX_PASSWORD, MIN_PASSWORD } from "@/lib/utils";
 import { addPerson, baseUrl, getAuth } from "./auth";
 import { create, CrmError, crmDb, getPlan, log, type Plan, type Product, productName, promote, today } from "./crm";
 import { setToolAccess } from "./db";
-import { claimInvite, findInvite, inviteUsedBy, releaseInvite } from "./invites";
+import { claimInvite, findInvite, inviteAlreadyUsed, inviteUsedBy, releaseInvite } from "./invites";
 
 /**
  * Sign-up and payment. Someone picks a formula on /tarifs, creates an account, pays with Stripe
@@ -74,6 +74,7 @@ function companyOf(user: { id: string; name: string; email: string }) {
 
 // ---- Sign-up
 
+const ACCOUNT_EXISTS = "Un compte existe déjà avec cet e-mail : connecte-toi.";
 export const INVITE_INVALID = "Ce lien d'invitation n'est plus valable. Demande-en un nouveau.";
 
 const text = (input: Record<string, unknown>, key: string, max: number) => (typeof input[key] === "string" ? (input[key] as string).trim().slice(0, max) : "");
@@ -84,7 +85,10 @@ const text = (input: Record<string, unknown>, key: string, max: number) => (type
  */
 export async function signUp(input: Record<string, unknown>) {
   const invite = findInvite(input.invitation);
-  if (!invite) throw new CrmError(INVITE_INVALID, 403);
+  if (!invite) {
+    if (inviteAlreadyUsed(input.invitation)) throw new CrmError(ACCOUNT_EXISTS, 409);
+    throw new CrmError(INVITE_INVALID, 403);
+  }
   const name = text(input, "name", 80) || invite.name;
   const email = invite.email;
   const password = typeof input.password === "string" ? input.password : "";
@@ -94,7 +98,7 @@ export async function signUp(input: Record<string, unknown>) {
 
   const auth = await getAuth();
   const ctx = await auth.$context;
-  if (await ctx.internalAdapter.findUserByEmail(email)) throw new CrmError("Un compte existe déjà avec cet e-mail : connecte-toi.", 409);
+  if (await ctx.internalAdapter.findUserByEmail(email)) throw new CrmError(ACCOUNT_EXISTS, 409);
   // One link, one account: of two sign-ups sent at once with the same link, only one goes on.
   if (!claimInvite(invite.id)) throw new CrmError(INVITE_INVALID, 403);
   let user: Awaited<ReturnType<typeof addPerson>>;
