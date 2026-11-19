@@ -34,6 +34,10 @@ docker compose up -d --build
 docker ps --filter name=compte     # doit devenir « healthy »
 ```
 
+Le conteneur tourne sans root, avec un système de fichiers en lecture seule, sans aucun privilège Linux et
+avec des limites de mémoire et de CPU (`deploy/docker-compose.yml`). Sur une installation existante, vérifie
+que `.env` n'est lisible que par toi : `chmod 600 ~/compte/.env` (`ls -l ~/compte/.env` doit montrer `-rw-------`).
+
 ## 3. Brancher Caddy
 
 Garde une copie du Caddyfile (`~/.config/antoinequarroz-vitrine/runtime/Caddyfile`), puis ajoute :
