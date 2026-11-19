@@ -44,7 +44,10 @@ export const AUDIT_LABEL: Record<string, string> = {
   "site.article_traduit": "Traduction commencée",
   "site.produit_traduit": "Textes produit traduits",
   "installation.premier_admin": "Premier compte admin créé",
-  inscription: "Inscription sur le site",
+  inscription: "Inscription sur invitation",
+  "inscription.refusee": "Inscription refusée (invitation invalide)",
+  "admin.invitation_creee": "Invitation envoyée",
+  "admin.invitation_retiree": "Invitation retirée",
 };
 
 /** The families offered as a filter, by the start of their action name. */
@@ -52,7 +55,8 @@ export const AUDIT_FAMILIES: { value: string; label: string }[] = [
   { value: "connexion", label: "Connexions" },
   { value: "compte", label: "Comptes verrouillés" },
   { value: "2fa", label: "Double authentification" },
-  { value: "admin", label: "Comptes et refus admin" },
+  { value: "admin", label: "Comptes, invitations et refus admin" },
+  { value: "inscription", label: "Inscriptions" },
   { value: "outil", label: "Accès aux outils" },
   { value: "crm", label: "CRM et exports" },
   { value: "site", label: "Site et blog" },

@@ -18,25 +18,36 @@ type Choice = {
   stripe: boolean;
 };
 
-/** Creates the account (when nobody is signed in), then sends the browser to the payment, or starts the trial. */
-export function Signup({ choice, me }: { choice: Choice; me: { name: string; email: string } | null }) {
-  const [form, setForm] = useState({ name: "", company: "", email: "", password: "", website: "" });
+/** The invitation link that opened the page: the account takes its address. */
+export type Invitation = { token: string; email: string; name: string };
+
+/**
+ * Creates the account from the invitation (when nobody is signed in), then sends the browser to
+ * the payment or starts the trial, or, without a formula, to the account to add a passkey.
+ */
+export function Signup({ choice, me, invitation }: { choice: Choice | null; me: { name: string; email: string } | null; invitation: Invitation | null }) {
+  const [form, setForm] = useState({ name: invitation?.name ?? "", company: "", password: "", website: "" });
   const [seats, setSeats] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [key]: e.target.value }));
-  const q = quote(choice.plan, choice.app, seats, choice.period);
-  const trialDays = choice.trial ? choice.plan.trial_days : 0;
+  const q = choice ? quote(choice.plan, choice.app, seats, choice.period) : null;
+  const trialDays = choice?.trial ? choice.plan.trial_days : 0;
+  const creating = !me && !!invitation;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError("");
     try {
-      if (!me) {
-        await api("/api/inscription", { method: "POST", json: form });
-        const { error } = await authClient.signIn.email({ email: form.email, password: form.password });
+      if (creating) {
+        const { email } = await api<{ email: string }>("/api/inscription", { method: "POST", json: { ...form, invitation: invitation.token } });
+        const { error } = await authClient.signIn.email({ email, password: form.password });
         if (error) throw new Error(message(error));
+      }
+      if (!choice) {
+        window.location.href = "/compte?bienvenue=1";
+        return;
       }
       const { url } = await api<{ url: string }>("/api/paiement", { method: "POST", json: { plan: choice.plan.id, product: choice.app?.id, seats, period: choice.period } });
       window.location.href = url;
@@ -46,20 +57,20 @@ export function Signup({ choice, me }: { choice: Choice; me: { name: string; ema
     }
   };
 
-  const action = trialDays ? (choice.stripe ? `Commencer l'essai de ${trialDays} jours` : `Commencer l'essai gratuit`) : "Continuer vers le paiement";
+  const action = !choice ? "Créer mon compte" : trialDays ? (choice.stripe ? `Commencer l'essai de ${trialDays} jours` : `Commencer l'essai gratuit`) : "Continuer vers le paiement";
 
   return (
-    <form onSubmit={submit} className="grid w-full gap-5 lg:grid-cols-[1fr_380px]">
+    <form onSubmit={submit} className={cn("grid w-full gap-5", choice ? "lg:grid-cols-[1fr_380px]" : "mx-auto max-w-[560px]")}>
       <div className="flex flex-col gap-4 rounded-3xl border border-line bg-surface p-6 shadow-card sm:p-8">
         <h1 className="font-display text-[38px] leading-none">{me ? "Ta formule" : "Crée ton compte"}</h1>
         <p className="text-[14px] text-ink-2">
           {me ? (
             <>Connecté en tant que <span className="font-medium text-ink">{me.email}</span>.</>
           ) : (
-            "Un seul compte pour toutes les applications de la suite."
+            "Tu as été invité. Un seul compte pour toutes les applications de la suite."
           )}
         </p>
-        {!me && (
+        {creating && (
           <>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Ton nom">
@@ -69,17 +80,17 @@ export function Signup({ choice, me }: { choice: Choice; me: { name: string; ema
                 <input maxLength={120} autoComplete="organization" value={form.company} onChange={set("company")} className={inputClass} />
               </Field>
             </div>
-            <Field label="E-mail">
-              <input required type="email" maxLength={200} autoComplete="email" value={form.email} onChange={set("email")} className={inputClass} />
+            <Field label="E-mail" hint="L'adresse de ton invitation. Elle est déjà vérifiée.">
+              <input readOnly type="email" autoComplete="email" value={invitation.email} className={cn(inputClass, "cursor-default text-ink-3")} />
             </Field>
-            <Field label="Mot de passe" hint={`${MIN_PASSWORD} caractères au moins.`}>
+            <Field label="Mot de passe" hint={`${MIN_PASSWORD} caractères au moins. Juste après, tu pourras aussi entrer avec Face ID, Touch ID ou Windows Hello.`}>
               <input required type="password" minLength={MIN_PASSWORD} autoComplete="new-password" value={form.password} onChange={set("password")} className={inputClass} />
             </Field>
             {/* Hidden to people: robots fill it in. */}
             <input tabIndex={-1} autoComplete="off" aria-hidden value={form.website} onChange={set("website")} className="absolute -left-[9999px] size-px opacity-0" name="website" />
           </>
         )}
-        <Field label="Nombre de personnes">
+        {choice && <Field label="Nombre de personnes">
           <div className="flex items-center gap-2">
             <Button type="button" variant="secondary" size="sm" aria-label="Une de moins" onClick={() => setSeats((s) => Math.max(1, s - 1))} disabled={seats <= 1}>
               <Minus className="size-4" />
@@ -95,9 +106,9 @@ export function Signup({ choice, me }: { choice: Choice; me: { name: string; ema
               <Plus className="size-4" />
             </Button>
           </div>
-        </Field>
+        </Field>}
         {error && <p className="text-[13px] text-danger">{error}</p>}
-        <Button variant="primary" className="h-11 w-full" disabled={busy || (!me && (!form.name.trim() || !form.email || form.password.length < MIN_PASSWORD))}>
+        <Button variant="primary" className="h-11 w-full" disabled={busy || (creating && (!form.name.trim() || form.password.length < MIN_PASSWORD))}>
           {busy ? "Un instant…" : action}
           {!busy && <ArrowRight className="size-4" />}
         </Button>
@@ -108,7 +119,7 @@ export function Signup({ choice, me }: { choice: Choice; me: { name: string; ema
         )}
       </div>
 
-      <aside className="flex h-fit flex-col gap-4 rounded-3xl border border-line bg-[var(--glass-025)] p-6 sm:p-7">
+      {choice && <aside className="flex h-fit flex-col gap-4 rounded-3xl border border-line bg-[var(--glass-025)] p-6 sm:p-7">
         <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-ink-3">Récapitulatif</p>
         <div className="flex items-center gap-3">
           {choice.app && <ProductIcon id={choice.app.id} color={choice.app.color || undefined} />}
@@ -145,7 +156,7 @@ export function Signup({ choice, me }: { choice: Choice; me: { name: string; ema
             <Lock className="size-3.5" /> Paiement sécurisé par Stripe
           </p>
         )}
-      </aside>
+      </aside>}
     </form>
   );
 }

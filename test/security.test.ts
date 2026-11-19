@@ -27,6 +27,7 @@ const EVIL = "https://pirate.example";
 const ADMIN_ROUTES = [
   "admin/acces",
   "admin/confirmer",
+  "admin/invitations",
   "crm/[kind]",
   "crm/[kind]/[id]",
   "crm/export",
@@ -40,7 +41,7 @@ const ADMIN_ROUTES = [
 const PUBLIC_ROUTES: Record<string, string> = {
   "auth/[...all]": "Better Auth: its admin routes are tested in admin-2fa.test.ts, its limits in limits.test.ts",
   contact: "the contact form: same origin (or the public site), limited per address",
-  inscription: "sign-up from the pricing page: same origin, limited per address",
+  inscription: "sign-up with an invitation link only (tested in invites.test.ts): same origin, limited per address",
   demarrage: "creates the first admin of a brand-new installation, closed once an account exists",
   paiement: "a signed-in person starts a payment: same origin",
   "paiement/portail": "a signed-in person opens the Stripe portal: same origin",
@@ -113,6 +114,7 @@ const SENSITIVE: [string, string][] = [
   ["crm/[kind]/[id]", "DELETE"],
   ["site/posts/[id]", "DELETE"],
   ["admin/acces", "POST"],
+  ["admin/invitations", "POST"],
 ];
 
 beforeAll(async () => {
