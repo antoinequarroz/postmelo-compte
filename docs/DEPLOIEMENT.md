@@ -77,7 +77,7 @@ postmelo.ch, www.postmelo.ch {
 		X-Content-Type-Options "nosniff"
 		-Server
 	}
-	@site path / /_compte/* /_next/* /api/contact /favicon.ico /icon* /apple-icon* /robots.txt
+	@site path / /_compte/* /_next/* /api/contact /favicon.ico /icon* /apple-icon* /robots.txt /.well-known/security.txt
 	handle @site {
 		reverse_proxy compte:3000 {
 			header_up X-Forwarded-For {remote_host}
