@@ -52,6 +52,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
           {plans.length ? (
             <Pricing
               account={account}
+              invitationOnly={!session}
               apps={apps.map((a) => ({ id: a.id, name: a.name, color: a.color, category: a.category, price_cents: a.price_cents }))}
               plans={plans.map((p) => ({ id: p.id, name: p.name, tagline: p.tagline, features: lines(p.features), scope: p.scope, monthly_cents: p.monthly_cents, yearly_discount: p.yearly_discount, trial_days: p.trial_days, highlight: !!p.highlight, status: p.status }))}
             />

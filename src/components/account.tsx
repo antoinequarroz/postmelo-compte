@@ -25,7 +25,7 @@ export function Title({ children, hint }: { children: React.ReactNode; hint?: st
   );
 }
 
-export function Account({ me, sessionToken, tools, subscription }: { me: Me; sessionToken: string; tools: ToolInfo[]; subscription?: React.ReactNode }) {
+export function Account({ me, sessionToken, tools, subscription, welcome = false }: { me: Me; sessionToken: string; tools: ToolInfo[]; subscription?: React.ReactNode; welcome?: boolean }) {
   const signOut = async () => {
     await authClient.signOut();
     window.location.href = "/connexion";
@@ -45,12 +45,14 @@ export function Account({ me, sessionToken, tools, subscription }: { me: Me; ses
       </header>
       {me.adminNeedsTwoFactor && <AdminLocked />}
       {me.adminSessionExpired && <AdminExpired />}
+      {/* Just signed up: the passkey comes first, so the next sign-in needs no password. */}
+      {welcome && <Passkeys welcome />}
       {subscription}
       <Tools tools={tools} />
       <Profile me={me} />
       <Password />
       <TwoFactor enabled={me.twoFactor} />
-      <Passkeys />
+      {!welcome && <Passkeys />}
       <Devices current={sessionToken} />
       <Appearance />
       {me.admin && <Admin me={me} />}
@@ -344,7 +346,7 @@ function TwoFactor({ enabled: initial }: { enabled: boolean }) {
 
 type Passkey = { id: string; name?: string | null; createdAt: string | Date };
 
-function Passkeys() {
+function Passkeys({ welcome = false }: { welcome?: boolean }) {
   const [list, setList] = useState<Passkey[] | null>(null);
   const [supported, setSupported] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -373,8 +375,12 @@ function Passkeys() {
   };
 
   return (
-    <Card className="flex flex-col gap-3">
-      <Title hint="Connecte-toi avec Face ID, Touch ID ou une clé de sécurité, sans taper de mot de passe.">Clés d&apos;accès</Title>
+    <Card className={cn("flex flex-col gap-3", welcome && !list?.length && "border-accent/50")}>
+      {welcome ? (
+        <Title hint="Ton compte est prêt. Ajoute une clé d'accès : la prochaine fois, tu entres avec Face ID, Touch ID ou Windows Hello, sans mot de passe.">Bienvenue !</Title>
+      ) : (
+        <Title hint="Connecte-toi avec Face ID, Touch ID ou une clé de sécurité, sans taper de mot de passe.">Clés d&apos;accès</Title>
+      )}
       {list && list.length > 0 && (
         <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
           {list.map((p) => (
@@ -392,7 +398,7 @@ function Passkeys() {
         </ul>
       )}
       {supported ? (
-        <Button className="self-start" disabled={busy} onClick={add}>
+        <Button className="self-start" variant={welcome && !list?.length ? "primary" : undefined} disabled={busy} onClick={add}>
           <KeyRound className="size-4" />
           Ajouter une clé d&apos;accès
         </Button>

@@ -7,6 +7,7 @@ import { MAX_PASSWORD, MIN_PASSWORD } from "@/lib/utils";
 import { addPerson, baseUrl, getAuth } from "./auth";
 import { create, CrmError, crmDb, getPlan, log, type Plan, type Product, productName, promote, today } from "./crm";
 import { setToolAccess } from "./db";
+import { claimInvite, findInvite, inviteAlreadyUsed, inviteUsedBy, releaseInvite } from "./invites";
 
 /**
  * Sign-up and payment. Someone picks a formula on /tarifs, creates an account, pays with Stripe
@@ -73,22 +74,41 @@ function companyOf(user: { id: string; name: string; email: string }) {
 
 // ---- Sign-up
 
+const ACCOUNT_EXISTS = "Un compte existe déjà avec cet e-mail : connecte-toi.";
+export const INVITE_INVALID = "Ce lien d'invitation n'est plus valable. Demande-en un nouveau.";
+
 const text = (input: Record<string, unknown>, key: string, max: number) => (typeof input[key] === "string" ? (input[key] as string).trim().slice(0, max) : "");
 
-/** Creates the account, its company in the CRM (a prospect until it pays) and the link between them. */
+/**
+ * Creates the account from an invitation, its company in the CRM (a prospect until it pays) and
+ * the link between them. The address is the one of the invitation, never one typed on the page.
+ */
 export async function signUp(input: Record<string, unknown>) {
-  const name = text(input, "name", 80);
-  const email = text(input, "email", 200).toLowerCase();
+  const invite = findInvite(input.invitation);
+  if (!invite) {
+    if (inviteAlreadyUsed(input.invitation)) throw new CrmError(ACCOUNT_EXISTS, 409);
+    throw new CrmError(INVITE_INVALID, 403);
+  }
+  const name = text(input, "name", 80) || invite.name;
+  const email = invite.email;
   const password = typeof input.password === "string" ? input.password : "";
   const companyName = text(input, "company", 120) || name;
   if (!name) throw new CrmError("Indique ton nom.");
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new CrmError("Cette adresse e-mail n'est pas valide.");
   if (password.length < MIN_PASSWORD || password.length > MAX_PASSWORD) throw new CrmError(`Le mot de passe doit faire au moins ${MIN_PASSWORD} caractères.`);
 
   const auth = await getAuth();
   const ctx = await auth.$context;
-  if (await ctx.internalAdapter.findUserByEmail(email)) throw new CrmError("Un compte existe déjà avec cet e-mail : connecte-toi.", 409);
-  const user = await addPerson(auth, { name, email, role: "user", passwordHash: await hashPassword(password) });
+  if (await ctx.internalAdapter.findUserByEmail(email)) throw new CrmError(ACCOUNT_EXISTS, 409);
+  // One link, one account: of two sign-ups sent at once with the same link, only one goes on.
+  if (!claimInvite(invite.id)) throw new CrmError(INVITE_INVALID, 403);
+  let user: Awaited<ReturnType<typeof addPerson>>;
+  try {
+    user = await addPerson(auth, { name, email, role: "user", passwordHash: await hashPassword(password) });
+  } catch (e) {
+    releaseInvite(invite.id);
+    throw e;
+  }
+  inviteUsedBy(invite.id, user.id);
 
   const conn = crmDb();
   conn.transaction(() => {
@@ -97,9 +117,9 @@ export async function signUp(input: Record<string, unknown>) {
     const companyId = known && !linkOfCompany(known.id) ? known.id : create("company", { name: companyName, kind: "prospect", email }, "Site");
     if (!conn.prepare("select 1 from crm_contact where company_id = ? and email = ?").get(companyId, email)) create("contact", { company_id: companyId, name, email });
     linkCompany(companyId, user.id);
-    log(companyId, `Compte créé sur le site par ${name} <${email}>.`, "Site");
+    log(companyId, `Compte créé sur invitation par ${name} <${email}>.`, "Site");
   })();
-  return user.id;
+  return { id: user.id, email, inviteId: invite.id };
 }
 
 // ---- Choosing a formula

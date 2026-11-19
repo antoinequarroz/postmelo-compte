@@ -44,9 +44,11 @@ test("prices: an app's own price wins, the yearly discount applies, the suite is
 test("signing up creates the account, its company in the CRM and, without Stripe, a free trial with the apps opened", async () => {
   crm.update("plan", "une-app", { status: "publie" });
   crm.update("plan", "suite", { status: "publie" });
-  await billing.signUp({ name: "Léa Martin", email: "Lea@Studio.ch", password: PASSWORD, company: "Studio Léa" });
-  await expect(billing.signUp({ name: "Léa", email: "lea@studio.ch", password: PASSWORD })).rejects.toThrow("existe déjà");
-  await expect(billing.signUp({ name: "X", email: "x@y.ch", password: "court" })).rejects.toThrow("mot de passe");
+  const { createInvite } = await import("@/server/invites");
+  const invite = (email: string) => createInvite({ email, createdBy: "admin" }).token;
+  await billing.signUp({ name: "Léa Martin", email: "ignoree@ailleurs.ch", password: PASSWORD, company: "Studio Léa", invitation: invite("Lea@Studio.ch") });
+  await expect(billing.signUp({ name: "Léa", password: PASSWORD, invitation: invite("lea@studio.ch") })).rejects.toThrow("existe déjà");
+  await expect(billing.signUp({ name: "X", password: "court", invitation: invite("x@y.ch") })).rejects.toThrow("mot de passe");
 
   const lea = await user("lea@studio.ch");
   expect(lea.role).toBe("user");
@@ -79,7 +81,8 @@ test("signing up creates the account, its company in the CRM and, without Stripe
 });
 
 test("Stripe's subscription drives the licences: paid, unpaid, cancelled, and the same news twice changes nothing", async () => {
-  await billing.signUp({ name: "Marc", email: "marc@atelier.ch", password: PASSWORD, company: "Atelier Marc" });
+  const { createInvite } = await import("@/server/invites");
+  await billing.signUp({ name: "Marc", password: PASSWORD, company: "Atelier Marc", invitation: createInvite({ email: "marc@atelier.ch", createdBy: "admin" }).token });
   const marc = await user("marc@atelier.ch");
   const companyId = billing.linkOfUser(marc.id)!.company_id;
   const sub = (status: string, quantity = 3) =>
