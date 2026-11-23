@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "4.3.3",
+    "@tailwindcss/postcss": "4.3.5",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^22",
     "@types/qrcode": "^1.5.5",
@@ -35,10 +35,10 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.28",
-    "openid-client": "^6.9.0",
-    "tailwindcss": "4.3.3",
+    "openid-client": "^6.9.1",
+    "tailwindcss": "4.3.5",
     "typescript": "^5",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "packageManager": "pnpm@12.16.1"
 }
