@@ -11,9 +11,9 @@
     "import:lamio": "node scripts/import-lamio.mjs"
   },
   "dependencies": {
-    "@better-auth/oauth-provider": "1.7.25",
-    "@better-auth/passkey": "1.7.25",
-    "better-auth": "1.7.25",
+    "@better-auth/oauth-provider": "1.7.27",
+    "@better-auth/passkey": "1.7.27",
+    "better-auth": "1.7.27",
     "better-sqlite3": "^13.0.3",
     "clsx": "^2.1.1",
     "lucide-react": "^1.66.0",
