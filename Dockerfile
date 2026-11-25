@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 
 FROM node:26-bookworm-slim AS base
-RUN corepack enable
+# Node 25+ no longer ships corepack: install it (pinned), then it provides the pnpm of package.json.
+RUN npm install -g corepack@0.36.0 && corepack enable
 WORKDIR /app
 
 # Dependencies (better-sqlite3 compiles a native module)
@@ -27,6 +28,11 @@ COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/public ./public
 # The import of Lamio's accounts runs inside the container: docs/DEPLOIEMENT.md
 COPY --from=build --chown=app:app /app/scripts ./scripts
+# Next 16 (Turbopack) loads better-sqlite3 through a hashed alias only. The backup, the restore check
+# and the Lamio import run `node` in this container and need the plain name: link it, and fail the
+# build if it does not load.
+RUN ln -s "$(cd node_modules && ls -d .pnpm/better-sqlite3@*/node_modules/better-sqlite3 | head -n 1)" node_modules/better-sqlite3 \
+ && node -e 'new (require("better-sqlite3"))(":memory:").close()'
 USER app
 VOLUME /data
 EXPOSE 3000
