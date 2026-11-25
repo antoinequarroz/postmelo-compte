@@ -33,10 +33,13 @@ export function Pricing({
   plans,
   apps,
   account,
+  invitationOnly = false,
 }: {
   plans: PricingPlan[];
   apps: PricingApp[];
   account: string;
+  /** New accounts open by invitation: the buttons ask for access instead. */
+  invitationOnly?: boolean;
 }) {
   const [period, setPeriod] = useState<Period>("mois");
   const discount = Math.max(
@@ -91,6 +94,7 @@ export function Pricing({
             apps={apps}
             period={period}
             account={account}
+            invitationOnly={invitationOnly}
           />
         ))}
       </ul>
@@ -103,11 +107,13 @@ function PlanCard({
   apps,
   period,
   account,
+  invitationOnly,
 }: {
   plan: PricingPlan;
   apps: PricingApp[];
   period: Period;
   account: string;
+  invitationOnly: boolean;
 }) {
   const [appId, setAppId] = useState(apps[0]?.id ?? "");
   const app =
@@ -238,7 +244,9 @@ function PlanCard({
       >
         {onRequest
           ? "Nous écrire"
-          : plan.trial_days
+          : invitationOnly
+            ? "Demander un accès"
+            : plan.trial_days
             ? `Essayer ${plan.trial_days} jours gratuits`
             : "Choisir"}
         <ArrowRight className="size-4" />
