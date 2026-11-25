@@ -11,7 +11,10 @@ export const prefersReduced = () => typeof window !== "undefined" && window.matc
 export function useScrollProgress<T extends HTMLElement>(onProgress: (p: number, el: T) => void) {
   const ref = useRef<T>(null);
   const cb = useRef(onProgress);
-  cb.current = onProgress;
+  // The latest callback, without restarting the listener (updated after render, as React asks).
+  useEffect(() => {
+    cb.current = onProgress;
+  });
   useEffect(() => {
     const el = ref.current;
     if (!el) return;

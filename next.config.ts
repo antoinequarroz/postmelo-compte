@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Self-contained server for the Docker image.
   output: "standalone",
+  // No "X-Powered-By: Next.js": nothing tells a visitor which framework to probe.
+  poweredByHeader: false,
   serverExternalPackages: ["better-sqlite3"],
   // The landing page is also served on postmelo.ch, next to another Next.js app (Postmelo Studio):
   // a prefix of our own keeps our /_next files from colliding with its files there.

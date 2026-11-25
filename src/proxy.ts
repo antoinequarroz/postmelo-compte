@@ -5,7 +5,7 @@ import { contentSecurityPolicy, newNonce, toolOrigins } from "@/lib/csp";
  * Security headers that depend on the request or on the environment (the fixed ones are in next.config.ts):
  * a Content-Security-Policy with a fresh nonce, HSTS and Cross-Origin-Opener-Policy.
  */
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const nonce = newNonce();
   const https = (process.env.COMPTE_URL ?? "").trim().startsWith("https://");
   const csp = contentSecurityPolicy(nonce, { https, dev: process.env.NODE_ENV === "development", formTargets: toolOrigins() });

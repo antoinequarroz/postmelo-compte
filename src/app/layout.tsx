@@ -24,7 +24,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  // The nonce of this request (src/middleware.ts): the only inline script allowed to run carries it.
+  // The nonce of this request (src/proxy.ts): the only inline script allowed to run carries it.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     // The theme script sets data-theme before React starts: the attribute is allowed to differ.
