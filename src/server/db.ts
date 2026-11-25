@@ -3,7 +3,7 @@ import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 
-export const dataDir = () => path.resolve(process.env.DATA_DIR ?? "./data");
+export const dataDir = () => path.resolve(/*turbopackIgnore: true*/ process.env.DATA_DIR ?? "./data");
 
 const globalForDb = globalThis as unknown as { __compteDb?: { dir: string; conn: Database.Database } };
 

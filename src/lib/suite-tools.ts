@@ -1,6 +1,6 @@
 /**
  * The tools of the suite that sign people in with this account (no secrets here: this list is
- * also read by the middleware, which builds the Content-Security-Policy). See src/server/tools.ts.
+ * also read by the proxy (src/proxy.ts), which builds the Content-Security-Policy). See src/server/tools.ts.
  */
 export const SUITE = [
   { id: "lamio", name: "Lamio", description: "Messagerie d'équipe" },
