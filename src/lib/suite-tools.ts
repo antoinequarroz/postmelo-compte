@@ -9,4 +9,5 @@ export const SUITE = [
   { id: "tickup", name: "TickUp", description: "Gestion de projet" },
   { id: "alfred", name: "Alfred", description: "Assistant" },
   { id: "nino", name: "Nino", description: "Régie vidéo" },
+  { id: "orbi", name: "Orbi", description: "Erreurs et disponibilité" },
 ] as const;

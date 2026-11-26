@@ -12,7 +12,7 @@ CAIRN_URL=https://cairn.antoinequarroz.ch
 CAIRN_CLIENT_SECRET=<openssl rand -base64 32>
 ```
 
-Les outils connus sont `lamio`, `cairn`, `metricove`, `tickup`, `alfred` et `nino` (liste dans `src/server/tools.ts`).
+Les outils connus sont `lamio`, `cairn`, `metricove`, `tickup`, `alfred`, `nino` et `orbi` (liste dans `src/lib/suite-tools.ts`).
 L'adresse de retour n'est pas un paramètre : c'est toujours `<adresse de l'outil>/api/auth/compte/callback`.
 
 ## 2. Configurer l'outil
