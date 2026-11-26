@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Self-contained server for the Docker image.
   output: "standalone",
-  serverExternalPackages: ["better-sqlite3"],
+  serverExternalPackages: ["better-sqlite3", "@sentry/node"],
   // The landing page is also served on postmelo.ch, next to another Next.js app (Postmelo Studio):
   // a prefix of our own keeps our /_next files from colliding with its files there.
   assetPrefix: "/_compte",
