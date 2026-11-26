@@ -1,4 +1,4 @@
-import { Box, CalendarClock, Clapperboard, KanbanSquare, Megaphone, MessagesSquare, PenLine, Radio, Vault, type LucideIcon } from "lucide-react";
+import { Activity, Box, CalendarClock, Clapperboard, KanbanSquare, Megaphone, MessagesSquare, PenLine, Radio, Vault, type LucideIcon } from "lucide-react";
 import { BrandIcon } from "@/components/logo";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,7 @@ const ICONS: Record<string, LucideIcon> = {
   "postmelo-studio": PenLine,
   nino: Clapperboard,
   maya: Radio,
+  orbi: Activity,
 };
 
 /** The bare glyph of a product, without its tile: for quiet, monochrome places. */
