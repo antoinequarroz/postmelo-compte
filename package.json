@@ -13,6 +13,7 @@
   "dependencies": {
     "@better-auth/oauth-provider": "1.7.27",
     "@better-auth/passkey": "1.7.27",
+    "@sentry/node": "^10.78.0",
     "better-auth": "1.7.27",
     "better-sqlite3": "^13.0.3",
     "clsx": "^2.1.1",
